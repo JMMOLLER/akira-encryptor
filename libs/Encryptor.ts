@@ -1,20 +1,21 @@
 import generateSecretKey from "@utils/generateSecretKey";
-import { decodeUTF8, encodeUTF8 } from "tweetnacl-util";
 import { FileSystem } from "./FileSystem";
+import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
-import nacl from "tweetnacl";
 import path from "path";
 
 class Encryptor {
-  private static readonly SECRET_KEY = generateSecretKey(env.PASSWORD);
+  private static SECRET_KEY: Uint8Array;
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly STORAGE = FileSystem.getInstance();
   private static instance: Encryptor;
 
   private constructor() {}
 
-  static getInstance(): Encryptor {
+  static async getInstance(): Promise<Encryptor> {
     if (!Encryptor.instance) {
+      await sodium.ready;
+      Encryptor.SECRET_KEY = generateSecretKey(env.PASSWORD);
       Encryptor.instance = new Encryptor();
     }
     return Encryptor.instance;
@@ -24,8 +25,8 @@ class Encryptor {
    * @description `[ENG]` Generates a nonce for encryption.
    * @description `[ES]` Genera un nonce para la cifrado.
    */
-  generateNonce() {
-    return nacl.randomBytes(nacl.secretbox.nonceLength);
+  generateNonce(): Uint8Array {
+    return sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
   }
 
   /**
@@ -34,28 +35,19 @@ class Encryptor {
    * @param txt - The text to be encrypted
    */
   encryptText(txt: string): string {
-    // Convert text to Uint8Array
-    const msgToBytes = decodeUTF8(txt);
-
-    // Generate a nonce for encryption
+    // Convert the text to bytes
+    const textBytes = sodium.from_string(txt);
     const nonce = this.generateNonce();
 
-    // Encrypt the text using the secret key and nonce
-    const encryptedText = nacl.secretbox(
-      msgToBytes,
-      nonce,
-      Encryptor.SECRET_KEY
-    );
+    // Encrypt the text using the nonce and secret key
+    const cipher = sodium.crypto_secretbox_easy(textBytes, nonce, Encryptor.SECRET_KEY);
 
-    /**
-     * @name encryptedMsgWithNonce
-     */
-    const encMsgWithNonce = new Uint8Array(nonce.length + encryptedText.length);
-    encMsgWithNonce.set(nonce);
-    encMsgWithNonce.set(encryptedText, nonce.length);
+    // Combine the nonce and cipher into a single Uint8Array
+    const combined = new Uint8Array(nonce.length + cipher.length);
+    combined.set(nonce);
+    combined.set(cipher, nonce.length);
 
-    // Return the encrypted text as selected encoding
-    return Buffer.from(encMsgWithNonce).toString(Encryptor.ENCODING);
+    return Buffer.from(combined).toString(Encryptor.ENCODING);
   }
 
   /**
@@ -64,33 +56,18 @@ class Encryptor {
    * @param encryptedText - The encrypted text to be decrypted
    */
   decryptText(encryptedText: string): string | null {
-    /**
-     * @name encryptedMsgWithNonce
-     */
-    const encMsgWithNonce = new Uint8Array(
-      Buffer.from(encryptedText, Encryptor.ENCODING)
-    );
+    // Convert the encrypted text to bytes
+    const combined = new Uint8Array(Buffer.from(encryptedText, Encryptor.ENCODING));
 
-    // Extract the nonce (the first bytes of the encrypted text)
-    const nonce = encMsgWithNonce.slice(0, nacl.secretbox.nonceLength);
+    // Get the nonce and cipher from the combined array
+    const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+    const cipher = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
 
-    // Extract the actual encrypted message (the rest of the bytes)
-    const encryptedMsg = encMsgWithNonce.slice(nacl.secretbox.nonceLength);
+    // Decrypt the cipher using the nonce and secret key
+    const decrypted = sodium.crypto_secretbox_open_easy(cipher, nonce, Encryptor.SECRET_KEY);
+    if (!decrypted) return null;
 
-    // Try to decrypt the message using the secret key and nonce
-    const decryptedText = nacl.secretbox.open(
-      encryptedMsg,
-      nonce,
-      Encryptor.SECRET_KEY
-    );
-
-    if (!decryptedText) {
-      // If decryption fails, return null
-      return null;
-    }
-
-    // Convert the decrypted text from Uint8Array to string
-    return encodeUTF8(decryptedText);
+    return sodium.to_string(decrypted);
   }
 
   /**
@@ -102,12 +79,8 @@ class Encryptor {
     const map = Encryptor.STORAGE.read();
     if (withDecrypt) {
       for (const [id, mensajeCifrado] of map) {
-        const mensajeDescifrado = this.decryptText(mensajeCifrado);
-        if (mensajeDescifrado) {
-          console.log(`ID: ${id}, Mensaje: ${mensajeDescifrado}`);
-        } else {
-          console.log(`ID: ${id}, Mensaje no válido`);
-        }
+        const decryptedMsg = this.decryptText(mensajeCifrado);
+        console.log(`ID: ${id}, Mensaje: ${decryptedMsg || "Mensaje no válido"}`);
       }
     } else {
       console.log(map);
@@ -120,41 +93,27 @@ class Encryptor {
    * @param filePath `string` - The path of the file to be encrypted (read-only).
    */
   encryptFile(filePath: Readonly<string>) {
-    try {
-      // Read the file as a buffer
-      const fileBuffer = Encryptor.STORAGE.getFile(filePath);
-      const fileUnit8 = new Uint8Array(fileBuffer);
+    // Convert the file to bytes
+    const fileBuffer = Encryptor.STORAGE.getFile(filePath);
+    const fileUint8 = new Uint8Array(fileBuffer);
 
-      const nonce = this.generateNonce();
-      const encryptedFile = nacl.secretbox(
-        fileUnit8,
-        nonce,
-        Encryptor.SECRET_KEY
-      );
+    // Generate a nonce and encrypt the file
+    const nonce = this.generateNonce();
+    const encrypted = sodium.crypto_secretbox_easy(fileUint8, nonce, Encryptor.SECRET_KEY);
 
-      // Concatenate nonce and encrypted file
-      const combined = new Uint8Array(nonce.length + encryptedFile.length);
-      combined.set(nonce);
-      combined.set(encryptedFile, nonce.length);
+    // Combine the nonce and encrypted data into a single Uint8Array
+    const combined = new Uint8Array(nonce.length + encrypted.length);
+    combined.set(nonce);
+    combined.set(encrypted, nonce.length);
 
-      // Convert to Buffer and save to file
-      const combinedBuffer = Buffer.from(combined);
+    // Convert the combined Uint8Array to a Buffer and save it with a new name
+    const combinedBuffer = Buffer.from(combined);
+    const fileName = path.basename(filePath);
+    const encryptedName = this.encryptText(fileName);
+    const newFileName = Encryptor.STORAGE.add(encryptedName);
+    const newPath = filePath.replace(fileName, `${newFileName}.enc`);
 
-      // Extract the file name from the path
-      const fileName = path.basename(filePath);
-      // Encrypt the file name and generate a new file name
-      const newFileName = Encryptor.STORAGE.add(this.encryptText(fileName));
-      // Create a new path for the encrypted file
-      const newPath = new String(filePath).replace(
-        fileName,
-        `${newFileName}.enc`
-      );
-
-      // Save the encrypted file with the new name
-      Encryptor.STORAGE.replaceFile(filePath, newPath, combinedBuffer);
-    } catch (error) {
-      throw error;
-    }
+    Encryptor.STORAGE.replaceFile(filePath, newPath, combinedBuffer);
   }
 
   /**
@@ -163,69 +122,41 @@ class Encryptor {
    * @param filePath `string` - The path of the file to be decrypted (read-only).
    */
   decryptFile(filePath: Readonly<string>) {
-    try {
-      // Read the encrypted file as a buffer
-      const encryptedBuffer = Encryptor.STORAGE.getFile(filePath);
-      const encryptedBytes = new Uint8Array(encryptedBuffer);
+    // Convert the file to bytes
+    const encryptedBuffer = Encryptor.STORAGE.getFile(filePath);
+    const encryptedBytes = new Uint8Array(encryptedBuffer);
 
-      // Validate the length of the encrypted bytes
-      if (encryptedBytes.length < nacl.secretbox.nonceLength) {
-        throw new Error("Archivo cifrado inválido: muy corto.");
-      }
-
-      // Extract the nonce and ciphertext from the encrypted bytes
-      const nonce = encryptedBytes.slice(0, nacl.secretbox.nonceLength);
-      const ciphertext = encryptedBytes.slice(nacl.secretbox.nonceLength);
-
-      // Try to decrypt the ciphertext using the secret key and nonce
-      const decryptedBytes = nacl.secretbox.open(
-        ciphertext,
-        nonce,
-        Encryptor.SECRET_KEY
-      );
-
-      if (!decryptedBytes) {
-        throw new Error(
-          "No se pudo descifrar el archivo. Verifica la clave o el archivo."
-        );
-      }
-
-      const originalBuffer = Buffer.from(decryptedBytes);
-
-      // Get the encrypted file name from the path
-      const fileName = path.basename(filePath).replace(/\.enc$/, "");
-      if (!fileName) {
-        throw new Error("No se pudo obtener el nombre del archivo cifrado.");
-      }
-
-      // Decrypt the file name using the stored value
-      const originalFileName = this.decryptText(
-        Encryptor.STORAGE.getByUID(fileName)
-      );
-      if (!originalFileName) {
-        throw new Error("No se pudo descifrar el nombre del archivo.");
-      }
-
-      // Generate the restored path for the decrypted file
-      const restoredPath = new String(filePath).replace(
-        path.basename(filePath),
-        originalFileName
-      );
-
-      // Save the decrypted file with the original name
-      Encryptor.STORAGE.replaceFile(filePath, restoredPath, originalBuffer);
-
-      // Remove the encrypted file from the library
-      Encryptor.STORAGE.removeFromLibrary(fileName);
-    } catch (error) {
-      console.error(`Error al descifrar archivo "${filePath}":`, error);
-      throw new Error(
-        `Fallo en decryptFile: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+    // Check if the file is too short to be valid
+    if (encryptedBytes.length < sodium.crypto_secretbox_NONCEBYTES) {
+      throw new Error("Archivo cifrado inválido: muy corto.");
     }
+
+    // Get the nonce and ciphertext from the encrypted bytes
+    const nonce = encryptedBytes.slice(0, sodium.crypto_secretbox_NONCEBYTES);
+    const ciphertext = encryptedBytes.slice(sodium.crypto_secretbox_NONCEBYTES);
+
+    // Decrypt the ciphertext using the nonce and secret key
+    const decrypted = sodium.crypto_secretbox_open_easy(ciphertext, nonce, Encryptor.SECRET_KEY);
+    if (!decrypted) {
+      throw new Error("No se pudo descifrar el archivo.");
+    }
+
+    // Get the original file name from the encrypted file name
+    const originalBuffer = Buffer.from(decrypted);
+    const fileName = path.basename(filePath).replace(/\.enc$/, "");
+    const encryptedFileName = Encryptor.STORAGE.getByUID(fileName);
+
+    // Check if the encrypted file name is valid
+    const originalFileName = this.decryptText(encryptedFileName);
+    if (!originalFileName) {
+      throw new Error("No se pudo descifrar el nombre del archivo.");
+    }
+
+    // Restore the original file name and save the decrypted file
+    const restoredPath = filePath.replace(path.basename(filePath), originalFileName);
+    Encryptor.STORAGE.replaceFile(filePath, restoredPath, originalBuffer);
+    Encryptor.STORAGE.removeFromLibrary(fileName);
   }
 }
 
-export default Encryptor.getInstance();
+export default await Encryptor.getInstance();
