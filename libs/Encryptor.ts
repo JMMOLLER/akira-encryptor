@@ -40,7 +40,11 @@ class Encryptor {
     const nonce = this.generateNonce();
 
     // Encrypt the text using the nonce and secret key
-    const cipher = sodium.crypto_secretbox_easy(textBytes, nonce, Encryptor.SECRET_KEY);
+    const cipher = sodium.crypto_secretbox_easy(
+      textBytes,
+      nonce,
+      Encryptor.SECRET_KEY
+    );
 
     // Combine the nonce and cipher into a single Uint8Array
     const combined = new Uint8Array(nonce.length + cipher.length);
@@ -57,14 +61,20 @@ class Encryptor {
    */
   decryptText(encryptedText: string): string | null {
     // Convert the encrypted text to bytes
-    const combined = new Uint8Array(Buffer.from(encryptedText, Encryptor.ENCODING));
+    const combined = new Uint8Array(
+      Buffer.from(encryptedText, Encryptor.ENCODING)
+    );
 
     // Get the nonce and cipher from the combined array
     const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
     const cipher = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
 
     // Decrypt the cipher using the nonce and secret key
-    const decrypted = sodium.crypto_secretbox_open_easy(cipher, nonce, Encryptor.SECRET_KEY);
+    const decrypted = sodium.crypto_secretbox_open_easy(
+      cipher,
+      nonce,
+      Encryptor.SECRET_KEY
+    );
     if (!decrypted) return null;
 
     return sodium.to_string(decrypted);
@@ -80,7 +90,9 @@ class Encryptor {
     if (withDecrypt) {
       for (const [id, mensajeCifrado] of map) {
         const decryptedMsg = this.decryptText(mensajeCifrado);
-        console.log(`ID: ${id}, Mensaje: ${decryptedMsg || "Mensaje no válido"}`);
+        console.log(
+          `ID: ${id}, Mensaje: ${decryptedMsg || "Mensaje no válido"}`
+        );
       }
     } else {
       console.log(map);
