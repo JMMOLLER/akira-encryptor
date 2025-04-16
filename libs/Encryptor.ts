@@ -7,7 +7,7 @@ import path from "path";
 class Encryptor {
   private static SECRET_KEY: Uint8Array;
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
-  private static readonly STORAGE = FileSystem.getInstance();
+  private static readonly FS = FileSystem.getInstance();
   private static instance: Encryptor;
 
   private constructor() {}
@@ -86,7 +86,7 @@ class Encryptor {
    * @param withDecrypt `true` to decrypt the messages before printing, `false` to print the encrypted messages as is.
    */
   printMap(withDecrypt?: boolean) {
-    const map = Encryptor.STORAGE.read();
+    const map = Encryptor.FS.read();
     if (withDecrypt) {
       for (const [id, mensajeCifrado] of map) {
         const decryptedMsg = this.decryptText(mensajeCifrado);
@@ -105,11 +105,11 @@ class Encryptor {
    * @param filePath `string` - The path of the file to be encrypted (read-only).
    */
   encryptFile(filePath: Readonly<string>, onProgress?: ProgressCallback) {
-    const stat = Encryptor.STORAGE.getStatFile(filePath);
+    const stat = Encryptor.FS.getStatFile(filePath);
     const totalSize = stat.size;
     let processed = 0;
 
-    const readStream = Encryptor.STORAGE.createReadStream(filePath);
+    const readStream = Encryptor.FS.createReadStream(filePath);
     const chunks: Buffer[] = [];
 
     readStream.on("data", (chunk: string | Buffer) => {
@@ -138,10 +138,10 @@ class Encryptor {
       const combined = Buffer.concat(chunks);
       const fileName = path.basename(filePath);
       const encryptedName = this.encryptText(fileName);
-      const newFileName = Encryptor.STORAGE.add(encryptedName);
+      const newFileName = Encryptor.FS.add(encryptedName);
       const newPath = filePath.replace(fileName, `${newFileName}.enc`);
 
-      Encryptor.STORAGE.replaceFile(filePath, newPath, combined);
+      Encryptor.FS.replaceFile(filePath, newPath, combined);
     });
 
     readStream.on("error", (error: Error) => {
@@ -155,7 +155,7 @@ class Encryptor {
    * @param filePath `string` - The path of the file to be decrypted (read-only).
    */
   decryptFile(filePath: Readonly<string>, onProgress?: ProgressCallback) {
-    const stat = Encryptor.STORAGE.getStatFile(filePath);
+    const stat = Encryptor.FS.getStatFile(filePath);
     const totalSize = stat.size;
     let processed = 0;
 
@@ -165,8 +165,8 @@ class Encryptor {
     const blockSize = chunkSize + macLength;
 
     const tempPath = filePath + ".dec.temp";
-    const readStream = Encryptor.STORAGE.createReadStream(filePath, blockSize);
-    const writeStream = Encryptor.STORAGE.createWriteStream(tempPath);
+    const readStream = Encryptor.FS.createReadStream(filePath, blockSize);
+    const writeStream = Encryptor.FS.createWriteStream(tempPath);
 
     let leftover = Buffer.alloc(0);
 
@@ -215,7 +215,7 @@ class Encryptor {
       writeStream.end(async () => {
         try {
           const fileName = path.basename(filePath).replace(/\.enc$/, "");
-          const encryptedFileName = Encryptor.STORAGE.getByUID(fileName);
+          const encryptedFileName = Encryptor.FS.getByUID(fileName);
           const originalFileName = this.decryptText(encryptedFileName);
 
           if (!originalFileName) {
@@ -226,26 +226,26 @@ class Encryptor {
             path.basename(filePath),
             originalFileName
           );
-          Encryptor.STORAGE.replaceFile(
+          Encryptor.FS.replaceFile(
             tempPath,
             restoredPath,
-            Encryptor.STORAGE.readFile(tempPath)
+            Encryptor.FS.readFile(tempPath)
           );
-          Encryptor.STORAGE.removeFile(filePath);
-          Encryptor.STORAGE.removeFromLibrary(fileName);
+          Encryptor.FS.removeFile(filePath);
+          Encryptor.FS.removeFromLibrary(fileName);
         } catch (err) {
-          Encryptor.STORAGE.removeFile(tempPath);
+          Encryptor.FS.removeFile(tempPath);
           throw err;
         }
       });
     });
 
     readStream.on("error", (err) => {
-      Encryptor.STORAGE.removeFile(tempPath);
+      Encryptor.FS.removeFile(tempPath);
       throw err;
     });
     writeStream.on("error", (err) => {
-      Encryptor.STORAGE.removeFile(tempPath);
+      Encryptor.FS.removeFile(tempPath);
       throw err;
     });
   }
