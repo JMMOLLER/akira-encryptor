@@ -6,11 +6,19 @@
     "start": "bun run main.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/cli-progress": "^3.11.6"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "cli-progress": "^3.12.0",
+    "dotenv": "^16.5.0",
+    "inquirer": "^12.5.2",
+    "nanoid": "^5.1.5",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "zod": "^3.24.2"
   }
 }
