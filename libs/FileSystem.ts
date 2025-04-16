@@ -1,6 +1,8 @@
 import generateUID from "@utils/generateUID";
 import validateUID from "@utils/validateUID";
+import { pipeline } from "stream/promises";
 import { env } from "@configs/env";
+import { Readable } from "stream";
 import fs from "fs";
 
 export class FileSystem {
@@ -100,15 +102,66 @@ export class FileSystem {
   }
 
   /**
-   * @description `[ENG]` Get a file from the specified path.
-   * @description `[ESP]` Obtiene un archivo de la ruta especificada.
-   * @param path `string` - The path of the file to be read.
+   * @description `[ENG]` Get the file statistics of a file.
+   * @description `[ESP]` Obtiene las estadísticas del archivo de un archivo.
+   * @param path `string` - The path of the file to be checked.
    */
-  getFile(path: string) {
-    if (!path || typeof path !== "string") {
-      throw new Error("Invalid path: Path must be a non-empty string.");
+  getStatFile(path: string) {
+    if (!fs.existsSync(path)) {
+      throw new Error(`File not found: ${path}`);
     }
 
+    return fs.statSync(path);
+  }
+
+  /**
+   * @description `[ENG]` Create a readable stream from a file.
+   * @description `[ESP]` Crea un flujo de lectura desde un archivo.
+   * @param path `string` - The path of the file to be read.
+   * @param highWaterMark `number` - The size of each chunk to be read (optional).
+   */
+  createReadStream(path: string, highWaterMark?: number) {
+    if (!fs.existsSync(path)) {
+      throw new Error(`File not found: ${path}`);
+    }
+
+    return fs.createReadStream(path, {
+      highWaterMark
+    });
+  }
+
+  /**
+   * @description `[ENG]` Create a writable stream to a file.
+   * @description `[ESP]` Crea un flujo de escritura a un archivo.
+   * @param path `string` - The path of the file to be created.
+   */
+  createWriteStream(path: string) {
+    return fs.createWriteStream(path);
+  }
+
+  /**
+   * @description `[ENG]` Remove a file from the filesystem.
+   * @description `[ESP]` Elimina un archivo del sistema de archivos.
+   * @param path `string` - The path of the file to be removed.
+   */
+  removeFile(path: string) {
+    if (!fs.existsSync(path)) {
+      return;
+    }
+
+    try {
+      fs.unlinkSync(path);
+    } catch (error) {
+      return;
+    }
+  }
+
+  /**
+   * @description `[ENG]` Read a file from the filesystem.
+   * @description `[ESP]` Lee un archivo del sistema de archivos.
+   * @param path `string` - The path of the file to be read.
+   */
+  readFile(path: string) {
     if (!fs.existsSync(path)) {
       throw new Error(`File not found: ${path}`);
     }
@@ -116,11 +169,9 @@ export class FileSystem {
     try {
       return fs.readFileSync(path);
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Error reading file at '${path}': ${error.message}`);
-      } else {
-        throw new Error(`Error reading file at '${path}': Unknown error`);
-      }
+      throw new Error(
+        `Error reading file '${path}': ${(error as Error).message}`
+      );
     }
   }
 
@@ -131,13 +182,41 @@ export class FileSystem {
    * @param newPath The new path for the file
    * @param data Data to be written to the new file
    */
-  replaceFile(prevPath: string, newPath: string, data: Buffer | Uint8Array) {
+  async replaceFile(
+    source: string,
+    newPath: string,
+    data: Buffer | Uint8Array | string
+  ): Promise<void> {
     try {
-      fs.writeFileSync(newPath, data);
-      fs.unlinkSync(prevPath);
-      return true;
-    } catch (error) {
-      throw error;
+      // Determinar si 'data' es un path temporal o contenido en memoria
+      const readable =
+        typeof data === "string"
+          ? fs.createReadStream(data) // Es un archivo temporal
+          : Readable.from(data); // Es un buffer/memoria
+
+      const writable = fs.createWriteStream(newPath);
+      await pipeline(readable, writable);
+
+      // Solo eliminar si 'source' ≠ 'newPath' y no es el mismo archivo
+      if (
+        typeof data === "string" && // solo si viene de archivo temporal
+        source !== newPath
+      ) {
+        await fs.promises.unlink(data).catch(() => {}); // Silencioso
+      }
+
+      // También eliminar el archivo original (fuente) si es distinto al destino
+      if (source !== newPath) {
+        await fs.promises.unlink(source).catch(() => {});
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+          ? err
+          : "Unknown error";
+      throw new Error(`Error al reemplazar archivo: ${message}`);
     }
   }
 }

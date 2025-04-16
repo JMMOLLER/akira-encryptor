@@ -92,28 +92,49 @@ class Encryptor {
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    * @param filePath `string` - The path of the file to be encrypted (read-only).
    */
-  encryptFile(filePath: Readonly<string>) {
-    // Convert the file to bytes
-    const fileBuffer = Encryptor.STORAGE.getFile(filePath);
-    const fileUint8 = new Uint8Array(fileBuffer);
+  encryptFile(filePath: Readonly<string>, onProgress?: ProgressCallback) {
+    const stat = Encryptor.STORAGE.getStatFile(filePath);
+    const totalSize = stat.size;
+    let processed = 0;
 
-    // Generate a nonce and encrypt the file
-    const nonce = this.generateNonce();
-    const encrypted = sodium.crypto_secretbox_easy(fileUint8, nonce, Encryptor.SECRET_KEY);
+    const readStream = Encryptor.STORAGE.createReadStream(filePath);
+    const chunks: Buffer[] = [];
 
-    // Combine the nonce and encrypted data into a single Uint8Array
-    const combined = new Uint8Array(nonce.length + encrypted.length);
-    combined.set(nonce);
-    combined.set(encrypted, nonce.length);
+    readStream.on("data", (chunk: string | Buffer) => {
+      const nonce = this.generateNonce();
+      const chunkArray =
+        typeof chunk === "string"
+          ? sodium.from_string(chunk)
+          : new Uint8Array(chunk);
+      const encryptedChunk = sodium.crypto_secretbox_easy(
+        chunkArray,
+        nonce,
+        Encryptor.SECRET_KEY
+      );
+      const lengthBuffer = Buffer.alloc(4);
+      lengthBuffer.writeUInt32BE(encryptedChunk.length, 0);
 
-    // Convert the combined Uint8Array to a Buffer and save it with a new name
-    const combinedBuffer = Buffer.from(combined);
-    const fileName = path.basename(filePath);
-    const encryptedName = this.encryptText(fileName);
-    const newFileName = Encryptor.STORAGE.add(encryptedName);
-    const newPath = filePath.replace(fileName, `${newFileName}.enc`);
+      chunks.push(Buffer.from(nonce));
+      chunks.push(lengthBuffer);
+      chunks.push(Buffer.from(encryptedChunk));
 
-    Encryptor.STORAGE.replaceFile(filePath, newPath, combinedBuffer);
+      processed += chunk.length;
+      onProgress?.(processed, totalSize);
+    });
+
+    readStream.on("end", () => {
+      const combined = Buffer.concat(chunks);
+      const fileName = path.basename(filePath);
+      const encryptedName = this.encryptText(fileName);
+      const newFileName = Encryptor.STORAGE.add(encryptedName);
+      const newPath = filePath.replace(fileName, `${newFileName}.enc`);
+
+      Encryptor.STORAGE.replaceFile(filePath, newPath, combined);
+    });
+
+    readStream.on("error", (error: Error) => {
+      throw new Error(`Error reading file: ${error.message}`);
+    });
   }
 
   /**
@@ -121,41 +142,100 @@ class Encryptor {
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    * @param filePath `string` - The path of the file to be decrypted (read-only).
    */
-  decryptFile(filePath: Readonly<string>) {
-    // Convert the file to bytes
-    const encryptedBuffer = Encryptor.STORAGE.getFile(filePath);
-    const encryptedBytes = new Uint8Array(encryptedBuffer);
+  decryptFile(filePath: Readonly<string>, onProgress?: ProgressCallback) {
+    const stat = Encryptor.STORAGE.getStatFile(filePath);
+    const totalSize = stat.size;
+    let processed = 0;
 
-    // Check if the file is too short to be valid
-    if (encryptedBytes.length < sodium.crypto_secretbox_NONCEBYTES) {
-      throw new Error("Archivo cifrado inválido: muy corto.");
-    }
+    const nonceLength = sodium.crypto_secretbox_NONCEBYTES;
+    const macLength = sodium.crypto_secretbox_MACBYTES;
+    const chunkSize = 64 * 1024;
+    const blockSize = chunkSize + macLength;
 
-    // Get the nonce and ciphertext from the encrypted bytes
-    const nonce = encryptedBytes.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-    const ciphertext = encryptedBytes.slice(sodium.crypto_secretbox_NONCEBYTES);
+    const tempPath = filePath + ".dec.temp";
+    const readStream = Encryptor.STORAGE.createReadStream(filePath, blockSize);
+    const writeStream = Encryptor.STORAGE.createWriteStream(tempPath);
 
-    // Decrypt the ciphertext using the nonce and secret key
-    const decrypted = sodium.crypto_secretbox_open_easy(ciphertext, nonce, Encryptor.SECRET_KEY);
-    if (!decrypted) {
-      throw new Error("No se pudo descifrar el archivo.");
-    }
+    let leftover = Buffer.alloc(0);
 
-    // Get the original file name from the encrypted file name
-    const originalBuffer = Buffer.from(decrypted);
-    const fileName = path.basename(filePath).replace(/\.enc$/, "");
-    const encryptedFileName = Encryptor.STORAGE.getByUID(fileName);
+    readStream.on("data", (chunk: Buffer | string) => {
+      const chunkArray =
+        typeof chunk === "string"
+          ? sodium.from_string(chunk)
+          : new Uint8Array(chunk);
+      leftover = Buffer.concat([leftover, chunkArray]);
 
-    // Check if the encrypted file name is valid
-    const originalFileName = this.decryptText(encryptedFileName);
-    if (!originalFileName) {
-      throw new Error("No se pudo descifrar el nombre del archivo.");
-    }
+      while (leftover.length >= nonceLength + macLength) {
+        // Extraer nonce
+        const chunkNonce = leftover.subarray(0, nonceLength);
+        const lengthBuffer = leftover.subarray(nonceLength, nonceLength + 4);
+        const encryptedLength = lengthBuffer.readUInt32BE(0);
 
-    // Restore the original file name and save the decrypted file
-    const restoredPath = filePath.replace(path.basename(filePath), originalFileName);
-    Encryptor.STORAGE.replaceFile(filePath, restoredPath, originalBuffer);
-    Encryptor.STORAGE.removeFromLibrary(fileName);
+        // Si no hay suficiente para un bloque cifrado, esperar más datos
+        if (leftover.length < macLength + 4 + encryptedLength) {
+          break;
+        }
+
+        // Extraer chunk cifrado
+        const encryptedChunk = leftover.subarray(
+          nonceLength + 4,
+          nonceLength + 4 + encryptedLength
+        );
+        leftover = leftover.subarray(nonceLength + 4 + encryptedLength);
+
+        const decrypted = sodium.crypto_secretbox_open_easy(
+          encryptedChunk,
+          chunkNonce,
+          Encryptor.SECRET_KEY
+        );
+
+        if (!decrypted) {
+          throw new Error("Error al descifrar un bloque del archivo.");
+        }
+
+        writeStream.write(Buffer.from(decrypted));
+        processed += nonceLength + 4 + encryptedLength;
+        onProgress?.(processed, totalSize);
+      }
+    });
+
+    readStream.on("end", () => {
+      writeStream.end(async () => {
+        try {
+          const fileName = path.basename(filePath).replace(/\.enc$/, "");
+          const encryptedFileName = Encryptor.STORAGE.getByUID(fileName);
+          const originalFileName = this.decryptText(encryptedFileName);
+
+          if (!originalFileName) {
+            throw new Error("No se pudo descifrar el nombre del archivo.");
+          }
+
+          const restoredPath = filePath.replace(
+            path.basename(filePath),
+            originalFileName
+          );
+          Encryptor.STORAGE.replaceFile(
+            tempPath,
+            restoredPath,
+            Encryptor.STORAGE.readFile(tempPath)
+          );
+          Encryptor.STORAGE.removeFile(filePath);
+          Encryptor.STORAGE.removeFromLibrary(fileName);
+        } catch (err) {
+          Encryptor.STORAGE.removeFile(tempPath);
+          throw err;
+        }
+      });
+    });
+
+    readStream.on("error", (err) => {
+      Encryptor.STORAGE.removeFile(tempPath);
+      throw err;
+    });
+    writeStream.on("error", (err) => {
+      Encryptor.STORAGE.removeFile(tempPath);
+      throw err;
+    });
   }
 }
 
