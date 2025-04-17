@@ -15,6 +15,10 @@ const envSchema = z.object({
     )
     .default("base64"),
   LIBRARY_PATH: z.string().default("./library.json"),
+  LOG: z
+    .string()
+    .transform((val) => val === "true")
+    .default("false"),
   PASSWORD: z.string()
 });
 

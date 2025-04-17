@@ -9,6 +9,7 @@ class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
   private static instance: Encryptor;
+  private static LOG = env.LOG;
 
   private constructor() {}
 
