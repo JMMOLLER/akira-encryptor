@@ -9,7 +9,9 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cli-progress": "^3.11.6",
-    "@types/libsodium-wrappers": "^0.7.14"
+    "@types/libsodium-wrappers": "^0.7.14",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

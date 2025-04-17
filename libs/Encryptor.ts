@@ -60,7 +60,7 @@ class Encryptor {
    * @description `[ES]` Descifra el mensaje cifrado dado utilizando la clave secreta.
    * @param encryptedText - The encrypted text to be decrypted
    */
-  decryptText(encryptedText: string): string | null {
+  decryptText(encryptedText: string) {
     // Convert the encrypted text to bytes
     const combined = new Uint8Array(
       Buffer.from(encryptedText, Encryptor.ENCODING)
@@ -71,14 +71,16 @@ class Encryptor {
     const cipher = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
 
     // Decrypt the cipher using the nonce and secret key
-    const decrypted = sodium.crypto_secretbox_open_easy(
-      cipher,
-      nonce,
-      Encryptor.SECRET_KEY
-    );
-    if (!decrypted) return null;
-
-    return sodium.to_string(decrypted);
+    try {
+      const decrypted = sodium.crypto_secretbox_open_easy(
+        cipher,
+        nonce,
+        Encryptor.SECRET_KEY
+      );
+      return sodium.to_string(decrypted);
+    } catch (err) {
+      throw err;
+    }
   }
 
   /**
