@@ -176,3 +176,4 @@ dist
 
 # Dev
 library.json
+demo/**/*.mp4
