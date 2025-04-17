@@ -3,6 +3,7 @@ import validateUID from "@utils/validateUID";
 import { pipeline } from "stream/promises";
 import { env } from "@configs/env";
 import { Readable } from "stream";
+import path from "path";
 import fs from "fs";
 
 export class FileSystem {
@@ -135,8 +136,8 @@ export class FileSystem {
    * @description `[ESP]` Crea un flujo de escritura a un archivo.
    * @param path `string` - The path of the file to be created.
    */
-  createWriteStream(path: string) {
-    return fs.createWriteStream(path);
+  createWriteStream(path: string, options?: any) {
+    return fs.createWriteStream(path, options);
   }
 
   /**
@@ -219,4 +220,93 @@ export class FileSystem {
       throw new Error(`Error al reemplazar archivo: ${message}`);
     }
   }
+
+  /**
+   * @description `[ENG]` Read a directory from the filesystem.
+   * @description `[ESP]` Lee un directorio del sistema de archivos.
+   * @param folderPath `string` - The path of the folder to be read.
+   */
+  readDir(folderPath: string) {
+    if (!fs.existsSync(folderPath)) {
+      throw new Error(`Directory not found: ${folderPath}`);
+    }
+
+    try {
+      return fs.readdirSync(folderPath, {
+        withFileTypes: true
+      });
+    } catch (error) {
+      throw new Error(
+        `Error reading directory '${folderPath}': ${(error as Error).message}`
+      );
+    }
+  }
+
+  /**
+   * @description `[ENG]` Rename a folder in the filesystem.
+   * @description `[ESP]` Renombra una carpeta en el sistema de archivos.
+   * @param folderPath `string` - The path of the folder to be renamed.
+   * @param newPath `string` - The new path for the folder.
+   */
+  renameFolder(folderPath: string, newPath: string) {
+    if (!fs.existsSync(folderPath)) {
+      throw new Error(`Directory not found: ${folderPath}`);
+    }
+
+    try {
+      fs.renameSync(folderPath, newPath);
+    } catch (error) {
+      throw new Error(
+        `Error renaming directory '${folderPath}': ${(error as Error).message}`
+      );
+    }
+  }
+
+  /**
+   * @description `[ENG]` Create a folder in the filesystem.
+   * @description `[ESP]` Crea una carpeta en el sistema de archivos.
+   * @param folderPath `string` - The path of the folder to be created.
+   */
+  createFolder(folderPath: string) {
+    if (fs.existsSync(folderPath)) {
+      throw new Error(`Directory already exists: ${folderPath}`);
+    }
+
+    try {
+      fs.mkdirSync(folderPath, { recursive: true });
+    } catch (error) {
+      throw new Error(
+        `Error creating directory '${folderPath}': ${(error as Error).message}`
+      );
+    }
+  }
+
+  /**
+   * @description `[ENG]` Safely rename a folder in the filesystem with retries.
+   * @description `[ESP]` Renombra una carpeta de forma segura en el sistema de archivos con reintentos.
+   * @param src `string` - The source path of the folder to be renamed.
+   * @param dest `string` - The destination path for the renamed folder.
+   * @param retries `number` - The number of retries to attempt if the rename fails (default: 20).
+   */
+  async safeRenameFolder(src: string, dest: string, retries = 20): Promise<void> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        this.renameFolder(src, dest);
+        return;
+      } catch (err) {
+        if (i === retries - 1) throw err;
+        await this.delay(100 * (i + 1)); // backoff exponencial
+      }
+    }
+  }
+  
+  /**
+   * @description `[ENG]` Delay function to pause execution for a specified time.
+   * @description `[ESP]` Función de retraso para pausar la ejecución durante un tiempo especificado.
+   * @param ms - The number of milliseconds to delay
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
 }
