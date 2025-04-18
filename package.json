@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run cli/main.ts",
-    "build:cli": "bun build cli/main.ts --outdir ./dist/cli --target node"
+    "build:cli": "bun build cli/main.ts --outdir ./cli/dist --target node"
   },
   "devDependencies": {
     "@types/bun": "latest",
