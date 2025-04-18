@@ -1,10 +1,10 @@
 {
   "name": "akira-encryptor",
-  "module": "core/cli/main.ts",
+  "module": "cli/main.ts",
   "type": "module",
   "scripts": {
-    "start": "bun run core/cli/main.ts",
-    "build:cli": "bun build core/cli/main.ts --outdir ./dist/cli --target node"
+    "start": "bun run cli/main.ts",
+    "build:cli": "bun build cli/main.ts --outdir ./dist/cli --target node"
   },
   "devDependencies": {
     "@types/bun": "latest",

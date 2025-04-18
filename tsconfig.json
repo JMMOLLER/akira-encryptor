@@ -27,7 +27,7 @@
     /* Paths */
     "baseUrl": ".",
     "paths": {
-      "@cli/*": ["core/cli/*"],
+      "@cli/*": ["cli/*"],
       "@libs/*": ["core/libs/*"],
       "@utils/*": ["core/utils/*"],
       "@configs/*": ["core/configs/*"],
