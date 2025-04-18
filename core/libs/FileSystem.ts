@@ -3,7 +3,6 @@ import validateUID from "@utils/validateUID";
 import { pipeline } from "stream/promises";
 import { env } from "@configs/env";
 import { Readable } from "stream";
-import path from "path";
 import fs from "fs";
 
 export class FileSystem {

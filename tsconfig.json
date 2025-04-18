@@ -27,10 +27,10 @@
     /* Paths */
     "baseUrl": ".",
     "paths": {
-      "@cli/*": ["cli/*"],
-      "@libs/*": ["libs/*"],
-      "@utils/*": ["utils/*"],
-      "@configs/*": ["configs/*"],
+      "@cli/*": ["core/cli/*"],
+      "@libs/*": ["core/libs/*"],
+      "@utils/*": ["core/utils/*"],
+      "@configs/*": ["core/configs/*"],
     }
   }
 }

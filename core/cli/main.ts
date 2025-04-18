@@ -1,6 +1,6 @@
-import handleFolderAction from "@cli/folderHandler";
-import handleFileAction from "@cli/fileHandler";
-import { askUserActions } from "./cli/prompts";
+import handleFolderAction from "@cli/handlers/folderHandler";
+import handleFileAction from "@cli/handlers/fileHandler";
+import { askUserActions } from "@cli/prompts";
 import fs from "fs";
 
 async function main() {
