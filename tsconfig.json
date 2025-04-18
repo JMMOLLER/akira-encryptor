@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    // Enables the use of `tsc --build` to build the project
+    "composite": true,
+    "emitDeclarationOnly": true,
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -12,7 +15,7 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "noEmit": true,
+    "noEmit": false,
 
     // Best practices
     "strict": true,

@@ -2,6 +2,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { join } from 'path'
+import fs from 'fs'
 
 function createWindow(): void {
   // Create the browser window.
@@ -65,6 +66,16 @@ app.on('ready', () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  if (import.meta.env.MODE === 'development') {
+    try {
+      const envPath = join(__dirname, '../../.env')
+      if (fs.existsSync(envPath)) {
+        fs.unlinkSync(envPath) // Remove the .env file
+      }
+    } catch (error) {
+      console.error('Error removing .env file:', error)
+    }
+  }
   if (process.platform !== 'darwin') {
     app.quit()
   }
