@@ -5,21 +5,13 @@ import { env } from "@configs/env";
 import path from "path";
 
 class Encryptor {
-  private static SECRET_KEY: Uint8Array;
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
-  private static instance: Encryptor;
+  private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
 
-  private constructor() {}
-
-  static async getInstance(): Promise<Encryptor> {
-    if (!Encryptor.instance) {
-      await sodium.ready;
-      Encryptor.SECRET_KEY = generateSecretKey(env.PASSWORD);
-      Encryptor.instance = new Encryptor();
-    }
-    return Encryptor.instance;
+  constructor(password: string) {
+    this.SECRET_KEY = generateSecretKey(password);
   }
 
   /**
@@ -44,7 +36,7 @@ class Encryptor {
     const cipher = sodium.crypto_secretbox_easy(
       textBytes,
       nonce,
-      Encryptor.SECRET_KEY
+      this.SECRET_KEY
     );
 
     // Combine the nonce and cipher into a single Uint8Array
@@ -75,7 +67,7 @@ class Encryptor {
       const decrypted = sodium.crypto_secretbox_open_easy(
         cipher,
         nonce,
-        Encryptor.SECRET_KEY
+        this.SECRET_KEY
       );
       return sodium.to_string(decrypted);
     } catch (err) {
@@ -137,7 +129,7 @@ class Encryptor {
         const encryptedChunk = sodium.crypto_secretbox_easy(
           chunkArray,
           nonce,
-          Encryptor.SECRET_KEY
+          this.SECRET_KEY
         );
 
         const lengthBuffer = Buffer.alloc(4);
@@ -265,7 +257,7 @@ class Encryptor {
             const decrypted = sodium.crypto_secretbox_open_easy(
               encryptedChunk,
               chunkNonce,
-              Encryptor.SECRET_KEY
+              this.SECRET_KEY
             );
 
             if (!decrypted) {
@@ -461,4 +453,4 @@ class Encryptor {
   }
 }
 
-export default await Encryptor.getInstance();
+export default Encryptor;

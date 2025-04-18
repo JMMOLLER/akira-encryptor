@@ -1,10 +1,18 @@
 import formatBytes from "@utils/formatBytes";
-import Encryptor from "@libs/Encryptor";
+import EncryptorClass from "@libs/Encryptor";
 import cliProgress from "cli-progress";
 import path from "path";
 import fs from "fs";
 
-async function handleFileAction(action: CliAction, filePath: string) {
+type HanlderProps = {
+  action: CliAction;
+  filePath: string;
+  password: string;
+};
+
+async function handleFileAction(props: HanlderProps) {
+  const { action, filePath, password } = props;
+
   const progressBar = new cliProgress.SingleBar(
     {
       format:
@@ -43,6 +51,8 @@ async function handleFileAction(action: CliAction, filePath: string) {
   };
 
   try {
+    const Encryptor = new EncryptorClass(password);
+
     if (action === "encrypt") {
       await Encryptor.encryptFile({
         filePath: path.normalize(filePath),

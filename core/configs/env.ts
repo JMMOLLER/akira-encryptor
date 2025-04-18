@@ -19,7 +19,10 @@ const envSchema = z.object({
     .string()
     .transform((val) => val === "true")
     .default("false"),
-  PASSWORD: z.string()
+  PASSWORD: z
+    .string()
+    .min(4, "Password must be at least 4 characters")
+    .optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,11 +1,19 @@
 import collectFileSizes from "@utils/collectFileSizes";
 import createBar from "@utils/createProgressBar";
 import formatBytes from "@utils/formatBytes";
-import Encryptor from "@libs/Encryptor";
+import EncryptorClass from "@libs/Encryptor";
 import cliProgress from "cli-progress";
 import path from "path";
 
-async function handleFolderAction(action: CliAction, folderPath: string) {
+type HanlderProps = {
+  action: CliAction;
+  folderPath: string;
+  password: string;
+};
+
+async function handleFolderAction(props: HanlderProps) {
+  const { action, folderPath, password } = props;
+
   const totalBytes = collectFileSizes(folderPath);
   let globalProcessed = 0;
 
@@ -53,6 +61,8 @@ async function handleFolderAction(action: CliAction, folderPath: string) {
   };
 
   try {
+    const Encryptor = new EncryptorClass(password);
+
     if (action === "encrypt") {
       await Encryptor.encryptFolder({
         filePath: path.normalize(folderPath),

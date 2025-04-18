@@ -4,7 +4,7 @@ import { askUserActions } from "@cli/prompts";
 import fs from "fs";
 
 async function main() {
-  const { action, type, path } = await askUserActions();
+  const { action, type, path, password } = await askUserActions();
 
   if (
     (type === "file" &&
@@ -18,9 +18,9 @@ async function main() {
 
   try {
     if (type === "file") {
-      await handleFileAction(action, path);
+      await handleFileAction({ action, filePath: path, password });
     } else {
-      await handleFolderAction(action, path);
+      await handleFolderAction({ action, folderPath: path, password });
     }
   } catch (err) {
     console.error(`\n❌ Error inesperado:\n`, err);

@@ -1,4 +1,6 @@
+import { env } from "@configs/env";
 import inquirer from "inquirer";
+import fs from "fs";
 
 export async function askUserActions() {
   const { action } = await inquirer.prompt<{ action: CliAction }>([
@@ -33,9 +35,42 @@ export async function askUserActions() {
       name: "path",
       message: `Ruta de ${type === "folder" ? "la carpeta" : "el archivo"} a ${
         action === "encrypt" ? "encriptar" : "desencriptar"
-      }:`
+      }:`,
+      validate: (input) => {
+        if (!fs.existsSync(input)) {
+          return "La ruta especificada no existe.";
+        }
+        if (type === "folder" && !fs.statSync(input).isDirectory()) {
+          return "La ruta especificada no es una carpeta.";
+        }
+        if (type === "file" && !fs.statSync(input).isFile()) {
+          return "La ruta especificada no es un archivo.";
+        }
+        return true;
+      }
     }
   ]);
 
-  return { action, type, path };
+  let password: string | undefined = env.PASSWORD;
+  if (!password) {
+    const { password: pwd } = await inquirer.prompt<{ password: string }>([
+      {
+        type: "password",
+        name: "password",
+        message: `${
+          action === "encrypt" ? "Cree una" : "Ingrese la"
+        } contraseña:`,
+        mask: "*",
+        validate: (input) => {
+          if (input.length < 4) {
+            return "La contraseña debe tener al menos 4 caracteres.";
+          }
+          return true;
+        }
+      }
+    ]);
+    password = pwd;
+  }
+
+  return { action, type, path, password };
 }
