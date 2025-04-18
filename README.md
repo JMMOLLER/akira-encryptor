@@ -20,6 +20,20 @@
 
 ---
 
+## ⚙️ Configuración previa
+
+Antes de ejecutar la herramienta, se debe crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+
+```env
+PASSWORD=<your_password>
+```
+
+> ⚠️ Importante: Esta contraseña será utilizada para derivar la clave de cifrado.
+> En versiones futuras se mejorará este apartado.
+> **Por ahora**, puedes establecer la contraseña solo para encriptar o desencriptar y luego eliminarla.
+
+---
+
 ## 🚀 Instalación y uso
 
 > Requisitos: Node.js ≥ 18.x y npm
@@ -49,6 +63,8 @@ bun start
 ❯ Encriptar
   Desencriptar
 ```
+
+---
 
 ## 📁 Estructura del proyecto
 
