@@ -1,31 +1,19 @@
-import { InfoCircleOutlined, EyeOutlined, KeyOutlined } from '@ant-design/icons'
-import { useMenuItem } from '@renderer/hooks/useMenuItem'
-import { Avatar, Card, Layout, Tooltip } from 'antd'
-import { useEffect, useRef, useState } from 'react'
+import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { Content } from 'antd/es/layout/layout'
+import { useEffect, useRef } from 'react'
+import SkeletonCard from './SkeletonCard'
 import NewEncrypt from './NewEncrypt'
+import LoadCard from './LoadCard'
+import { Layout } from 'antd'
 import Flip from 'gsap/Flip'
 import gsap from 'gsap'
 
 // Register GSAP plugins
 gsap.registerPlugin(Flip)
 
-const actions: React.ReactNode[] = [
-  <Tooltip title="Mostrar" key="show">
-    <EyeOutlined />
-  </Tooltip>,
-  <Tooltip title="Desencriptar" key="decrypt">
-    <KeyOutlined />
-  </Tooltip>,
-  <Tooltip title="Información" key="info">
-    <InfoCircleOutlined />
-  </Tooltip>
-]
-
 function MainContent() {
   const contentRef = useRef<HTMLDivElement>(null)
-  const [loading, _setLoading] = useState(false)
-  const { item } = useMenuItem()
+  const { encryptedItems } = useEncryptedItems()
 
   useEffect(() => {
     const content = contentRef.current
@@ -56,24 +44,11 @@ function MainContent() {
         className="flex content-start flex-wrap gap-5 py-4 px-6 overflow-auto"
         ref={contentRef}
       >
-        {new Array(5).fill(0).map((_, index) => (
-          <Card key={index} className="w-[350px] h-min" loading={loading} actions={actions}>
-            <Card.Meta
-              avatar={<Avatar src="https://api.dicebear.com/7.x/miniavs/svg?seed=1" />}
-              title={item === 'files' ? 'Archivo Encriptado' : 'Carpeta Encriptada'}
-              description={
-                <ul>
-                  <li>
-                    <span className="font-semibold">Nombre:</span> archivo.txt
-                  </li>
-                  <li>
-                    <span className="font-semibold">Tamaño:</span> 2.5 MB
-                  </li>
-                </ul>
-              }
-            />
-          </Card>
-        ))}
+        {!encryptedItems
+          ? new Array(5).fill(0).map((_, index) => <SkeletonCard key={index} />)
+          : encryptedItems.map((encryptedItem, index) => (
+              <LoadCard key={index} encryptedItem={encryptedItem} />
+            ))}
       </Content>
       <NewEncrypt />
     </Layout>

@@ -1,5 +1,6 @@
 import './assets/main.css'
 
+import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import { MenuItemProvider } from './contexts/MenuItemContext'
 import { App as AntdApp, ConfigProvider } from 'antd'
 import { createRoot } from 'react-dom/client'
@@ -12,9 +13,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider theme={theme} locale={esES}>
       <AntdApp>
-        <MenuItemProvider>
-          <App />
-        </MenuItemProvider>
+        <EncryptedItemProvider>
+          <MenuItemProvider>
+            <App />
+          </MenuItemProvider>
+        </EncryptedItemProvider>
       </AntdApp>
     </ConfigProvider>
   </StrictMode>

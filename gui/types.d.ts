@@ -25,4 +25,14 @@ declare global {
     title?: string
     key?: MenuItemOptions
   }
+
+  interface EncryptedItem {
+    type: 'files' | 'folders'
+    status: 'loading' | 'encrypted' | 'error'
+    percent: number
+  }
+  interface EncryptedItemContextType {
+    encryptedItems: EncryptedItem[] | undefined
+    setItems: React.Dispatch<React.SetStateAction<EncryptedItemContextType['encryptedItems']>>
+  }
 }

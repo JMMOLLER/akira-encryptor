@@ -1,8 +1,14 @@
-type ProgressCallback = (processedBytes: number, totalBytes: number) => void;
-type CliAction = "encrypt" | "decrypt";
-type CliType = "file" | "folder";
+export type ProgressCallback = (
+  processedBytes: number,
+  totalBytes: number
+) => void;
 
-interface EncryptorFuncion {
-  filePath: Readonly<string>;
-  onProgress: ProgressCallback;
+declare global {
+  type CliAction = "encrypt" | "decrypt";
+  type CliType = "file" | "folder";
+
+  interface EncryptorFuncion {
+    filePath: Readonly<string>;
+    onProgress: ProgressCallback;
+  }
 }
