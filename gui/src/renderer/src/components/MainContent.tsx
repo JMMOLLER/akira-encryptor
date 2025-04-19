@@ -19,20 +19,44 @@ function MainContent() {
     const content = contentRef.current
     if (!content) return
 
-    const observer = new ResizeObserver(() => {
-      // Check if the content is smaller than 770px
-      const shouldCenter = content.offsetWidth < 770
-      content.classList.toggle('justify-center', shouldCenter)
+    const cardsSelector = '.ant-card, .skeleton-card'
+    let previousWidth: number | undefined
 
-      // Animate the cards
-      const state = Flip.getState('.ant-card')
-      Flip.from(state, {
-        ease: 'power1.inOut',
-        absolute: true,
-        duration: 0.5
-      })
-    })
+    /**
+     * @description `[ESP]` Este cambio mas que nada se realizo porque GSAP hacia un bucle infinito con el transorm y transform3d porque el Content pasaba de tener overflow a no tenerlo al aplicar a todas las cards la propiedad absolute 🤡.
+     * @description `[ENG]` This change was made because GSAP caused an infinite loop with the transform and transform3d because the Content changed from having overflow to not having it when applying the absolute property to all cards.
+     */
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      const { contentRect } = entries[0]
+      const currentWidth = contentRect.width ?? 0
+      const difference = Math.abs(currentWidth - (previousWidth ?? 0))
 
+      // Only animate if the difference is significant
+      if (difference > 5) {
+        const shouldCenter = content.offsetWidth < 770
+        content.classList.toggle('justify-center', shouldCenter)
+
+        // Animate the cards
+        const state = Flip.getState(cardsSelector)
+        Flip.from(state, {
+          ease: 'power1.inOut',
+          absolute: true,
+          duration: 0.5,
+          onComplete: () => {
+            gsap.set(cardsSelector, { clearProps: 'all' })
+          }
+        })
+
+        previousWidth = currentWidth
+      }
+
+      // Save the current width for the next resize event
+      if (!previousWidth && currentWidth > 0) {
+        previousWidth = currentWidth
+      }
+    }
+
+    const observer = new ResizeObserver(handleResize)
     observer.observe(content)
 
     return () => observer.disconnect()
