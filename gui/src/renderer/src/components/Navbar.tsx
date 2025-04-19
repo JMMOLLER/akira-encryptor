@@ -1,4 +1,4 @@
-import { useMenuItem } from '@renderer/hooks/useMenuItemContext'
+import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import items from '@renderer/constants/menuItems'
 import { MenuInfo } from 'rc-menu/lib/interface'
 import Sider from 'antd/es/layout/Sider'
