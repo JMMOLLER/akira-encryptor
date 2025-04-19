@@ -1,10 +1,10 @@
 import MenuItemContext from '@renderer/contexts/MenuItemContext'
 import { useContext } from 'react'
 
-export function useMenuItemContext() {
+export function useMenuItem() {
   const context = useContext(MenuItemContext)
   if (!context) {
-    throw new Error('useMyContext debe usarse dentro de un <MyContextProvider>')
+    throw new Error('useMenuItem debe usarse dentro de un <MenuItemProvider>')
   }
   return context
 }

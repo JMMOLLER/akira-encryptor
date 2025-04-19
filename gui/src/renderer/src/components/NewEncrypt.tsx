@@ -1,5 +1,5 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
-import { useMenuItemContext } from '@renderer/hooks/useMenuItemContext'
+import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { PlusOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 
@@ -7,7 +7,7 @@ function NewEncrypt() {
   const [status, setStatus] = useState<InputProps['status']>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
-  const { item } = useMenuItemContext()
+  const { item } = useMenuItem()
 
   const showModal = () => {
     setIsModalOpen(true)

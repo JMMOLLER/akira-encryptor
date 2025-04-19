@@ -1,5 +1,5 @@
 import { InfoCircleOutlined, EyeOutlined, KeyOutlined } from '@ant-design/icons'
-import { useMenuItemContext } from '@renderer/hooks/useMenuItemContext'
+import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { Avatar, Card, Layout, Tooltip } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { Content } from 'antd/es/layout/layout'
@@ -25,7 +25,7 @@ const actions: React.ReactNode[] = [
 function MainContent() {
   const contentRef = useRef<HTMLDivElement>(null)
   const [loading, _setLoading] = useState(false)
-  const { item } = useMenuItemContext()
+  const { item } = useMenuItem()
 
   useEffect(() => {
     const content = contentRef.current

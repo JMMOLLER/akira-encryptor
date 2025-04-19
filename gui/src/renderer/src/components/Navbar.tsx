@@ -1,4 +1,4 @@
-import { useMenuItemContext } from '@renderer/hooks/useMenuItemContext'
+import { useMenuItem } from '@renderer/hooks/useMenuItemContext'
 import items from '@renderer/constants/menuItems'
 import { MenuInfo } from 'rc-menu/lib/interface'
 import Sider from 'antd/es/layout/Sider'
@@ -9,7 +9,7 @@ const defaultSelectedKey: MenuItemOptions[] = ['files']
 
 function Navbar() {
   const [collapsed, setCollapsed] = useState(false)
-  const { setItem } = useMenuItemContext()
+  const { setItem } = useMenuItem()
 
   const handleSelect = (item: MenuInfo) => {
     setItem(item.key as MenuItemOptions)
