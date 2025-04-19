@@ -1,44 +1,33 @@
-import * as Icons from '@ant-design/icons'
+import { useMenuItemContext } from '@renderer/hooks/useMenuItemContext'
+import items from '@renderer/constants/menuItems'
+import { MenuInfo } from 'rc-menu/lib/interface'
 import Sider from 'antd/es/layout/Sider'
 import { useState } from 'react'
 import { Menu } from 'antd'
 
+const defaultSelectedKey: MenuItemOptions[] = ['files']
+
 function Navbar() {
   const [collapsed, setCollapsed] = useState(false)
+  const { setItem } = useMenuItemContext()
+
+  const handleSelect = (item: MenuInfo) => {
+    setItem(item.key as MenuItemOptions)
+  }
 
   return (
     <Sider
-      className="backdrop-blur-md"
+      className="backdrop-blur-md z-10"
       onClick={() => setCollapsed(!collapsed)}
       defaultCollapsed
       collapsible
     >
       <div className="demo-logo-vertical" />
       <Menu
+        defaultSelectedKeys={defaultSelectedKey}
+        onSelect={handleSelect}
         mode="inline"
-        defaultSelectedKeys={['1']}
-        items={[
-          {
-            key: '1',
-            icon: <Icons.FileImageOutlined />,
-            label: 'Archivos'
-          },
-          {
-            key: '2',
-            icon: <Icons.FolderOutlined />,
-            label: 'Carpetas'
-          },
-          {
-            type: 'divider',
-            className: 'bg-white/20'
-          },
-          {
-            key: '3',
-            icon: <Icons.SettingOutlined />,
-            label: 'Ajustes',
-            disabled: true
-          }
-        ]}
+        items={items}
       />
     </Sider>
   )

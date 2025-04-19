@@ -1,5 +1,6 @@
 import './assets/main.css'
 
+import { MenuItemProvider } from './contexts/MenuItemContext'
 import { App as AntdApp, ConfigProvider } from 'antd'
 import { createRoot } from 'react-dom/client'
 import esES from 'antd/locale/es_ES'
@@ -11,7 +12,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider theme={theme} locale={esES}>
       <AntdApp>
-        <App />
+        <MenuItemProvider>
+          <App />
+        </MenuItemProvider>
       </AntdApp>
     </ConfigProvider>
   </StrictMode>

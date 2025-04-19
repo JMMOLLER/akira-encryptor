@@ -1,4 +1,5 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
+import { useMenuItemContext } from '@renderer/hooks/useMenuItemContext'
 import { PlusOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 
@@ -6,6 +7,7 @@ function NewEncrypt() {
   const [status, setStatus] = useState<InputProps['status']>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
+  const { item } = useMenuItemContext()
 
   const showModal = () => {
     setIsModalOpen(true)
@@ -13,6 +15,7 @@ function NewEncrypt() {
   }
 
   const handleOk = () => {
+    window.electron.ipcRenderer.send('ping')
     setIsModalOpen(false)
   }
 
@@ -31,7 +34,7 @@ function NewEncrypt() {
 
     // Open file explorer
     const archivo = await window.api.openExplorer({
-      title: 'Seleccionar archivo',
+      title: `Seleccionar ${item === 'files' ? 'archivo' : 'carpeta'}`,
       properties: ['openFile']
     })
     if (!archivo) {
@@ -51,8 +54,8 @@ function NewEncrypt() {
         type="primary"
       />
       <Modal
+        title={`Encriptar ${item === 'files' ? 'Nuevo Archivo' : 'Nueva Carpeta'}`}
         okButtonProps={{ disabled: status === 'error' || pathVal === '' }}
-        title="Encriptar Nuevo Archivo"
         onCancel={handleCancel}
         open={isModalOpen}
         onOk={handleOk}
@@ -60,8 +63,12 @@ function NewEncrypt() {
       >
         <Form name="basic" className="[&_.ant-form-item-has-error]:mb-0! *:mb-4!">
           <Form.Item
-            help={status === 'error' ? 'Por favor seleccione un archivo' : ''}
-            label="Ingrese la ruta del archivo::"
+            help={
+              status === 'error'
+                ? `Por favor seleccione ${item === 'files' ? 'un archivo' : 'una carpeta'}`
+                : ''
+            }
+            label={`Ingrese la ruta ${item === 'files' ? 'del archivo' : 'de la carpeta'}::`}
             wrapperCol={{ span: 24 }}
             labelCol={{ span: 24 }}
             className="inline-flex"
@@ -69,7 +76,11 @@ function NewEncrypt() {
             name="path"
           >
             <Space.Compact className="w-full">
-              <Input placeholder="Seleccionar archivo" value={pathVal} readOnly />
+              <Input
+                placeholder={`Seleccionar ${item === 'files' ? 'archivo' : 'carpeta'}`}
+                value={pathVal}
+                readOnly
+              />
               <Button onClick={handleClick} type="primary">
                 Seleccionar
               </Button>
