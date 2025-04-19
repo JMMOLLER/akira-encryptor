@@ -1,14 +1,17 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import registerIpcMain from './ipcMain'
 import { join } from 'path'
 import fs from 'fs'
 
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 870,
     height: 670,
+    minWidth: 870,
+    minHeight: 615,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -50,8 +53,8 @@ app.on('ready', () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // Initialize all IPC handlers
+  registerIpcMain()
 
   createWindow()
 

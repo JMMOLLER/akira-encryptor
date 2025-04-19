@@ -22,7 +22,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-updater": "^6.3.9"
+    "@tailwindcss/vite": "^4.1.4",
+    "antd": "^5.24.7",
+    "electron-updater": "^6.3.9",
+    "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
