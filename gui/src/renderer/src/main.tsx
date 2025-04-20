@@ -1,5 +1,6 @@
 import './assets/main.css'
 
+import { PendingEncryptionProvider } from './contexts/PendingEncryption'
 import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import { MenuItemProvider } from './contexts/MenuItemContext'
 import { App as AntdApp, ConfigProvider } from 'antd'
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')!).render(
     <ConfigProvider theme={theme} locale={esES}>
       <AntdApp>
         <EncryptedItemProvider>
-          <MenuItemProvider>
-            <App />
-          </MenuItemProvider>
+          <PendingEncryptionProvider>
+            <MenuItemProvider>
+              <App />
+            </MenuItemProvider>
+          </PendingEncryptionProvider>
         </EncryptedItemProvider>
       </AntdApp>
     </ConfigProvider>

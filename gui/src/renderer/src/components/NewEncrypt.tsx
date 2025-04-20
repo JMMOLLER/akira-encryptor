@@ -1,12 +1,17 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
+import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { PlusOutlined } from '@ant-design/icons'
+import useApp from 'antd/es/app/useApp'
 import { useState } from 'react'
+import uid from 'tiny-uid'
 
 function NewEncrypt() {
   const [status, setStatus] = useState<InputProps['status']>('')
+  const { setPendingEncryptedItems } = usePendingEncryption()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
+  const message = useApp().message
   const { item } = useMenuItem()
 
   const showModal = () => {
@@ -15,7 +20,25 @@ function NewEncrypt() {
   }
 
   const handleOk = () => {
-    window.electron.ipcRenderer.send('ping')
+    if (item === 'settings') {
+      message.error('No se puede encriptar desde la pantalla de configuración.')
+      return
+    }
+
+    const id = uid()
+
+    setPendingEncryptedItems((prev) => {
+      return new Map(prev).set(id, {
+        type: item,
+        status: 'loading',
+        percent: 0
+      })
+    })
+    window.electron.ipcRenderer.send('encrypt-file', {
+      filePath: pathVal,
+      password: 'mypassword', // TODO: Get password from input
+      itemId: id
+    })
     setIsModalOpen(false)
   }
 

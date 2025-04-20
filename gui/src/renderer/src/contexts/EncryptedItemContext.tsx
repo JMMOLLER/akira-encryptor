@@ -10,7 +10,7 @@ export function EncryptedItemProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fakeLoad = async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      setItems(new Array(5).fill({}))
+      setItems([])
     }
     if (encryptedItems === undefined) {
       fakeLoad()

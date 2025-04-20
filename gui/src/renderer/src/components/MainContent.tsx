@@ -1,10 +1,11 @@
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { Content } from 'antd/es/layout/layout'
+import PendingContent from './PendingContent'
 import { useEffect, useRef } from 'react'
 import SkeletonCard from './SkeletonCard'
+import { Layout, Typography } from 'antd'
 import NewEncrypt from './NewEncrypt'
 import LoadCard from './LoadCard'
-import { Layout } from 'antd'
 import Flip from 'gsap/Flip'
 import gsap from 'gsap'
 
@@ -64,15 +65,19 @@ function MainContent() {
 
   return (
     <Layout className="h-screen">
-      <Content
-        className="flex content-start flex-wrap gap-5 py-4 px-6 overflow-auto"
-        ref={contentRef}
-      >
-        {!encryptedItems
-          ? new Array(5).fill(0).map((_, index) => <SkeletonCard key={index} />)
-          : encryptedItems.map((encryptedItem, index) => (
-              <LoadCard key={index} encryptedItem={encryptedItem} />
-            ))}
+      <Content className="py-4 px-6 space-y-2.5! overflow-auto" ref={contentRef}>
+        <PendingContent />
+
+        <Typography.Title level={2} className="text-gray-400">
+          Archivos encriptados — {encryptedItems?.length ?? 0}
+        </Typography.Title>
+        <div className="flex content-start flex-wrap gap-5">
+          {!encryptedItems
+            ? new Array(5).fill(0).map((_, index) => <SkeletonCard key={index} />)
+            : encryptedItems.map((encryptedItem, index) => (
+                <LoadCard key={index} encryptedItem={encryptedItem} />
+              ))}
+        </div>
       </Content>
       <NewEncrypt />
     </Layout>

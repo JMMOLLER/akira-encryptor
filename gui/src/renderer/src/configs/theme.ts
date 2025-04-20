@@ -12,6 +12,9 @@ const theme: ConfigProviderProps['theme'] = {
       bodyBg: 'transparent',
       siderBg: '#81818185',
       triggerBg: '#00000010'
+    },
+    Typography: {
+      colorTextHeading: '#fff'
     }
   }
 }
