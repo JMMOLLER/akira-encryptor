@@ -45,9 +45,9 @@ class Storage {
    * @description `[ESP]` Almacena un elemento en el almacenamiento. Si el elemento tiene un `id`, será reemplazado.
    * @param item `Omit<StorageItem, "id">` - The item to be stored. It should not contain the `id` property.
    */
-  async set(item: Omit<StorageItem, "id">) {
+  async set(item: Omit<StorageItemType, "id">) {
     const newId = generateUID();
-    const newItem: StorageItem = { ...item, id: newId };
+    const newItem: StorageItemType = { ...item, id: newId };
     Storage.db.data.encryptedItems.set(newItem.id, newItem);
     await Storage.db.write();
     return newItem;

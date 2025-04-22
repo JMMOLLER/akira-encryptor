@@ -29,7 +29,7 @@ function NewEncrypt() {
 
     setPendingEncryptedItems((prev) => {
       return new Map(prev).set(id, {
-        type: item,
+        type: item === 'files' ? 'file' : 'folder',
         status: 'loading',
         percent: 0
       })

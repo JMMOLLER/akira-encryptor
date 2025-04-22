@@ -17,11 +17,9 @@ export function PendingEncryptionProvider({ children }: { children: ReactNode })
       let hasEncrypted = false
 
       for (const [key, value] of pendingEncryptedItems.entries()) {
-        if (value.status === 'encrypted') {
+        if (value.percent >= 100) {
           await new Promise((resolve) => setTimeout(resolve, 1000)) // Add 1-second delay
-          setItems((prev) => {
-            return prev ? [{ ...value }, ...prev] : prev
-          })
+          setItems(undefined) // force to reload the encrypted items
           newMap.delete(key)
           hasEncrypted = true
         } else if (value.status === 'error') {

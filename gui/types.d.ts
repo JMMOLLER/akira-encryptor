@@ -41,8 +41,8 @@ declare global {
   }
 
   interface PendingItem {
-    type: 'files' | 'folders'
-    status: 'loading' | 'encrypted' | 'error'
+    type: 'file' | 'folder'
+    status: 'loading' | 'error'
     percent: number
     message?: string
     filePath?: string

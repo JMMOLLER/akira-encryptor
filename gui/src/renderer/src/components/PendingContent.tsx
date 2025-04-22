@@ -19,7 +19,6 @@ function PendingContent() {
         if (!item) return prev
 
         item.percent = Math.floor((data.processedBytes / data.totalBytes) * 100)
-        item.status = item.percent >= 100 ? 'encrypted' : 'loading'
 
         return newMap
       })
