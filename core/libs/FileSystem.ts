@@ -2,6 +2,9 @@ import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import fs from "fs";
 
+// TODO: Add a function to check if a file or directory is locked.
+// TODO: agregar una funcion para bloquear un archivo o directorio.
+
 export class FileSystem {
   private static instance: FileSystem;
 
