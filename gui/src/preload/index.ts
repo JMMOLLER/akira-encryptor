@@ -4,7 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 // Custom APIs for renderer
 const api = {
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),
-  encryptFile: (props: EncryptFileProps) => ipcRenderer.invoke('encrypt-file', props),
+  encryptorAction: (props: EncryptFileProps) => ipcRenderer.invoke('encryptor-action', props),
   getEncryptedContent: (password: string) => ipcRenderer.invoke('get-encrypted-content', password)
 }
 

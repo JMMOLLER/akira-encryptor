@@ -32,6 +32,7 @@ export function PendingEncryptionProvider({ children }: { children: ReactNode })
           await new Promise((resolve) => setTimeout(resolve, 1000)) // Add 1-second delay
           newMap.delete(key)
           hasEncrypted = true
+          setItems(undefined) // force to reload the encrypted items
         }
       }
 

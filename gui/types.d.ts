@@ -10,6 +10,8 @@ declare global {
   }
 
   type EncryptFileProps = {
+    action: 'encrypt' | 'decrypt'
+    actionFor: 'file' | 'folder'
     password: string
     filePath: string
     itemId: string
@@ -18,7 +20,7 @@ declare global {
   interface ElectronIpcAPI {
     getEncryptedContent: (password: string) => Promise<[string, StorageItem][] | Error>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
-    encryptFile: (props: EncryptFileProps) => Promise<void>
+    encryptorAction: (props: EncryptFileProps) => Promise<void>
   }
 
   type MenuItemOptions = 'files' | 'folders' | 'settings'

@@ -1,26 +1,43 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from 'electron'
+import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
 export default function registerIpcMain() {
-  ipcMain.on('encrypt-file', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
+  ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
     const focusedWindow = BrowserWindow.getFocusedWindow()
     const { password, filePath, itemId } = props
 
     try {
       const encryptor = await Encryptor.init(password)
-      await encryptor.encryptFile({
-        filePath: String(filePath),
-        onProgress: (processedBytes, totalBytes) => {
-          // send progress to renderer process
-          if (focusedWindow) {
-            focusedWindow.webContents.send('onProgress', {
-              processedBytes,
-              totalBytes,
-              itemId
-            })
-          }
+      const handleProgress: ProgressCallback = (processedBytes, totalBytes) => {
+        // send progress to renderer process
+        if (focusedWindow) {
+          focusedWindow.webContents.send('onProgress', {
+            processedBytes,
+            totalBytes,
+            itemId
+          })
         }
-      })
+      }
+      const fileSendPayload = {
+        filePath: String(filePath),
+        onProgress: handleProgress
+      }
+
+      switch (props.action) {
+        case 'encrypt':
+          props.actionFor === 'file'
+            ? await encryptor.encryptFile(fileSendPayload)
+            : await encryptor.encryptFolder(fileSendPayload)
+          break
+        case 'decrypt':
+          props.actionFor === 'file'
+            ? await encryptor.decryptFile(fileSendPayload)
+            : await encryptor.decryptFolder(fileSendPayload)
+          break
+        default:
+          throw new Error('Acción no válida')
+      }
     } catch (error) {
       // Send error to renderer process
       if (focusedWindow) {

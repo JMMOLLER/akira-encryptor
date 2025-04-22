@@ -34,9 +34,11 @@ function NewEncrypt() {
         percent: 0
       })
     })
-    window.electron.ipcRenderer.send('encrypt-file', {
-      filePath: pathVal,
+    window.electron.ipcRenderer.send('encryptor-action', {
+      actionFor: item === 'files' ? 'file' : 'folder',
       password: 'mypassword', // TODO: Get password from input
+      action: 'encrypt',
+      filePath: pathVal,
       itemId: id
     })
     setIsModalOpen(false)

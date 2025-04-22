@@ -1,44 +1,71 @@
+import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
+import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import cardActions from '@renderer/constants/cardActions'
+import { Avatar, Card, Popconfirm, Tooltip } from 'antd'
 import { StorageItem } from '../../../../../types'
 import formatBytes from '@utils/formatBytes'
-import { Avatar, Card, Tooltip } from 'antd'
+import useApp from 'antd/es/app/useApp'
+import { useMemo } from 'react'
 
 interface LoadCardProps {
   encryptedItem: StorageItem
 }
 
 const LoadCard = ({ encryptedItem }: LoadCardProps) => {
-  const renderActions = () =>
-    cardActions.map(({ Icon, key, title, onclick }) => (
-      <Tooltip title={title} key={key}>
-        <Icon onClick={onclick} />
-      </Tooltip>
-    ))
+  const { setPendingEncryptedItems } = usePendingEncryption()
+  const { setItems } = useEncryptedItems()
+  const { message } = useApp()
 
-  const renderDescription = () => (
-    <ul>
-      <li className="truncate">
-        <span className="font-semibold">Nombre:</span>{' '}
-        {encryptedItem.originalName && encryptedItem.originalName.length > 28 ? (
-          <Tooltip title={encryptedItem.originalName}>
+  const renderActions = useMemo(
+    () =>
+      cardActions.map(({ Icon, key, title, onclick }) => (
+        <Tooltip title={title} key={key}>
+          <Popconfirm
+            style={{ color: 'red' }}
+            title="¿Estás seguro de que quieres continuar?"
+            onConfirm={() =>
+              onclick({
+                setter: setPendingEncryptedItems,
+                setEncryptedItems: setItems,
+                item: encryptedItem,
+                message
+              })
+            }
+          >
+            <Icon />
+          </Popconfirm>
+        </Tooltip>
+      )),
+    [encryptedItem, message, setItems, setPendingEncryptedItems]
+  )
+
+  const renderDescription = useMemo(
+    () => (
+      <ul>
+        <li className="truncate">
+          <span className="font-semibold">Nombre:</span>{' '}
+          {encryptedItem.originalName && encryptedItem.originalName.length > 28 ? (
+            <Tooltip title={encryptedItem.originalName}>
+              <span>{encryptedItem.originalName}</span>
+            </Tooltip>
+          ) : (
             <span>{encryptedItem.originalName}</span>
-          </Tooltip>
-        ) : (
-          <span>{encryptedItem.originalName}</span>
-        )}
-      </li>
-      <li>
-        <span className="font-semibold">Tamaño:</span> {formatBytes(encryptedItem.size || 0)}
-      </li>
-    </ul>
+          )}
+        </li>
+        <li>
+          <span className="font-semibold">Tamaño:</span> {formatBytes(encryptedItem.size || 0)}
+        </li>
+      </ul>
+    ),
+    [encryptedItem]
   )
 
   return (
-    <Card className="w-[350px] h-min" actions={renderActions()}>
+    <Card className="w-[350px] h-min" actions={renderActions}>
       <Card.Meta
         avatar={<Avatar src="https://api.dicebear.com/7.x/miniavs/svg?seed=1" />}
         title={encryptedItem.type === 'file' ? 'Archivo Encriptado' : 'Carpeta Encriptada'}
-        description={renderDescription()}
+        description={renderDescription}
       />
     </Card>
   )
