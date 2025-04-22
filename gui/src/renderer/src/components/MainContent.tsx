@@ -1,7 +1,7 @@
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
+import { useEffect, useMemo, useRef } from 'react'
 import { Content } from 'antd/es/layout/layout'
 import PendingContent from './PendingContent'
-import { useEffect, useRef } from 'react'
 import SkeletonCard from './SkeletonCard'
 import { Layout, Typography } from 'antd'
 import NewEncrypt from './NewEncrypt'
@@ -15,6 +15,10 @@ gsap.registerPlugin(Flip)
 function MainContent() {
   const contentRef = useRef<HTMLDivElement>(null)
   const { encryptedItems } = useEncryptedItems()
+  const encItems = useMemo(() => {
+    if (!encryptedItems) return []
+    return Array.from(encryptedItems.values())
+  }, [encryptedItems])
 
   useEffect(() => {
     const content = contentRef.current
@@ -69,12 +73,12 @@ function MainContent() {
         <PendingContent />
 
         <Typography.Title level={2} className="text-gray-400">
-          Archivos encriptados — {encryptedItems?.length ?? 0}
+          Archivos encriptados — {encryptedItems?.size ?? 0}
         </Typography.Title>
         <div className="flex content-start flex-wrap gap-5">
           {!encryptedItems
             ? new Array(5).fill(0).map((_, index) => <SkeletonCard key={index} />)
-            : encryptedItems.map((encryptedItem, index) => (
+            : encItems.map((encryptedItem, index) => (
                 <LoadCard key={index} encryptedItem={encryptedItem} />
               ))}
         </div>

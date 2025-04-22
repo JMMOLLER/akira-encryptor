@@ -1,11 +1,14 @@
 import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
+import { useEffect, useMemo } from 'react'
 import SkeletonCard from './SkeletonCard'
 import { Typography } from 'antd'
-import { useEffect } from 'react'
 
 function PendingContent() {
   const { pendingEncryptedItems, setPendingEncryptedItems } = usePendingEncryption()
-  const values = Array.from(pendingEncryptedItems.values())
+  const values = useMemo(() => {
+    if (!pendingEncryptedItems) return []
+    return Array.from(pendingEncryptedItems.values())
+  }, [pendingEncryptedItems])
 
   useEffect(() => {
     const onProgressHandler = (_: unknown, data: ProgressCallbackProps) => {

@@ -1,16 +1,30 @@
 import { InfoCircleOutlined, EyeOutlined, KeyOutlined } from '@ant-design/icons'
-import { Tooltip } from 'antd'
 
-const cardActions: React.ReactNode[] = [
-  <Tooltip title="Mostrar" key="show">
-    <EyeOutlined />
-  </Tooltip>,
-  <Tooltip title="Desencriptar" key="decrypt">
-    <KeyOutlined />
-  </Tooltip>,
-  <Tooltip title="Información" key="info">
-    <InfoCircleOutlined />
-  </Tooltip>
+const cardActions = [
+  {
+    key: 'view',
+    Icon: EyeOutlined,
+    title: 'Ver contenido',
+    onclick: () => {
+      console.log('Not implemented yet.')
+    }
+  },
+  {
+    key: 'decrypt',
+    Icon: KeyOutlined,
+    title: 'Desencriptar',
+    onclick: () => {
+      console.log('Not implemented yet.')
+    }
+  },
+  {
+    key: 'info',
+    Icon: InfoCircleOutlined,
+    title: 'Información',
+    onclick: () => {
+      console.log('Not implemented yet.')
+    }
+  }
 ]
 
 export default cardActions

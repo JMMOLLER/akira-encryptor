@@ -50,4 +50,15 @@ export default function registerIpcMain() {
     if (result.canceled) return null
     return result.filePaths
   })
+
+  ipcMain.handle('get-encrypted-content', async (_event: IpcMainInvokeEvent, password: string) => {
+    try {
+      const encryptor = await Encryptor.init(password)
+      const content = encryptor.getStorage()
+
+      return Array.from(content.entries())
+    } catch (error) {
+      return error
+    }
+  })
 }

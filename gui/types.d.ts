@@ -1,5 +1,6 @@
 import type { ItemType } from 'antd/es/menu/interface'
 import type { OpenDialogOptions } from 'electron'
+import { StorageItem } from '../types'
 
 declare global {
   type OpenExplorerProps = {
@@ -15,6 +16,7 @@ declare global {
   }
 
   interface ElectronIpcAPI {
+    getEncryptedContent: (password: string) => Promise<[string, StorageItem][] | Error>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
     encryptFile: (props: EncryptFileProps) => Promise<void>
   }
@@ -33,22 +35,22 @@ declare global {
     key?: MenuItemOptions
   }
 
-  interface EncryptedItem {
+  interface EncryptedItemContextType {
+    encryptedItems: Map<string, StorageItem> | undefined
+    setItems: React.Dispatch<React.SetStateAction<EncryptedItemContextType['encryptedItems']>>
+  }
+
+  interface PendingItem {
     type: 'files' | 'folders'
     status: 'loading' | 'encrypted' | 'error'
     percent: number
     message?: string
     filePath?: string
   }
-  interface EncryptedItemContextType {
-    encryptedItems: EncryptedItem[] | undefined
-    setItems: React.Dispatch<React.SetStateAction<EncryptedItemContextType['encryptedItems']>>
-  }
-
-  type PendingEncryptType = Map<string, EncryptedItem>
+  type PendingStorage = Map<string, PendingItem>
   interface PendingEncryptContextType {
-    pendingEncryptedItems: PendingEncryptType
-    setPendingEncryptedItems: React.Dispatch<React.SetStateAction<PendingEncryptType>>
+    pendingEncryptedItems: PendingStorage
+    setPendingEncryptedItems: React.Dispatch<React.SetStateAction<PendingStorage>>
   }
 
   interface ProgressCallbackProps {

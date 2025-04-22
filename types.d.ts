@@ -5,6 +5,16 @@ export type ProgressCallback = (
   totalBytes: number
 ) => void;
 
+export interface StorageItem {
+  type: "file" | "folder";
+  encryptedName: string;
+  originalName?: string;
+  encryptedAt?: Date;
+  filePath?: string;
+  size?: number;
+  id: string;
+}
+
 declare global {
   type CliAction = "encrypt" | "decrypt";
   type CliType = "file" | "folder";
@@ -12,16 +22,6 @@ declare global {
   interface EncryptorFuncion {
     filePath: Readonly<string>;
     onProgress: ProgressCallback;
-  }
-
-  interface StorageItem {
-    type: "file" | "folder";
-    encryptedName: string;
-    originalName?: string;
-    encryptedAt?: Date;
-    filePath?: string;
-    size?: number;
-    id: string;
   }
 
   interface EncryptedDataStore {

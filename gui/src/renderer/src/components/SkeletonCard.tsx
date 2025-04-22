@@ -6,7 +6,7 @@ interface SkeletonCardProps {
    * @description `[ENG]` Encrypted item in progress that will be shown in the skeleton card.
    * @description `[ESP]` Elemento en proceso de encriptación que se mostrará en la tarjeta de esqueleto.
    */
-  encryptedItem?: EncryptedItem
+  encryptedItem?: PendingItem
 }
 
 function SkeletonCard(props: SkeletonCardProps) {
@@ -30,9 +30,9 @@ function SkeletonCard(props: SkeletonCardProps) {
         active
       />
       <ul className="inline-flex justify-between rounded-b-lg bg-white w-full text-black/25 divide-x divide-gray-300/35 border-t border-gray-300/35 pb-0.5!">
-        {cardActions.map((action, actionIndex) => (
-          <li className="grow my-3! cursor-not-allowed *:justify-center *:w-full" key={actionIndex}>
-            {action}
+        {cardActions.map(({ Icon, key }) => (
+          <li className="grow my-3! cursor-not-allowed *:justify-center *:w-full" key={key}>
+            <Icon />
           </li>
         ))}
       </ul>

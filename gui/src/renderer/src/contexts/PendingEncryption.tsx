@@ -7,7 +7,7 @@ const PendingEncryptionContext = createContext<PendingEncryptContextType | undef
 
 // Provider component for the context
 export function PendingEncryptionProvider({ children }: { children: ReactNode }) {
-  const [pendingEncryptedItems, setPendingEncryptedItems] = useState<PendingEncryptType>(new Map())
+  const [pendingEncryptedItems, setPendingEncryptedItems] = useState<PendingStorage>(new Map())
   const { setItems } = useEncryptedItems()
   const { notification } = useApp()
 
