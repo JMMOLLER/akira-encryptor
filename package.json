@@ -3,7 +3,9 @@
   "module": "cli/main.ts",
   "type": "module",
   "scripts": {
+    "test": "bun vitest",
     "start": "bun run cli/main.ts",
+    "debug": "bunx tsx cli/main.ts",
     "build:cli": "bun build cli/main.ts --outdir ./cli/dist --target node"
   },
   "devDependencies": {
