@@ -7,7 +7,7 @@ export default function registerIpcMain() {
     const { password, filePath, itemId } = props
 
     try {
-      const encryptor = new Encryptor(password)
+      const encryptor = await Encryptor.init(password)
       await encryptor.encryptFile({
         filePath: String(filePath),
         onProgress: (processedBytes, totalBytes) => {

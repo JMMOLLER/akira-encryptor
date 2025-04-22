@@ -13,7 +13,8 @@ export default defineConfig({
         '@core': corePath,
         '@utils': resolve(corePath, 'utils'),
         '@libs': resolve(corePath, 'libs'),
-        '@configs': resolve(corePath, 'configs')
+        '@configs': resolve(corePath, 'configs'),
+        '@adapters': resolve(corePath, 'adapters')
       }
     },
     define: {

@@ -11,6 +11,7 @@
       "@utils/*": ["../../core/utils/*"],
       "@libs/*": ["../../core/libs/*"],
       "@configs/*": ["../../core/configs/*"],
+      "@adapters/*": ["../../core/adapters/*"],
     },
 
   }

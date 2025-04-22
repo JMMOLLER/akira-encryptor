@@ -1,4 +1,4 @@
-import MapAdapter from "core/adapters/MapAdapter";
+import MapAdapter from "@adapters/MapAdapter";
 import generateUID from "@utils/generateUID";
 import { JSONFile } from "lowdb/node";
 import { env } from "@configs/env";

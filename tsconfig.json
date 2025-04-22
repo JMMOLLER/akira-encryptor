@@ -34,6 +34,7 @@
       "@libs/*": ["core/libs/*"],
       "@utils/*": ["core/utils/*"],
       "@configs/*": ["core/configs/*"],
+      "@adapters/*": ["core/adapters/*"],
     }
   }
 }
