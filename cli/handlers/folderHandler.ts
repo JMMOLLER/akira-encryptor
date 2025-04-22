@@ -1,5 +1,6 @@
 import collectFileSizes from "@utils/collectFileSizes";
 import createBar from "@utils/createProgressBar";
+import type { ProgressCallback } from "types";
 import formatBytes from "@utils/formatBytes";
 import EncryptorClass from "@libs/Encryptor";
 import cliProgress from "cli-progress";
@@ -61,7 +62,7 @@ async function handleFolderAction(props: HanlderProps) {
   };
 
   try {
-    const Encryptor = new EncryptorClass(password);
+    const Encryptor = await EncryptorClass.init(password);
 
     if (action === "encrypt") {
       await Encryptor.encryptFolder({

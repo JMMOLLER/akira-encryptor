@@ -1,12 +1,8 @@
-import generateUID from "@utils/generateUID";
-import validateUID from "@utils/validateUID";
 import { pipeline } from "stream/promises";
-import { env } from "@configs/env";
 import { Readable } from "stream";
 import fs from "fs";
 
 export class FileSystem {
-  private static readonly LIBRARY_PATH = env.LIBRARY_PATH;
   private static instance: FileSystem;
 
   private constructor() {}
@@ -16,89 +12,6 @@ export class FileSystem {
       FileSystem.instance = new FileSystem();
     }
     return FileSystem.instance;
-  }
-
-  /**
-   * @description `[ENG]` Adds a value to the library with a unique identifier.
-   * @description `[ESP]` Agrega un valor a la biblioteca con un identificador único.
-   * @param val Value to be added to the library
-   */
-  add(val: string) {
-    const UID = generateUID();
-    const map = this.read();
-    map.set(UID, val);
-    this.save(map);
-    return UID;
-  }
-
-  /**
-   * @description `[ENG]` Save the map of values to the library.
-   * @description `[ESP]` Guarda el mapa de valores en la biblioteca.
-   * @param map Map of values to be saved
-   */
-  private save(map: Map<string, string>) {
-    const obj = Object.fromEntries(map);
-    try {
-      fs.writeFileSync(FileSystem.LIBRARY_PATH, JSON.stringify(obj, null, 2));
-    } catch (error) {
-      throw new Error(
-        `Error saving library to '${FileSystem.LIBRARY_PATH}': ${
-          (error as Error).message
-        }`
-      );
-    }
-  }
-
-  /**
-   * @description `[ENG]` Read the library and return a map of values.
-   * @description `[ESP]` Lee la biblioteca y devuelve un mapa de valores.
-   */
-  read(): Map<string, string> {
-    if (!fs.existsSync(FileSystem.LIBRARY_PATH)) return new Map();
-
-    try {
-      const data = fs.readFileSync(FileSystem.LIBRARY_PATH, "utf-8");
-      const jsonData = JSON.parse(data);
-      return new Map(Object.entries(jsonData));
-    } catch (error) {
-      throw new Error(
-        `Error reading library from '${FileSystem.LIBRARY_PATH}': ${
-          (error as Error).message
-        }`
-      );
-    }
-  }
-
-  /**
-   * @description `[ENG]` Remove a value from the library by its unique identifier.
-   * @description `[ESP]` Elimina un valor de la biblioteca por su identificador único.
-   * @param UID `string` - The unique identifier of the value to be removed.
-   */
-  removeFromLibrary(UID: string) {
-    validateUID(UID);
-
-    const map = this.read();
-    if (!map.has(UID)) {
-      throw new Error(`UID not found: ${UID}`);
-    }
-    map.delete(UID);
-    this.save(map);
-  }
-
-  /**
-   * @description `[ENG]` Get a value from the library by its unique identifier.
-   * @description `[ESP]` Obtiene un valor de la biblioteca por su identificador único.
-   * @param UID `string` - The unique identifier of the value to be retrieved.
-   */
-  getByUID(UID: string) {
-    validateUID(UID);
-
-    const map = this.read();
-    const value = map.get(UID);
-    if (!value) {
-      throw new Error(`Value not found for UID: ${UID}`);
-    }
-    return value;
   }
 
   /**
@@ -298,14 +211,21 @@ export class FileSystem {
       }
     }
   }
-  
+
   /**
    * @description `[ENG]` Delay function to pause execution for a specified time.
    * @description `[ESP]` Función de retraso para pausar la ejecución durante un tiempo especificado.
    * @param ms - The number of milliseconds to delay
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  
+
+  fileExists(path: string): boolean {
+    try {
+      return fs.existsSync(path);
+    } catch (error) {
+      throw error;
+    }
+  }
 }

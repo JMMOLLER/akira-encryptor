@@ -1,3 +1,5 @@
+import type { Low } from "lowdb";
+
 export type ProgressCallback = (
   processedBytes: number,
   totalBytes: number
@@ -11,4 +13,23 @@ declare global {
     filePath: Readonly<string>;
     onProgress: ProgressCallback;
   }
+
+  interface StorageItem {
+    type: "file" | "folder";
+    encryptedName: string;
+    originalName?: string;
+    encryptedAt?: Date;
+    filePath?: string;
+    size?: number;
+    id: string;
+  }
+
+  interface EncryptedDataStore {
+    encryptedItems: {
+      [key: string]: StorageItem;
+    };
+  }
+
+  type LowStoreType = Low<{ encryptedItems: Map<string, StorageItem> }>;
+  type EncryptorFunc = (text: string) => string;
 }

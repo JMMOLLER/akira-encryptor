@@ -2,16 +2,33 @@ import generateSecretKey from "@utils/generateSecretKey";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
+import Storage from "./Storage";
 import path from "path";
 
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
+  private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
 
-  constructor(password: string) {
+  private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
+  }
+
+  /**
+   * @description `[ENG]` Initializes the Encryptor instance and the storage.
+   * @description `[ES]` Inicializa la instancia de Encryptor y el almacenamiento.
+   * @param password `string` - The password used to generate the secret key.
+   */
+  static async init(password: string) {
+    await sodium.ready;
+    const instance = new Encryptor(password);
+    Encryptor.STORAGE = await Storage.init(
+      instance.encryptText.bind(instance),
+      instance.decryptText.bind(instance)
+    );
+    return instance;
   }
 
   /**
@@ -76,22 +93,11 @@ class Encryptor {
   }
 
   /**
-   * @description `[ENG]` Prints the map of encrypted messages. If `withDecrypt` is true, it decrypts the messages before printing.
-   * @description `[ES]` Imprime el mapa de mensajes cifrados. Si `withDecrypt` es verdadero, descifra los mensajes antes de imprimir.
-   * @param withDecrypt `true` to decrypt the messages before printing, `false` to print the encrypted messages as is.
+   * @description `[ENG]` Retrieves all encrypted items from storage.
+   * @description `[ES]` Recupera todos los elementos cifrados del almacenamiento.
    */
-  printMap(withDecrypt?: boolean) {
-    const map = Encryptor.FS.read();
-    if (withDecrypt) {
-      for (const [id, mensajeCifrado] of map) {
-        const decryptedMsg = this.decryptText(mensajeCifrado);
-        console.log(
-          `ID: ${id}, Mensaje: ${decryptedMsg || "Mensaje no válido"}`
-        );
-      }
-    } else {
-      console.log(map);
-    }
+  getStorage() {
+    return Encryptor.STORAGE.getAll();
   }
 
   /**
@@ -149,33 +155,54 @@ class Encryptor {
         onProgress?.(processed, totalSize);
       });
 
-      readStream.on("end", () => {
-        const combined = Buffer.concat(chunks);
-        const fileName = path.basename(filePath);
-        const encryptedName = this.encryptText(fileName);
-        const newFileName = Encryptor.FS.add(encryptedName);
-        const newPath = filePath.replace(fileName, `${newFileName}.enc`);
+      readStream.on("end", async () => {
+        try {
+          const combined = Buffer.concat(chunks);
+          const fileName = path.basename(filePath);
+          const encryptedName = this.encryptText(fileName);
 
-        if (logStream) {
-          logStream.write(`✅ Cifrado completado\n`);
-          logStream.write(`Archivo original: ${filePath}\n`);
-          logStream.write(`Nombre cifrado: ${newFileName}.enc\n`);
-          logStream.write(`Ruta destino: ${newPath}\n`);
-        }
-
-        Encryptor.FS.replaceFile(filePath, newPath, combined)
-          .then(() => {
-            if (logStream) {
-              logStream.end("🔒 Archivo cifrado exitosamente.\n");
-            }
-            resolve(newPath);
-          })
-          .catch((err) => {
-            if (logStream) {
-              logStream.end(`❌ Error al guardar el archivo: ${err.message}\n`);
-            }
-            reject(err);
+          const saved = await Encryptor.STORAGE.set({
+            type: "file",
+            encryptedName,
+            originalName: fileName,
+            encryptedAt: new Date(),
+            size: stat.size,
+            filePath
           });
+          const newFileName = saved.id;
+
+          const newPath = filePath.replace(fileName, `${newFileName}.enc`);
+
+          if (logStream) {
+            logStream.write(`✅ Cifrado completado\n`);
+            logStream.write(`Archivo original: ${filePath}\n`);
+            logStream.write(`Nombre cifrado: ${newFileName}.enc\n`);
+            logStream.write(`Ruta destino: ${newPath}\n`);
+          }
+
+          Encryptor.FS.replaceFile(filePath, newPath, combined)
+            .then(() => {
+              if (logStream) {
+                logStream.end("🔒 Archivo cifrado exitosamente.\n");
+              }
+              resolve(newPath);
+            })
+            .catch((err) => {
+              if (logStream) {
+                logStream.end(
+                  `❌ Error al guardar el archivo: ${err.message}\n`
+                );
+              }
+              reject(err);
+            });
+        } catch (err) {
+          if (logStream) {
+            logStream.end(
+              `❌ Error al cifrar el archivo: ${(err as Error).message}\n`
+            );
+          }
+          reject(err);
+        }
       });
 
       readStream.on("error", (error: Error) => {
@@ -192,7 +219,7 @@ class Encryptor {
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    * @param filePath `string` - The path of the file to be decrypted (read-only).
    */
-  decryptFile(props: EncryptorFuncion): Promise<void> {
+  async decryptFile(props: EncryptorFuncion): Promise<void> {
     const { filePath, onProgress } = props;
 
     // skip logs file
@@ -294,8 +321,9 @@ class Encryptor {
         writeStream.end(async () => {
           try {
             const fileName = path.basename(filePath).replace(/\.enc$/, "");
-            const encryptedFileName = Encryptor.FS.getByUID(fileName);
-            const originalFileName = this.decryptText(encryptedFileName);
+
+            const { originalName } = Encryptor.STORAGE.get(fileName) || {};
+            const originalFileName = originalName;
 
             if (!originalFileName) {
               if (logStream) {
@@ -315,7 +343,8 @@ class Encryptor {
             await Encryptor.FS.replaceFile(tempPath, restoredPath, data);
 
             Encryptor.FS.removeFile(filePath);
-            Encryptor.FS.removeFromLibrary(fileName);
+
+            await Encryptor.STORAGE.delete(fileName);
 
             if (logStream) {
               logStream.write(
@@ -386,8 +415,15 @@ class Encryptor {
 
     // Encrypt the name of the current folder
     const encryptedName = this.encryptText(path.basename(folderPath));
-    const encryptedNameId = Encryptor.FS.add(encryptedName);
-    const encryptedPath = path.join(path.dirname(folderPath), encryptedNameId);
+    const { id } = await Encryptor.STORAGE.set({
+      type: "folder",
+      encryptedName,
+      originalName: path.basename(folderPath),
+      encryptedAt: new Date(),
+      filePath: folderPath,
+      size: 0
+    });
+    const encryptedPath = path.join(path.dirname(folderPath), id);
 
     await Encryptor.FS.safeRenameFolder(folderPath, encryptedPath);
 
@@ -430,8 +466,15 @@ class Encryptor {
 
     // Decrypt the name of the current folder
     const folderName = path.basename(folderPath);
-    const encryptedName = Encryptor.FS.getByUID(folderName);
-    const originalName = this.decryptText(encryptedName);
+    const saved = Encryptor.STORAGE.get(folderName);
+
+    if (!saved) {
+      throw new Error(
+        `No se encontró la carpeta en el almacenamiento: ${folderName}`
+      );
+    }
+
+    const originalName = this.decryptText(saved.encryptedName);
 
     if (!originalName) {
       console.warn(
@@ -444,7 +487,7 @@ class Encryptor {
 
     try {
       await Encryptor.FS.safeRenameFolder(folderPath, decryptedPath);
-      Encryptor.FS.removeFromLibrary(folderName);
+      Encryptor.STORAGE.delete(folderName);
       return decryptedPath;
     } catch (err) {
       console.error(`Error al renombrar carpeta ${folderPath}:`, err);
