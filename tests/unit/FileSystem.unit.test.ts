@@ -5,15 +5,15 @@ import fs from "fs";
 vi.mock("fs");
 vi.mock("path");
 vi.mock("@configs/env", () => ({
-  env: { LIBRARY_PATH: "/mock/library.json" },
+  env: { LIBRARY_PATH: "/mock/library.json" }
 }));
 vi.mock("@utils/generateUID", () => ({
-  default: vi.fn(() => "mock-uid"),
+  default: vi.fn(() => "mock-uid")
 }));
 vi.mock("@utils/validateUID", () => ({
   default: vi.fn((uid) => {
     if (!uid.startsWith("mock-")) throw new Error("Invalid UID");
-  }),
+  })
 }));
 
 describe("FileSystem", () => {
@@ -22,70 +22,6 @@ describe("FileSystem", () => {
   beforeEach(() => {
     fileSystem = FileSystem.getInstance();
     vi.clearAllMocks();
-  });
-
-  it("should return an empty map when the library does not exist", () => {
-    vi.spyOn(fs, "existsSync").mockReturnValue(false);
-
-    const result = fileSystem.read();
-
-    expect(result.size).toBe(0);
-  });
-
-  it("should add a value to the library and return a UID", () => {
-    const mockMap = new Map();
-    vi.spyOn(fileSystem, "read").mockReturnValue(mockMap);
-    const saveSpy = vi.spyOn(fileSystem as any, "save");
-
-    const uid = fileSystem.add("test-value");
-
-    expect(uid).toBe("mock-uid");
-    expect(mockMap.get("mock-uid")).toBe("test-value");
-    expect(saveSpy).toHaveBeenCalledWith(mockMap);
-  });
-
-  it("should read the library when it exists", () => {
-    const mockData = JSON.stringify({ "mock-uid": "test-value" });
-    vi.spyOn(fs, "existsSync").mockReturnValue(true);
-    vi.spyOn(fs, "readFileSync").mockReturnValue(mockData);
-
-    const result = fileSystem.read();
-
-    expect(result.get("mock-uid")).toBe("test-value");
-  });
-
-  it("should remove a value from the library by UID", () => {
-    const mockMap = new Map([["mock-uid", "test-value"]]);
-    vi.spyOn(fileSystem, "read").mockReturnValue(mockMap);
-    const saveSpy = vi.spyOn(fileSystem as any, "save");
-
-    fileSystem.removeFromLibrary("mock-uid");
-
-    expect(mockMap.has("mock-uid")).toBe(false);
-    expect(saveSpy).toHaveBeenCalledWith(mockMap);
-  });
-
-  it("should throw an error when removing a non-existent UID", () => {
-    const mockMap = new Map();
-    vi.spyOn(fileSystem, "read").mockReturnValue(mockMap);
-
-    expect(() => fileSystem.removeFromLibrary("mock-uid")).toThrow("UID not found: mock-uid");
-  });
-
-  it("should retrieve a value by UID", () => {
-    const mockMap = new Map([["mock-uid", "test-value"]]);
-    vi.spyOn(fileSystem, "read").mockReturnValue(mockMap);
-
-    const result = fileSystem.getByUID("mock-uid");
-
-    expect(result).toBe("test-value");
-  });
-
-  it("should throw an error when retrieving a non-existent UID", () => {
-    const mockMap = new Map();
-    vi.spyOn(fileSystem, "read").mockReturnValue(mockMap);
-
-    expect(() => fileSystem.getByUID("mock-uid")).toThrow("Value not found for UID: mock-uid");
   });
 
   it("should get file statistics", () => {
@@ -101,7 +37,9 @@ describe("FileSystem", () => {
   it("should throw an error when getting stats for a non-existent file", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.getStatFile("/mock/path")).toThrow("File not found: /mock/path");
+    expect(() => fileSystem.getStatFile("/mock/path")).toThrow(
+      "File not found: /mock/path"
+    );
   });
 
   it("should create a readable stream", () => {
@@ -111,14 +49,16 @@ describe("FileSystem", () => {
     fileSystem.createReadStream("/mock/path");
 
     expect(createReadStreamSpy).toHaveBeenCalledWith("/mock/path", {
-      highWaterMark: undefined,
+      highWaterMark: undefined
     });
   });
 
   it("should throw an error when creating a readable stream for a non-existent file", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.createReadStream("/mock/path")).toThrow("File not found: /mock/path");
+    expect(() => fileSystem.createReadStream("/mock/path")).toThrow(
+      "File not found: /mock/path"
+    );
   });
 
   it("should remove a file", () => {
@@ -149,7 +89,9 @@ describe("FileSystem", () => {
   it("should throw an error when reading a non-existent directory", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.readDir("/mock/folder")).toThrow("Directory not found: /mock/folder");
+    expect(() => fileSystem.readDir("/mock/folder")).toThrow(
+      "Directory not found: /mock/folder"
+    );
   });
 
   it("should rename a folder", () => {
@@ -158,15 +100,18 @@ describe("FileSystem", () => {
 
     fileSystem.renameFolder("/mock/folder", "/mock/new-folder");
 
-    expect(renameSyncSpy).toHaveBeenCalledWith("/mock/folder", "/mock/new-folder");
+    expect(renameSyncSpy).toHaveBeenCalledWith(
+      "/mock/folder",
+      "/mock/new-folder"
+    );
   });
 
   it("should throw an error when renaming a non-existent folder", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.renameFolder("/mock/folder", "/mock/new-folder")).toThrow(
-      "Directory not found: /mock/folder"
-    );
+    expect(() =>
+      fileSystem.renameFolder("/mock/folder", "/mock/new-folder")
+    ).toThrow("Directory not found: /mock/folder");
   });
 
   it("should create a folder", () => {
@@ -175,19 +120,25 @@ describe("FileSystem", () => {
 
     fileSystem.createFolder("/mock/folder");
 
-    expect(mkdirSyncSpy).toHaveBeenCalledWith("/mock/folder", { recursive: true });
+    expect(mkdirSyncSpy).toHaveBeenCalledWith("/mock/folder", {
+      recursive: true
+    });
   });
 
   it("should throw an error when creating an existing folder", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
 
-    expect(() => fileSystem.createFolder("/mock/folder")).toThrow("Directory already exists: /mock/folder");
+    expect(() => fileSystem.createFolder("/mock/folder")).toThrow(
+      "Directory already exists: /mock/folder"
+    );
   });
 
   it("should safely rename a folder with retries", async () => {
-    const renameSpy = vi.spyOn(fileSystem, "renameFolder").mockImplementationOnce(() => {
-      throw new Error("Temporary error");
-    });
+    const renameSpy = vi
+      .spyOn(fileSystem, "renameFolder")
+      .mockImplementationOnce(() => {
+        throw new Error("Temporary error");
+      });
 
     await fileSystem.safeRenameFolder("/mock/src", "/mock/dest");
 

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, vi } from "vitest";
 import EncryptorClass from "@libs/Encryptor";
 import { FileSystem } from "@libs/FileSystem";
 
-let Encryptor: typeof EncryptorClass;
+let Encryptor: EncryptorClass;
 let mockFS: FileSystem;
 
 beforeAll(async () => {
@@ -36,7 +36,7 @@ beforeAll(async () => {
   vi.spyOn(FileSystem, "getInstance").mockReturnValue(mockFS);
 
   // Initialize Encryptor
-  Encryptor = (await import("@libs/Encryptor")).default;
+  Encryptor = await (await import("@libs/Encryptor")).default.init("mypassword");
 });
 
 describe("Encryptor Integration Tests", () => {

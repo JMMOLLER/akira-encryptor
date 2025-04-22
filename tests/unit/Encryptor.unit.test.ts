@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import EncryptorClass from "@libs/Encryptor";
 
-let Encryptor: typeof EncryptorClass;
+let Encryptor: EncryptorClass;
 
 beforeAll(async () => {
-  Encryptor = (await import("@libs/Encryptor")).default;
+  Encryptor = await (
+    await import("@libs/Encryptor")
+  ).default.init("mypassword");
 });
 
 describe("Encryptor", () => {
