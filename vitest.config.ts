@@ -13,9 +13,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@libs": resolve(__dirname, "libs"),
-      "@utils": resolve(__dirname, "utils"),
-      "@configs": resolve(__dirname, "configs")
+      "@libs": resolve(__dirname, "core/libs"),
+      "@utils": resolve(__dirname, "core/utils"),
+      "@configs": resolve(__dirname, "core/configs")
     }
   },
   plugins: [tsconfigPaths()]
