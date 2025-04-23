@@ -11,8 +11,8 @@ function NewEncrypt() {
   const { setPendingEncryptedItems } = usePendingEncryption()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
+  const { menuItem } = useMenuItem()
   const message = useApp().message
-  const { item } = useMenuItem()
 
   const showModal = () => {
     setIsModalOpen(true)
@@ -20,7 +20,7 @@ function NewEncrypt() {
   }
 
   const handleOk = () => {
-    if (item === 'settings') {
+    if (menuItem === 'settings') {
       message.error('No se puede encriptar desde la pantalla de configuración.')
       return
     }
@@ -29,13 +29,13 @@ function NewEncrypt() {
 
     setPendingEncryptedItems((prev) => {
       return new Map(prev).set(id, {
-        type: item === 'files' ? 'file' : 'folder',
+        type: menuItem === 'files' ? 'file' : 'folder',
         status: 'loading',
         percent: 0
       })
     })
     window.electron.ipcRenderer.send('encryptor-action', {
-      actionFor: item === 'files' ? 'file' : 'folder',
+      actionFor: menuItem === 'files' ? 'file' : 'folder',
       password: 'mypassword', // TODO: Get password from input
       action: 'encrypt',
       filePath: pathVal,
@@ -59,7 +59,7 @@ function NewEncrypt() {
 
     // Open file explorer
     const archivo = await window.api.openExplorer({
-      title: `Seleccionar ${item === 'files' ? 'archivo' : 'carpeta'}`,
+      title: `Seleccionar ${menuItem === 'files' ? 'archivo' : 'carpeta'}`,
       properties: ['openFile']
     })
     if (!archivo) {
@@ -79,7 +79,7 @@ function NewEncrypt() {
         type="primary"
       />
       <Modal
-        title={`Encriptar ${item === 'files' ? 'Nuevo Archivo' : 'Nueva Carpeta'}`}
+        title={`Encriptar ${menuItem === 'files' ? 'Nuevo Archivo' : 'Nueva Carpeta'}`}
         okButtonProps={{ disabled: status === 'error' || pathVal === '' }}
         onCancel={handleCancel}
         open={isModalOpen}
@@ -90,10 +90,10 @@ function NewEncrypt() {
           <Form.Item
             help={
               status === 'error'
-                ? `Por favor seleccione ${item === 'files' ? 'un archivo' : 'una carpeta'}`
+                ? `Por favor seleccione ${menuItem === 'files' ? 'un archivo' : 'una carpeta'}`
                 : ''
             }
-            label={`Ingrese la ruta ${item === 'files' ? 'del archivo' : 'de la carpeta'}::`}
+            label={`Ingrese la ruta ${menuItem === 'files' ? 'del archivo' : 'de la carpeta'}::`}
             wrapperCol={{ span: 24 }}
             labelCol={{ span: 24 }}
             className="inline-flex"
@@ -102,7 +102,7 @@ function NewEncrypt() {
           >
             <Space.Compact className="w-full">
               <Input
-                placeholder={`Seleccionar ${item === 'files' ? 'archivo' : 'carpeta'}`}
+                placeholder={`Seleccionar ${menuItem === 'files' ? 'archivo' : 'carpeta'}`}
                 value={pathVal}
                 readOnly
               />

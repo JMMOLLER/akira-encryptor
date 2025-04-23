@@ -11,10 +11,10 @@ const defaultSelectedKey: MenuItemOptions[] = ['files']
 
 function Navbar() {
   const [collapsed, setCollapsed] = useState(false)
-  const { item, setItem } = useMenuItem()
+  const { menuItem, setMenuItem } = useMenuItem()
 
   const handleSelect = (item: MenuInfo) => {
-    setItem(item.key as MenuItemOptions)
+    setMenuItem(item.key as MenuItemOptions)
   }
 
   return (
@@ -28,7 +28,7 @@ function Navbar() {
       <Menu
         defaultSelectedKeys={defaultSelectedKey}
         onSelect={handleSelect}
-        selectedKeys={[item]}
+        selectedKeys={[menuItem]}
         mode="inline"
         items={items}
       />

@@ -26,8 +26,8 @@ declare global {
   type MenuItemOptions = 'files' | 'folders' | 'settings'
 
   interface MenuItemContextType {
-    item: MenuItemOptions
-    setItem: (val: MenuItemOptions) => void
+    menuItem: MenuItemOptions
+    setMenuItem: (val: MenuItemOptions) => void
   }
 
   type CustomItemType = ItemType & {
