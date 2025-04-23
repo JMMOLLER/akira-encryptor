@@ -5,15 +5,7 @@ export type ProgressCallback = (
   totalBytes: number
 ) => void;
 
-export interface StorageItem {
-  type: "file" | "folder";
-  encryptedName: string;
-  originalName?: string;
-  encryptedAt?: Date;
-  filePath?: string;
-  size?: number;
-  id: string;
-}
+export type StorageItem = FileItem | FolderItem;
 
 declare global {
   type CliAction = "encrypt" | "decrypt";
@@ -30,7 +22,24 @@ declare global {
     };
   }
 
-  type StorageItemType = StorageItem
+  type StorageItemType = StorageItem;
   type LowStoreType = Low<{ encryptedItems: Map<string, StorageItem> }>;
   type EncryptorFunc = (text: string) => string;
+
+  interface Item {
+    encryptedName: string;
+    originalName?: string;
+    encryptedAt?: Date;
+    size?: number;
+    path: string;
+    id: string;
+  }
+
+  type FileItem = Item & {
+    type: "file";
+  };
+  type FolderItem = Item & {
+    content: StorageItem[];
+    type: "folder";
+  };
 }

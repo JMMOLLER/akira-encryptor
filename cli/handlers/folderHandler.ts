@@ -70,6 +70,12 @@ async function handleFolderAction(props: HanlderProps) {
         onProgress: handleProgress
       });
     } else {
+      const storage = Encryptor.getStorage()
+      const storedFolderData = storage.get(path.basename(folderPath))
+      if (!storedFolderData) {
+        throw new Error(`No se encontró la carpeta '${folderPath}' en el almacenamiento.`);
+      }
+
       await Encryptor.decryptFolder({
         filePath: path.normalize(folderPath),
         onProgress: handleProgress

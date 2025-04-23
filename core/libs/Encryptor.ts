@@ -1,4 +1,5 @@
 import generateSecretKey from "@utils/generateSecretKey";
+import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
@@ -104,9 +105,13 @@ class Encryptor {
    * @description `[ENG]` Encrypts a file using the secret key and saves it with a new name.
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    * @param filePath `string` - The path of the file to be encrypted (read-only).
+   * @param onProgress `ProgressCallback` - Optional callback function to track progress.
+   * @param saveOnEnd `boolean` - Optional flag to save the encrypted file in storage.
    */
-  encryptFile(props: EncryptorFuncion): Promise<string> {
-    const { filePath, onProgress } = props;
+  encryptFile(
+    props: EncryptorFuncion & { saveOnEnd?: boolean }
+  ): Promise<FileItem> {
+    const { filePath, onProgress, saveOnEnd = true } = props;
     const stat = Encryptor.FS.getStatFile(filePath);
     const totalSize = stat.size;
     let processed = 0;
@@ -154,7 +159,9 @@ class Encryptor {
 
           if (logStream) {
             logStream.write(`📦 Chunk procesado: ${chunk.length} bytes\n`);
-            logStream.write(` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`);
+            logStream.write(
+              ` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`
+            );
             logStream.write(` - Encrypted Length: ${encryptedChunk.length}\n`);
           }
 
@@ -176,14 +183,18 @@ class Encryptor {
         writeStream.end();
         writeStream.once("finish", async () => {
           try {
-            const saved = await Encryptor.STORAGE.set({
-              type: "file",
+            let saved: StorageItemType = {
               encryptedName: this.encryptText(baseName),
               originalName: path.basename(filePath),
-              filePath: path.resolve(filePath),
+              path: path.resolve(filePath),
               encryptedAt: new Date(),
-              size: stat.size
-            });
+              id: generateUID(),
+              size: stat.size,
+              type: "file"
+            };
+            if (saveOnEnd) {
+              saved = await Encryptor.STORAGE.set(saved);
+            }
             const newPath = tempPath.replace(
               path.basename(tempPath),
               saved.id + ".enc"
@@ -195,7 +206,7 @@ class Encryptor {
               logStream.end(`✅ Cifrado completo → ${finalPath}\n`);
             }
 
-            resolve(finalPath);
+            resolve(saved);
           } catch (err) {
             if (logStream)
               logStream.end(
@@ -220,8 +231,12 @@ class Encryptor {
    * @description `[ENG]` Decrypts a file using the secret key and saves it with the original name.
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    * @param filePath `string` - The path of the file to be decrypted (read-only).
+   * @param onProgress `ProgressCallback` - Optional callback function to track progress.
+   * @param file `FileItem` - Optional file item to be decrypted.
    */
-  async decryptFile(props: EncryptorFuncion): Promise<void> {
+  async decryptFile(
+    props: EncryptorFuncion & { file?: FileItem }
+  ): Promise<void> {
     const { filePath, onProgress } = props;
 
     // skip logs file
@@ -324,7 +339,8 @@ class Encryptor {
           try {
             const fileName = path.basename(filePath).replace(/\.enc$/, "");
 
-            const { originalName } = Encryptor.STORAGE.get(fileName) || {};
+            const { originalName } =
+              props.file || Encryptor.STORAGE.get(fileName) || {};
             const originalFileName = originalName;
 
             if (!originalFileName) {
@@ -346,7 +362,9 @@ class Encryptor {
 
             Encryptor.FS.removeFile(filePath);
 
-            await Encryptor.STORAGE.delete(fileName);
+            if (!props.file) {
+              await Encryptor.STORAGE.delete(fileName);
+            }
 
             if (logStream) {
               logStream.write(
@@ -391,9 +409,12 @@ class Encryptor {
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
    * @param folderPath `string` - The path of the folder to be encrypted.
    * @param onProgress `ProgressCallback` - Optional callback function to track progress.
+   * @param saveOnEnd `boolean` - Optional flag to save the encrypted folder in storage.
    */
-  async encryptFolder(props: EncryptorFuncion): Promise<void> {
-    const { filePath: folderPath, onProgress } = props;
+  async encryptFolder(
+    props: EncryptorFuncion & { saveOnEnd?: boolean }
+  ): Promise<FolderItem> {
+    const { filePath: folderPath, onProgress, saveOnEnd = true } = props;
     const entries = Encryptor.FS.readDir(folderPath);
     entries.sort((a, b) => {
       if (a.isDirectory() && b.isFile()) return -1;
@@ -401,14 +422,26 @@ class Encryptor {
       return a.name.localeCompare(b.name);
     });
 
+    const content: StorageItemType[] = [];
+
     for (const entry of entries) {
       const fullPath = path.join(folderPath, entry.name);
 
       if (entry.isDirectory()) {
-        await this.encryptFolder({ filePath: fullPath, onProgress });
+        const subFolder = await this.encryptFolder({
+          filePath: fullPath,
+          saveOnEnd: false,
+          onProgress
+        });
+        content.push(subFolder);
       } else if (entry.isFile()) {
         try {
-          await this.encryptFile({ filePath: fullPath, onProgress });
+          const subFile = await this.encryptFile({
+            filePath: fullPath,
+            saveOnEnd: false,
+            onProgress
+          });
+          content.push(subFile);
         } catch (err) {
           console.error(`Error al cifrar archivo ${fullPath}:`, err);
         }
@@ -417,19 +450,25 @@ class Encryptor {
 
     // Encrypt the name of the current folder
     const encryptedName = this.encryptText(path.basename(folderPath));
-    const { id } = await Encryptor.STORAGE.set({
-      type: "folder",
-      encryptedName,
+    let saved: StorageItemType = {
       originalName: path.basename(folderPath),
       encryptedAt: new Date(),
-      filePath: folderPath,
-      size: 0
-    });
-    const encryptedPath = path.join(path.dirname(folderPath), id);
+      id: generateUID(),
+      path: folderPath,
+      type: "folder",
+      encryptedName,
+      size: 0,
+      content
+    };
+
+    if (saveOnEnd) {
+      saved = await Encryptor.STORAGE.set(saved);
+    }
+    const encryptedPath = path.join(path.dirname(folderPath), saved.id);
 
     await Encryptor.FS.safeRenameFolder(folderPath, encryptedPath);
 
-    return Promise.resolve();
+    return Promise.resolve(saved);
   }
 
   /**
@@ -437,59 +476,63 @@ class Encryptor {
    * @description `[ES]` Descifra recursivamente todos los archivos dentro de una carpeta.
    * @param filePath `string` - Ruta de la carpeta encriptada.
    * @param onProgress `ProgressCallback` - Función opcional para seguimiento de progreso.
-   * @returns `Promise<string>` - Retorna la nueva ruta (descifrada) de la carpeta.
+   * @param folder `FolderItem` - Elemento de carpeta opcional para descifrar.
    */
-  async decryptFolder(props: EncryptorFuncion): Promise<string> {
-    const { filePath: folderPath, onProgress } = props;
+  async decryptFolder(
+    props: EncryptorFuncion & { folder?: FolderItem }
+  ): Promise<string> {
+    const { filePath: folderPath, onProgress, folder } = props;
 
-    const entries = Encryptor.FS.readDir(folderPath);
-    entries.sort((a, b) => {
-      if (a.isDirectory() && b.isFile()) return -1;
-      if (a.isFile() && b.isDirectory()) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    // If the folder is not passed, get it from storage
+    const baseName = path.basename(folderPath);
+    const currentFolder = folder || Encryptor.STORAGE.get(baseName);
 
-    for (const entry of entries) {
-      const fullPath = path.join(folderPath, entry.name);
-
-      if (entry.isDirectory()) {
-        await this.decryptFolder({
-          filePath: fullPath,
-          onProgress
-        });
-      } else if (entry.isFile()) {
-        try {
-          await this.decryptFile({ filePath: fullPath, onProgress });
-        } catch (err) {
-          throw new Error(`Error al descifrar archivo ${fullPath}: \n${err}`);
-        }
-      }
-    }
-
-    // Decrypt the name of the current folder
-    const folderName = path.basename(folderPath);
-    const saved = Encryptor.STORAGE.get(folderName);
-
-    if (!saved) {
+    if (!currentFolder || currentFolder.type !== "folder") {
       throw new Error(
-        `No se encontró la carpeta en el almacenamiento: ${folderName}`
+        `No se encontró la carpeta en el almacenamiento: ${baseName}`
       );
     }
 
-    const originalName = this.decryptText(saved.encryptedName);
+    // Process the content of the folder
+    for (const item of currentFolder.content) {
+      const fullPath = path.join(folderPath, item.id);
 
+      if (item.type === "folder") {
+        // Decrypt subfolder recursively
+        await this.decryptFolder({
+          filePath: fullPath,
+          onProgress,
+          folder: item
+        });
+      } else if (item.type === "file") {
+        // Decrypt file
+        await this.decryptFile({
+          filePath: fullPath + ".enc",
+          onProgress,
+          file: item
+        });
+      }
+    }
+
+    // Decrypt name of the current folder
+    const originalName = this.decryptText(currentFolder.encryptedName);
     if (!originalName) {
       console.warn(
-        `No se pudo descifrar el nombre de la carpeta: ${folderName}`
+        `No se pudo descifrar el nombre de la carpeta: ${currentFolder.id}`
       );
       return folderPath;
     }
 
+    // Get the original path of the folder
     const decryptedPath = path.join(path.dirname(folderPath), originalName);
 
     try {
+      // Rename the folder to its original name
       await Encryptor.FS.safeRenameFolder(folderPath, decryptedPath);
-      Encryptor.STORAGE.delete(folderName);
+
+      // Delete the folder from storage
+      Encryptor.STORAGE.delete(currentFolder.id);
+
       return decryptedPath;
     } catch (err) {
       console.error(`Error al renombrar carpeta ${folderPath}:`, err);
