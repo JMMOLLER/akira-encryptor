@@ -1,9 +1,9 @@
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMenuItem } from '@renderer/hooks/useMenuItem'
+import { Layout, Spin, Typography } from 'antd'
 import { Content } from 'antd/es/layout/layout'
 import PendingContent from './PendingContent'
-import SkeletonCard from './SkeletonCard'
-import { Layout, Typography } from 'antd'
 import NewEncrypt from './NewEncrypt'
 import LoadCard from './LoadCard'
 import Flip from 'gsap/Flip'
@@ -13,12 +13,27 @@ import gsap from 'gsap'
 gsap.registerPlugin(Flip)
 
 function MainContent() {
+  const [selectedItem, setSelectedItem] = useState<string>()
   const contentRef = useRef<HTMLDivElement>(null)
   const { encryptedItems } = useEncryptedItems()
+  const { menuItem } = useMenuItem()
+
   const encItems = useMemo(() => {
     if (!encryptedItems) return []
-    return Array.from(encryptedItems.values())
-  }, [encryptedItems])
+    return Array.from(
+      encryptedItems.values().filter((encItem) => {
+        if (menuItem === 'files') return encItem.type === 'file'
+        if (menuItem === 'folders') return encItem.type === 'folder'
+        return false
+      })
+    )
+  }, [encryptedItems, menuItem])
+
+  useEffect(() => {
+    if (menuItem === 'files' || menuItem === 'folders') {
+      setSelectedItem(menuItem)
+    }
+  }, [menuItem])
 
   useEffect(() => {
     const content = contentRef.current
@@ -73,14 +88,22 @@ function MainContent() {
         <PendingContent />
 
         <Typography.Title level={2} className="text-gray-400">
-          Archivos encriptados — {encryptedItems?.size ?? 0}
+          {selectedItem === 'files' ? 'Archivos encriptados' : 'Carpetas encriptadas'} —{' '}
+          {encItems.length ?? 0}
         </Typography.Title>
-        <div className="flex content-start flex-wrap gap-5">
-          {!encryptedItems
-            ? new Array(5).fill(0).map((_, index) => <SkeletonCard key={index} />)
-            : encItems.map((encryptedItem, index) => (
-                <LoadCard key={index} encryptedItem={encryptedItem} />
-              ))}
+        <div
+          className="flex content-start flex-wrap gap-5 min-h-[calc(100%_-_3rem)] aria-busy:justify-center aria-busy:content-center **:[.ant-spin-blur]:opacity-0!"
+          aria-busy={!encryptedItems}
+        >
+          {!encryptedItems ? (
+            <Spin className="text-white!" tip="Cargando" size="large">
+              <span className="p-10" />
+            </Spin>
+          ) : (
+            encItems.map((encryptedItem, index) => (
+              <LoadCard key={index} encryptedItem={encryptedItem} />
+            ))
+          )}
         </div>
       </Content>
       <NewEncrypt />

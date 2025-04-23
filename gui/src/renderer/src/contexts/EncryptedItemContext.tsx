@@ -1,5 +1,6 @@
 import { createContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import useApp from 'antd/es/app/useApp'
+import delay from '@utils/delay'
 
 // Initialize the type for the context
 const EncryptedItemContext = createContext<EncryptedItemContextType | undefined>(undefined)
@@ -11,7 +12,7 @@ export function EncryptedItemProvider({ children }: { children: ReactNode }) {
 
   const fetchEncryptedItems = useCallback(async () => {
     try {
-      const res = await window.api.getEncryptedContent('mypassword')
+      const [res] = await Promise.all([window.api.getEncryptedContent('mypassword'), delay(250)])
       if (res instanceof Error) {
         throw new Error(res.message)
       }
