@@ -422,6 +422,7 @@ class Encryptor {
       return a.name.localeCompare(b.name);
     });
 
+    const size = Encryptor.FS.getFolderSize(folderPath);
     const content: StorageItemType[] = [];
 
     for (const entry of entries) {
@@ -457,8 +458,8 @@ class Encryptor {
       path: folderPath,
       type: "folder",
       encryptedName,
-      size: 0,
-      content
+      content,
+      size
     };
 
     if (saveOnEnd) {

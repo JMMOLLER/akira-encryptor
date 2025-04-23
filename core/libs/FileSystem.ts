@@ -1,6 +1,7 @@
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import delay from "@utils/delay";
+import path from "path";
 import fs from "fs";
 
 // TODO: Add a function to check if a file or directory is locked.
@@ -29,6 +30,30 @@ export class FileSystem {
     }
 
     return fs.statSync(path);
+  }
+
+  /**
+   * @description `[ENG]` Get the size of a folder and its contents.
+   * @description `[ESP]` Obtiene el tamaño de una carpeta y su contenido.
+   * @param dirPath `string` - The path of the directory to be checked.
+   */
+  getFolderSize(dirPath: string) {
+    let totalSize = 0;
+
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+
+      if (entry.isFile()) {
+        const stats = this.getStatFile(fullPath);
+        totalSize += stats.size;
+      } else if (entry.isDirectory()) {
+        totalSize += this.getFolderSize(fullPath);
+      }
+    }
+
+    return totalSize;
   }
 
   /**
@@ -204,7 +229,11 @@ export class FileSystem {
    * @param dest `string` - The destination path for the renamed folder.
    * @param retries `number` - The number of retries to attempt if the rename fails (default: 20).
    */
-  async safeRenameFolder(src: string, dest: string, retries = 20): Promise<void> {
+  async safeRenameFolder(
+    src: string,
+    dest: string,
+    retries = 20
+  ): Promise<void> {
     for (let i = 0; i < retries; i++) {
       try {
         this.renameFolder(src, dest);
