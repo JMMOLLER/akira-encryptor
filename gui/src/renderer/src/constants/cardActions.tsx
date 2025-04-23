@@ -23,21 +23,20 @@ const cardActions = [
     title: 'Desencriptar',
     onclick: (props: DecryptFileProps) => {
       const { item, setter, message } = props
-      if (!item.filePath) {
+      if (!item.path) {
         message.error('No se ha proporcionado una ruta de archivo para la desencriptación.')
         console.error('No file path provided for decryption.')
         return
       }
 
-      const lastSlashIndex =
-        Math.max(item.filePath.lastIndexOf('/'), item.filePath.lastIndexOf('\\')) + 1
+      const lastSlashIndex = Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\')) + 1
       if (lastSlashIndex < 0) {
-        console.error('Invalid file path:', item.filePath)
+        console.error('Invalid file path:', item.path)
         message.error('Ruta de archivo no válida.')
         return
       }
 
-      const filePath = item.filePath.substring(0, lastSlashIndex) + item.id + '.enc'
+      const filePath = item.path.substring(0, lastSlashIndex) + item.id + '.enc'
       setter((prev) => {
         return new Map(prev).set(item.id, {
           type: item.type,
