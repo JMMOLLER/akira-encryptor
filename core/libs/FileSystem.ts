@@ -1,5 +1,6 @@
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
+import delay from "@utils/delay";
 import fs from "fs";
 
 // TODO: Add a function to check if a file or directory is locked.
@@ -210,18 +211,9 @@ export class FileSystem {
         return;
       } catch (err) {
         if (i === retries - 1) throw err;
-        await this.delay(100 * (i + 1)); // backoff exponencial
+        await delay(100 * (i + 1)); // backoff exponencial
       }
     }
-  }
-
-  /**
-   * @description `[ENG]` Delay function to pause execution for a specified time.
-   * @description `[ESP]` Función de retraso para pausar la ejecución durante un tiempo especificado.
-   * @param ms - The number of milliseconds to delay
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   fileExists(path: string): boolean {
