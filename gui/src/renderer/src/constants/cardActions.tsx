@@ -36,7 +36,12 @@ const cardActions = [
         return
       }
 
-      const filePath = item.path.substring(0, lastSlashIndex) + item.id + '.enc'
+      // Construct the file path for decryption
+      const basePath = item.path.substring(0, lastSlashIndex)
+      const fileName = item.id + (item.type === 'file' ? '.enc' : '')
+      const filePath = `${basePath}${fileName}`
+
+      // Set pending item & remove from encrypted items
       setter((prev) => {
         return new Map(prev).set(item.id, {
           type: item.type,
@@ -49,6 +54,8 @@ const cardActions = [
         newMap.delete(item.id)
         return newMap
       })
+
+      // Send decrypt action to main process
       window.electron.ipcRenderer.send('encryptor-action', {
         password: 'mypassword', // TODO: Get password from input
         actionFor: item.type,

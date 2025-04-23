@@ -60,7 +60,7 @@ function NewEncrypt() {
     // Open file explorer
     const archivo = await window.api.openExplorer({
       title: `Seleccionar ${menuItem === 'files' ? 'archivo' : 'carpeta'}`,
-      properties: ['openFile']
+      properties: menuItem === 'files' ? ['openFile'] : ['openDirectory']
     })
     if (!archivo) {
       setStatus('error')
