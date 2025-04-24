@@ -92,11 +92,11 @@ function MainContent() {
           {encItems.length ?? 0}
         </Typography.Title>
         <div
-          className="flex content-start flex-wrap gap-5 min-h-[calc(100%_-_3rem)] aria-busy:justify-center aria-busy:content-center **:[.ant-spin-blur]:opacity-0!"
+          className="flex content-start flex-wrap gap-5 aria-busy:justify-center aria-busy:content-center **:[.ant-spin-blur]:opacity-0!"
           aria-busy={!encryptedItems}
         >
           {!encryptedItems ? (
-            <Spin className="text-white!" tip="Cargando" size="large">
+            <Spin className="mt-16! text-white!" tip="Cargando" size="large">
               <span className="p-10" />
             </Spin>
           ) : (
