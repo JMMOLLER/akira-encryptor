@@ -1,5 +1,9 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
+import { exposeConf } from 'electron-conf/preload'
+
+// Expose the conf API to the renderer process
+exposeConf()
 
 // Custom APIs for renderer
 const api = {

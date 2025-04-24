@@ -1,4 +1,5 @@
 import type { ItemType } from 'antd/es/menu/interface'
+import { useAppProps } from 'antd/es/app/context'
 import type { OpenDialogOptions } from 'electron'
 import { StorageItem } from '../types'
 
@@ -65,4 +66,18 @@ declare global {
     message: string
     itemId: string
   }
+
+  interface ConfStoreType {
+    userConfig: Omit<UserConfig, 'password'>
+  }
+  interface UserConfig {
+    hashedPassword?: string
+    password?: string
+  }
+  interface UserConfigContext {
+    userConfig: UserConfig & { isLoggedIn: boolean }
+    updateUserConfig: (newConfig: Partial<UserConfig>) => void
+  }
+
+  type PrevModalType = ReturnType<useAppProps['modal']['info']>
 }

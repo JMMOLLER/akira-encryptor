@@ -1,5 +1,6 @@
 import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
+import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import cardActions from '@renderer/constants/cardActions'
 import { Avatar, Card, Popconfirm, Tooltip } from 'antd'
 import { StorageItem } from '../../../../../types'
@@ -14,6 +15,7 @@ interface LoadCardProps {
 const LoadCard = ({ encryptedItem }: LoadCardProps) => {
   const { setPendingEncryptedItems } = usePendingEncryption()
   const { setItems } = useEncryptedItems()
+  const { userConfig } = useUserConfig()
   const { message } = useApp()
 
   const renderActions = useMemo(
@@ -26,6 +28,7 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
             onConfirm={() =>
               onclick({
                 setter: setPendingEncryptedItems,
+                password: userConfig.password!,
                 setEncryptedItems: setItems,
                 item: encryptedItem,
                 message
@@ -36,7 +39,7 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
           </Popconfirm>
         </Tooltip>
       )),
-    [encryptedItem, message, setItems, setPendingEncryptedItems]
+    [encryptedItem, message, userConfig.password, setItems, setPendingEncryptedItems]
   )
 
   const renderDescription = useMemo(

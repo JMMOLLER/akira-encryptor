@@ -6,6 +6,7 @@ type DecryptFileProps = {
   setEncryptedItems: EncryptedItemContextType['setItems']
   message: MessageInstance
   item: StorageItemType
+  password: string
 }
 
 const cardActions = [
@@ -22,7 +23,7 @@ const cardActions = [
     Icon: KeyOutlined,
     title: 'Desencriptar',
     onclick: (props: DecryptFileProps) => {
-      const { item, setter, message } = props
+      const { item, setter, message, password } = props
       if (!item.path) {
         message.error('No se ha proporcionado una ruta de archivo para la desencriptación.')
         console.error('No file path provided for decryption.')
@@ -57,10 +58,10 @@ const cardActions = [
 
       // Send decrypt action to main process
       window.electron.ipcRenderer.send('encryptor-action', {
-        password: 'mypassword', // TODO: Get password from input
         actionFor: item.type,
         action: 'decrypt',
         itemId: item.id,
+        password,
         filePath
       })
     }

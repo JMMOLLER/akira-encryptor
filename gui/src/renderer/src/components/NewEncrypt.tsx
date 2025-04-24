@@ -1,5 +1,6 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
 import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
+import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { PlusOutlined } from '@ant-design/icons'
 import useApp from 'antd/es/app/useApp'
@@ -11,6 +12,7 @@ function NewEncrypt() {
   const { setPendingEncryptedItems } = usePendingEncryption()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
+  const { userConfig } = useUserConfig()
   const { menuItem } = useMenuItem()
   const message = useApp().message
 
@@ -36,7 +38,7 @@ function NewEncrypt() {
     })
     window.electron.ipcRenderer.send('encryptor-action', {
       actionFor: menuItem === 'files' ? 'file' : 'folder',
-      password: 'mypassword', // TODO: Get password from input
+      password: userConfig.password,
       action: 'encrypt',
       filePath: pathVal,
       itemId: id

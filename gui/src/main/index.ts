@@ -1,6 +1,7 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import { Conf } from 'electron-conf/main'
 import registerIpcMain from './ipcMain'
 import { join } from 'path'
 import fs from 'fs'
@@ -86,3 +87,28 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+const conf = new Conf<Partial<ConfStoreType>>({
+  defaults: {
+    userConfig: {}
+  },
+
+  schema: {
+    type: 'object',
+    properties: {
+      userConfig: {
+        type: 'object',
+        properties: {
+          hashedPassword: {
+            type: 'string',
+            minLength: 4,
+            nullable: true
+          }
+        },
+        nullable: true
+      }
+    },
+    additionalProperties: false
+  }
+}) // --> Que dolor de cabeza es definir esta vaina. 🫠
+
+conf.registerRendererListener()

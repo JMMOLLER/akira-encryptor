@@ -3,6 +3,7 @@ import './assets/main.css'
 import { PendingEncryptionProvider } from './contexts/PendingEncryption'
 import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import { MenuItemProvider } from './contexts/MenuItemContext'
+import { UserConfigProvider } from './contexts/UserConfig'
 import { App as AntdApp, ConfigProvider } from 'antd'
 import { createRoot } from 'react-dom/client'
 import esES from 'antd/locale/es_ES'
@@ -14,13 +15,15 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider theme={theme} locale={esES}>
       <AntdApp>
-        <EncryptedItemProvider>
-          <PendingEncryptionProvider>
-            <MenuItemProvider>
-              <App />
-            </MenuItemProvider>
-          </PendingEncryptionProvider>
-        </EncryptedItemProvider>
+        <UserConfigProvider>
+          <EncryptedItemProvider>
+            <PendingEncryptionProvider>
+              <MenuItemProvider>
+                <App />
+              </MenuItemProvider>
+            </PendingEncryptionProvider>
+          </EncryptedItemProvider>
+        </UserConfigProvider>
       </AntdApp>
     </ConfigProvider>
   </StrictMode>
