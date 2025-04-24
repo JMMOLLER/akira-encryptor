@@ -21,23 +21,32 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
 
   const renderActions = useMemo(
     () =>
-      cardActions.map(({ Icon, key, title, onclick }) => (
-        <Tooltip title={title} key={key}>
-          <Popconfirm
-            style={{ color: 'red' }}
-            title="¿Estás seguro de que quieres continuar?"
-            onConfirm={() =>
-              onclick({
-                setter: setPendingEncryptedItems,
-                password: userConfig.password!,
-                setEncryptedItems: setItems,
-                item: encryptedItem,
-                message
-              })
-            }
-          >
-            <Icon />
-          </Popconfirm>
+      cardActions.map(({ Icon, key, title, ...rest }) => (
+        <Tooltip
+          className={rest.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          title={rest.disabled ? undefined : title}
+          key={key}
+        >
+          {rest.popconfirm ? (
+            <Popconfirm
+              title="¿Estás seguro de que quieres continuar?"
+              disabled={rest.disabled}
+              style={{ color: 'red' }}
+              onConfirm={() =>
+                rest.onclick({
+                  setter: setPendingEncryptedItems,
+                  password: userConfig.password!,
+                  setEncryptedItems: setItems,
+                  item: encryptedItem,
+                  message
+                })
+              }
+            >
+              <Icon />
+            </Popconfirm>
+          ) : (
+            <Icon disabled={rest.disabled} />
+          )}
         </Tooltip>
       )),
     [encryptedItem, message, userConfig.password, setItems, setPendingEncryptedItems]

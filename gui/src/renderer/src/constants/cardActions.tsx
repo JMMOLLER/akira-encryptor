@@ -1,4 +1,5 @@
 import { InfoCircleOutlined, EyeOutlined, KeyOutlined } from '@ant-design/icons'
+import { AntdIconProps } from '@ant-design/icons/lib/components/AntdIcon'
 import { MessageInstance } from 'antd/es/message/interface'
 
 type DecryptFileProps = {
@@ -9,9 +10,19 @@ type DecryptFileProps = {
   password: string
 }
 
-const cardActions = [
+type CardAction = {
+  onclick: (props: DecryptFileProps) => void
+  Icon: React.FC<Omit<AntdIconProps, 'ref'>>
+  popconfirm?: boolean
+  disabled?: boolean
+  title: string
+  key: string
+}
+
+const cardActions: CardAction[] = [
   {
     key: 'view',
+    disabled: true,
     Icon: EyeOutlined,
     title: 'Ver contenido',
     onclick: () => {
@@ -22,6 +33,7 @@ const cardActions = [
     key: 'decrypt',
     Icon: KeyOutlined,
     title: 'Desencriptar',
+    popconfirm: true,
     onclick: (props: DecryptFileProps) => {
       const { item, setter, message, password } = props
       if (!item.path) {
@@ -68,8 +80,9 @@ const cardActions = [
   },
   {
     key: 'info',
-    Icon: InfoCircleOutlined,
+    disabled: true,
     title: 'Información',
+    Icon: InfoCircleOutlined,
     onclick: () => {
       console.log('Not implemented yet.')
     }
