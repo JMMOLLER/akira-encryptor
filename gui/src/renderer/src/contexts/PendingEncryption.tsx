@@ -17,11 +17,14 @@ export function PendingEncryptionProvider({ children }: { children: ReactNode })
       let hasEncrypted = false
 
       for (const [key, value] of pendingEncryptedItems.entries()) {
-        if (value.percent >= 100) {
-          await new Promise((resolve) => setTimeout(resolve, 1000)) // Add 1-second delay
-          setItems(undefined) // force to reload the encrypted items
+        const handleComplete = () => {
           newMap.delete(key)
           hasEncrypted = true
+          setItems(undefined)
+        }
+
+        if (value.percent >= 100) {
+          handleComplete()
         } else if (value.status === 'error') {
           notification.error({
             message: 'Error',
@@ -30,9 +33,7 @@ export function PendingEncryptionProvider({ children }: { children: ReactNode })
             duration: 5
           })
           await new Promise((resolve) => setTimeout(resolve, 1000)) // Add 1-second delay
-          newMap.delete(key)
-          hasEncrypted = true
-          setItems(undefined) // force to reload the encrypted items
+          handleComplete()
         }
       }
 
