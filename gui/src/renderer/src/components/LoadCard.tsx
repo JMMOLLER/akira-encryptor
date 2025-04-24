@@ -2,9 +2,10 @@ import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import cardActions from '@renderer/constants/cardActions'
-import { Avatar, Card, Popconfirm, Tooltip } from 'antd'
 import { StorageItem } from '../../../../../types'
+import { Card, Popconfirm, Tooltip } from 'antd'
 import formatBytes from '@utils/formatBytes'
+import * as Icons from '@ant-design/icons'
 import useApp from 'antd/es/app/useApp'
 import { useMemo } from 'react'
 
@@ -63,12 +64,33 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
     [encryptedItem]
   )
 
+  const renderAvatar = useMemo(() => {
+    const className = 'w-8 h-8 text-5xl'
+    if (encryptedItem.type === 'folder') {
+      return <Icons.FolderOpenOutlined className={className} />
+    }
+    const extension = encryptedItem.originalName?.split('.').pop()?.toLowerCase()
+    const imgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+    const audioExtensions = ['mp3', 'wav', 'aac', 'flac', 'ogg']
+    const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv']
+
+    if (extension && imgExtensions.includes(extension)) {
+      return <Icons.FileImageOutlined className={className} />
+    } else if (extension && audioExtensions.includes(extension)) {
+      return <Icons.CustomerServiceOutlined className={className} />
+    } else if (extension && videoExtensions.includes(extension)) {
+      return <Icons.PlaySquareOutlined className={className} />
+    }
+
+    return <Icons.FileUnknownOutlined className={className} />
+  }, [encryptedItem])
+
   return (
     <Card className="w-[350px] h-min" actions={renderActions}>
       <Card.Meta
-        avatar={<Avatar src="https://api.dicebear.com/7.x/miniavs/svg?seed=1" />}
         title={encryptedItem.type === 'file' ? 'Archivo Encriptado' : 'Carpeta Encriptada'}
         description={renderDescription}
+        avatar={renderAvatar}
       />
     </Card>
   )
