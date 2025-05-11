@@ -1,6 +1,6 @@
 {
-  "name": "akira-encryptor",
-  "version": "0.1.0",
+  "name": "akira-encryptor-gui",
+  "version": "0.1.0-alpha",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "JMMOLLER",
