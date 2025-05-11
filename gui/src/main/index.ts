@@ -40,6 +40,20 @@ function createWindow(): void {
   }
 }
 
+// Ensure that the app is not opened multiple times
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (BrowserWindow.getAllWindows().length) {
+      const mainWindow = BrowserWindow.getAllWindows()[0]
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
