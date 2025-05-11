@@ -6,12 +6,15 @@
     "test": "bun vitest",
     "start": "bun run cli/main.ts",
     "debug": "bunx tsx cli/main.ts",
-    "build:cli": "bun build cli/main.ts --outdir ./cli/dist --target node"
+    "build": "esbuild cli/main.ts --bundle --platform=node --target=node22 --outfile=cli/dist/main.cjs --format=cjs",
+    "build:win": "bun run build && pkg cli/dist/main.cjs --target node18-win-x64 --output cli/dist/akira-encryptor-cli-v0.1.0-beta.exe"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cli-progress": "^3.11.6",
     "@types/libsodium-wrappers": "^0.7.14",
+    "esbuild": "^0.25.4",
+    "pkg": "^5.8.1",
     "tsx": "^4.19.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"

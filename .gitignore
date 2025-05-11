@@ -179,3 +179,4 @@ library.json
 demo/**/*.mp4
 *.enc
 test.ts
+pendings.md
