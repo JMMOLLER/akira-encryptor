@@ -3,6 +3,19 @@ import { env } from "@configs/env";
 import inquirer from "inquirer";
 import fs from "fs";
 
+export async function askForOtherOperation() {
+  process.stdout.write("\n");
+  const { exit } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "exit",
+      message: "¿Desea realizar otra operación?",
+      default: false,
+    },
+  ]);
+  return !exit;
+}
+
 let password: string | undefined = env.PASSWORD;
 
 export async function askUserActions() {
