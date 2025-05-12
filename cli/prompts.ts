@@ -1,3 +1,4 @@
+import normalizePath from "@utils/normalizePath";
 import { FileSystem } from "@libs/FileSystem";
 import { env } from "@configs/env";
 import inquirer from "inquirer";
@@ -10,8 +11,8 @@ export async function askForOtherOperation() {
       type: "confirm",
       name: "exit",
       message: "¿Desea realizar otra operación?",
-      default: false,
-    },
+      default: false
+    }
   ]);
   return !exit;
 }
@@ -53,7 +54,10 @@ export async function askUserActions() {
       message: `Ruta de ${type === "folder" ? "la carpeta" : "el archivo"} a ${
         action === "encrypt" ? "encriptar" : "desencriptar"
       }:`,
-      validate: (input) => {
+      filter: normalizePath,
+      validate: (v) => {
+        const input = normalizePath(v);
+
         if (!fs.existsSync(input)) {
           return "La ruta especificada no existe.";
         }
