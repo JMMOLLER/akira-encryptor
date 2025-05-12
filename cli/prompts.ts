@@ -1,6 +1,9 @@
+import { FileSystem } from "@libs/FileSystem";
 import { env } from "@configs/env";
 import inquirer from "inquirer";
 import fs from "fs";
+
+let password: string | undefined = env.PASSWORD;
 
 export async function askUserActions() {
   const { action } = await inquirer.prompt<{ action: CliAction }>([
@@ -51,14 +54,14 @@ export async function askUserActions() {
     }
   ]);
 
-  let password: string | undefined = env.PASSWORD;
   if (!password) {
+    const storeExists = FileSystem.getInstance().fileExists(env.LIBRARY_PATH);
     const { password: pwd } = await inquirer.prompt<{ password: string }>([
       {
         type: "password",
         name: "password",
         message: `${
-          action === "encrypt" ? "Cree una" : "Ingrese la"
+          action === "encrypt" && !storeExists ? "Cree una" : "Ingrese la"
         } contraseña:`,
         mask: "*",
         validate: (input) => {
