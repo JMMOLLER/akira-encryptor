@@ -16,6 +16,7 @@ export async function askForOtherOperation() {
   return !exit;
 }
 
+// Note: If you enter an incorrect password, you will have to restart the program
 let password: string | undefined = env.PASSWORD;
 
 export async function askUserActions() {
