@@ -68,7 +68,7 @@ async function handleFileAction(props: HanlderProps) {
   } catch (error) {
     progressBar.stop();
     console.error(`\n❌ Error al procesar el archivo:\n`, error);
-    process.exit(1);
+    return;
   }
 }
 

@@ -15,7 +15,7 @@ async function main() {
         (!fs.existsSync(path) || !fs.statSync(path).isDirectory()))
     ) {
       console.error("\n❌ La ruta especificada no es válida.");
-      process.exit(1);
+      continue;
     }
 
     try {

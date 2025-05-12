@@ -96,7 +96,7 @@ async function handleFolderAction(props: HanlderProps) {
       } la carpeta:\n`,
       error
     );
-    process.exit(1);
+    return;
   }
 }
 
