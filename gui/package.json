@@ -1,7 +1,7 @@
 {
   "name": "akira-encryptor-gui",
   "version": "0.1.0-alpha",
-  "description": "An Electron application with React and TypeScript",
+  "description": "A GUI for Akira Encryptor",
   "main": "./out/main/index.js",
   "author": "JMMOLLER",
   "scripts": {

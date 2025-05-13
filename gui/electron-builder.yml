@@ -12,6 +12,9 @@ files:
 asarUnpack:
   - resources/**
 win:
+  target:
+    - portable
+    - nsis
   executableName: akira-encryptor
 nsis:
   artifactName: ${productName}-${version}-setup.${ext}
