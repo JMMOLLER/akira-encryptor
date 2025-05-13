@@ -3,7 +3,7 @@
 **Akira-encryptor** es una herramienta de línea de comandos (CLI) desarrollada en TypeScript/Node.js, diseñada para el cifrado y descifrado de archivos y carpetas, utilizando `libsodium-wrappers` para garantizar un alto nivel de seguridad criptográfica. El proyecto está enfocado en la eficiencia, soportando archivos grandes mediante flujos (`streams`) y permitiendo seguimiento de progreso tanto a nivel individual como global.
 
 > 🚧 El proyecto se encuentra actualmente en fase de desarrollo.  
-> 🧪 La interfaz gráfica de usuario (GUI) aún **no está disponible**.
+> 🧪 La interfaz gráfica de usuario (GUI) **está en fase alpha**.
 
 ---
 
@@ -16,25 +16,24 @@
 - 🧪 **Estructura modular** y lista para pruebas unitarias e integración (Vitest)
 - 🧰 Preparado para ser usado como:
   - CLI local
-  - Base para GUI (Electron, Wails, etc.)
+  - Base para GUI (entornos de nodejs)
 
 ---
 
-## ⚙️ Configuración previa
+## ⚙️ Configuración previa (Entorno node)
 
-Antes de ejecutar la herramienta, se debe crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+Puedes crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
 
 ```env
 PASSWORD=<your_password>
 ```
 
-> ⚠️ Importante: Esta contraseña será utilizada para derivar la clave de cifrado.
-> En versiones futuras se mejorará este apartado.
-> **Por ahora**, puedes establecer la contraseña solo para encriptar o desencriptar y luego eliminarla.
+> ⚠️ Importante: Esta contraseña es solo para fines de desarrollo. 
+> Permite saltear el requisito de ingreso de constraseña en cada operación.
 
 ---
 
-## 🚀 Instalación y uso
+## 🚀 Instalación y uso (Entorno node)
 
 > Requisitos: Node.js ≥ 18.x y npm
 
@@ -66,20 +65,6 @@ bun start
 
 ---
 
-## 📁 Estructura del proyecto
-
-```bash
-Akira-encryptor/
-├── cli/             # Lógica de línea de comandos
-├── core/            # Lógica principal (Encryptor, configuración, utilidades)
-│   ├── libs/
-│   ├── utils/
-│   └── configs/
-├── gui/             # (Pendiente) Interfaz gráfica de usuario
-├── tests/           # Pruebas unitarias y de integración
-└── demo/            # Archivos de ejemplo
-```
-
 ## ⚠️ Advertencia de uso
 
 **Este proyecto se encuentra en etapa experimental.**
@@ -94,6 +79,6 @@ Akira-encryptor/
 
 - [x] Soporte para archivos grandes
 
-- [ ] GUI en desarrollo (Electron)
+- [x] GUI en desarrollo (Electron)
 
 - [ ] Empaquetado multiplataforma
