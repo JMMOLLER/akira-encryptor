@@ -78,4 +78,11 @@ export default function registerIpcMain() {
       return error
     }
   })
+
+  ipcMain.on('open-devtools', (_event) => {
+    const window = BrowserWindow.getFocusedWindow()
+    if (window) {
+      window.webContents.openDevTools()
+    }
+  })
 }

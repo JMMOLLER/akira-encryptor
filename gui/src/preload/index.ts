@@ -6,7 +6,9 @@ import { exposeConf } from 'electron-conf/preload'
 exposeConf()
 
 // Custom APIs for renderer
+// Define the actions in the ipcMain.ts file
 const api = {
+  openDevTools: () => ipcRenderer.send('open-devtools'),
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),
   encryptorAction: (props: EncryptFileProps) => ipcRenderer.invoke('encryptor-action', props),
   getEncryptedContent: (password: string) => ipcRenderer.invoke('get-encrypted-content', password)

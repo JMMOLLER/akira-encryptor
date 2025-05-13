@@ -18,10 +18,12 @@ declare global {
     itemId: string
   }
 
+  // Define this function in the preload.ts file
   interface ElectronIpcAPI {
     getEncryptedContent: (password: string) => Promise<[string, StorageItem][] | Error>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
+    openDevTools: () => void
   }
 
   type MenuItemOptions = 'files' | 'folders' | 'settings'
