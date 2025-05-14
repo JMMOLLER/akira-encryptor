@@ -4,8 +4,8 @@ import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
 import Storage from "./Storage";
+import { tmpdir } from "os";
 import path from "path";
-import os, { tmpdir } from "os";
 
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;

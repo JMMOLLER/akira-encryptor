@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FileSystem } from "@libs/FileSystem";
 import fs from "fs";
+import { rejects } from "assert";
 
 vi.mock("fs");
 vi.mock("path");
@@ -94,11 +95,11 @@ describe("FileSystem", () => {
     );
   });
 
-  it("should rename a folder", () => {
+  it("should rename a folder", async () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
     const renameSyncSpy = vi.spyOn(fs, "renameSync");
 
-    fileSystem.renameFolder("/mock/folder", "/mock/new-folder");
+    await fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder");
 
     expect(renameSyncSpy).toHaveBeenCalledWith(
       "/mock/folder",
@@ -106,12 +107,12 @@ describe("FileSystem", () => {
     );
   });
 
-  it("should throw an error when renaming a non-existent folder", () => {
+  it("should throw an error when renaming a non-existent folder", async () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() =>
-      fileSystem.renameFolder("/mock/folder", "/mock/new-folder")
-    ).toThrow("Directory not found: /mock/folder");
+    await expect(async () =>
+      fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder")
+    ).rejects.toThrow("Directory not found: /mock/folder");
   });
 
   it("should create a folder", () => {
@@ -134,14 +135,29 @@ describe("FileSystem", () => {
   });
 
   it("should safely rename a folder with retries", async () => {
-    const renameSpy = vi
-      .spyOn(fileSystem, "renameFolder")
+    const busyError = new Error(
+      "Resource busy or locked"
+    ) as NodeJS.ErrnoException;
+    busyError.code = "EBUSY";
+
+    const renameSyncSpy = vi
+      .spyOn(fs, "renameSync")
       .mockImplementationOnce(() => {
-        throw new Error("Temporary error");
-      });
+        throw busyError;
+      })
+      .mockImplementationOnce(() => {
+        throw busyError;
+      })
+      .mockImplementationOnce(() => {}); // Succeeds on the third attempt
 
-    await fileSystem.safeRenameFolder("/mock/src", "/mock/dest");
+    vi.spyOn(fs, "existsSync").mockReturnValue(true);
 
-    expect(renameSpy).toHaveBeenCalledTimes(2);
+    await fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder");
+
+    expect(renameSyncSpy).toHaveBeenCalledTimes(3);
+    expect(renameSyncSpy).toHaveBeenCalledWith(
+      "/mock/folder",
+      "/mock/new-folder"
+    );
   });
 });

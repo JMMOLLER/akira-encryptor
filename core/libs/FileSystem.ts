@@ -106,22 +106,28 @@ export class FileSystem {
     }
   }
 
+  /**
+   * @description `[ENG]` Print an attempt message for a file operation.
+   * @description `[ESP]` Imprime un mensaje de intento para una operación de archivo.
+   * @param text The text to be printed
+   * @param error Error object
+   * @param retryCount The current retry count
+   * @param maxRetries The maximum number of retries
+   */
   async printAttempt(
     text: string,
     error: NodeJS.ErrnoException,
     retryCount: number,
     maxRetries: number
   ) {
-    if (error.code === "EPERM") {
+    if (error.code === "EBUSY" && retryCount < maxRetries) {
+      console.log(`Attempt ${retryCount + 1} to ${text} failed.`);
+      await delay(100 * (retryCount + 1));
+    } else if (error.code === "EPERM") {
       console.error(
         `\n❌ Permission denied to ${text}. Please close any applications using it, try open the script as administrator, or exclude the script from antivirus.`
       );
       return Promise.reject(error);
-    }
-
-    console.log(`Attempt ${retryCount + 1} to ${text} failed.`);
-    if (error.code === "EBUSY" && retryCount < maxRetries) {
-      await delay(100 * (retryCount + 1));
     } else {
       return Promise.reject(error);
     }
