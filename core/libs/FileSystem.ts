@@ -281,6 +281,21 @@ export class FileSystem {
     }
   }
 
+  async copyFile(src: string, dest: string, retries = 15): Promise<void> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        fs.copyFileSync(src, dest);
+        return;
+      } catch (err) {
+        if (err instanceof Error) {
+          await this.printAttempt(`copy file '${src}'`, err, i, retries);
+        } else {
+          return Promise.reject(err);
+        }
+      }
+    }
+  }
+
   fileExists(path: string): boolean {
     try {
       return fs.existsSync(path);

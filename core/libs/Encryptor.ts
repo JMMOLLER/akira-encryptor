@@ -208,7 +208,7 @@ class Encryptor {
             // Rename the temp file to the final file name
             await Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile);
             // Move the temp file to the final destination
-            await Encryptor.FS.safeRenameFolder(renamedTempFile, destPath);
+            await Encryptor.FS.copyFile(renamedTempFile, destPath);
             // Remove the original file
             await Encryptor.FS.removeFile(filePath);
 
