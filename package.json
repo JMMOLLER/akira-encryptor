@@ -10,7 +10,7 @@
     "start": "bun run cli/main.ts",
     "debug": "bunx tsx cli/main.ts",
     "build": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=cli/dist/main.cjs --format=cjs",
-    "build:win": "bun run build && bun scripts/build/generate-windows-binary.js"
+    "build:win": "bun run build && node scripts/build/generate-windows-binary.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
