@@ -123,7 +123,7 @@ class Encryptor {
     const dir = path.dirname(filePath);
     const baseName = path.basename(filePath, path.extname(filePath));
     const tempDir = os.tmpdir();
-    const tempPath = path.join(tempDir, `${baseName}.tmp.enc`);
+    const tempPath = path.join(tempDir, `${baseName}.enc.tmp`);
     // const finalPath = path.join(dir, `${baseName}.enc`);
 
     const writeStream = Encryptor.FS.createWriteStream(tempPath);
@@ -249,7 +249,7 @@ class Encryptor {
 
     // skip logs file
     if (filePath.includes(".encrypt.log")) return Promise.resolve();
-    if (filePath.includes(".dec.temp")) return Promise.resolve();
+    if (filePath.includes(".dec.tmp")) return Promise.resolve();
 
     const stat = Encryptor.FS.getStatFile(filePath);
     const totalSize = stat.size;
@@ -260,7 +260,10 @@ class Encryptor {
     const chunkSize = 64 * 1024;
     const blockSize = chunkSize + macLength;
 
-    const tempPath = filePath + ".dec.temp";
+    const tempPath = path.join(
+      os.tmpdir(),
+      path.basename(filePath).replace(".enc", ".dec.tmp")
+    );
     const readStream = Encryptor.FS.createReadStream(filePath, blockSize);
     const writeStream = Encryptor.FS.createWriteStream(tempPath);
 
