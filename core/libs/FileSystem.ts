@@ -85,16 +85,45 @@ export class FileSystem {
    * @description `[ENG]` Remove a file from the filesystem.
    * @description `[ESP]` Elimina un archivo del sistema de archivos.
    * @param path `string` - The path of the file to be removed.
+   * @param retries `number` - The number of retries to attempt if the removal fails (default: 15).
    */
-  removeFile(path: string) {
+  async removeFile(path: string, retries = 15) {
     if (!fs.existsSync(path)) {
       return;
     }
 
-    try {
-      fs.unlinkSync(path);
-    } catch (error) {
-      return;
+    for (let i = 0; i < retries; i++) {
+      try {
+        fs.unlinkSync(path);
+        return;
+      } catch (error) {
+        if (error instanceof Error) {
+          await this.printAttempt(`remove file '${path}'`, error, i, retries);
+        } else {
+          return Promise.reject(error);
+        }
+      }
+    }
+  }
+
+  async printAttempt(
+    text: string,
+    error: NodeJS.ErrnoException,
+    retryCount: number,
+    maxRetries: number
+  ) {
+    if (error.code === "EPERM") {
+      console.error(
+        `Permission denied to ${text}. Please close any applications using it, try open the script as administrator, or exclude the script from antivirus.`
+      );
+      return Promise.reject(error);
+    }
+
+    console.log(`Attempt ${retryCount + 1} to ${text} failed.`);
+    if (error.code === "EBUSY" && retryCount < maxRetries) {
+      await delay(100 * (retryCount + 1));
+    } else {
+      return Promise.reject(error);
     }
   }
 
@@ -232,15 +261,18 @@ export class FileSystem {
   async safeRenameFolder(
     src: string,
     dest: string,
-    retries = 20
+    retries = 15
   ): Promise<void> {
     for (let i = 0; i < retries; i++) {
       try {
         this.renameFolder(src, dest);
         return;
       } catch (err) {
-        if (i === retries - 1) throw err;
-        await delay(100 * (i + 1)); // backoff exponencial
+        if (err instanceof Error) {
+          await this.printAttempt(`rename folder '${src}'`, err, i, retries);
+        } else {
+          return Promise.reject(err);
+        }
       }
     }
   }

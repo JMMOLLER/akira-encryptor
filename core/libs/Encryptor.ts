@@ -5,6 +5,7 @@ import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
 import Storage from "./Storage";
 import path from "path";
+import os, { tmpdir } from "os";
 
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
@@ -121,8 +122,9 @@ class Encryptor {
     // Temp route and final route
     const dir = path.dirname(filePath);
     const baseName = path.basename(filePath, path.extname(filePath));
-    const tempPath = path.join(dir, `${baseName}.tmp.enc`);
-    const finalPath = path.join(dir, `${baseName}.enc`);
+    const tempDir = os.tmpdir();
+    const tempPath = path.join(tempDir, `${baseName}.tmp.enc`);
+    // const finalPath = path.join(dir, `${baseName}.enc`);
 
     const writeStream = Encryptor.FS.createWriteStream(tempPath);
 
@@ -137,7 +139,7 @@ class Encryptor {
         logStream.write(`Tamaño total: ${totalSize} bytes\n`);
       }
 
-      readStream.on("data", (chunk: Buffer | string) => {
+      readStream.on("data", async (chunk: Buffer | string) => {
         try {
           const nonce = this.generateNonce();
           const chunkArray =
@@ -170,7 +172,7 @@ class Encryptor {
         } catch (err) {
           readStream.destroy();
           writeStream.destroy();
-          Encryptor.FS.removeFile(tempPath);
+          await Encryptor.FS.removeFile(tempPath);
           if (logStream)
             logStream.end(
               `❌ Error al cifrar chunk: ${(err as Error).message}\n`
@@ -195,16 +197,20 @@ class Encryptor {
             if (saveOnEnd) {
               saved = await Encryptor.STORAGE.set(saved);
             }
-            const newPath = tempPath.replace(
-              path.basename(tempPath),
-              saved.id + ".enc"
-            );
-            await Encryptor.FS.safeRenameFolder(tempPath, newPath);
-            Encryptor.FS.removeFile(filePath);
+            const encryptedFileName = saved.id + ".enc";
+            const renamedTempFile = path.join(tempDir, encryptedFileName)
+            const destPath = path.join(dir, encryptedFileName)
 
-            if (logStream) {
-              logStream.end(`✅ Cifrado completo → ${finalPath}\n`);
-            }
+            // Rename the temp file to the final file name
+            await Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile);
+            // Move the temp file to the final destination
+            await Encryptor.FS.safeRenameFolder(renamedTempFile, destPath);
+            // Remove the original file
+            await Encryptor.FS.removeFile(filePath);
+
+            // if (logStream) {
+            //   logStream.end(`✅ Cifrado completo → ${finalPath}\n`);
+            // }
 
             resolve(saved);
           } catch (err) {
@@ -217,9 +223,9 @@ class Encryptor {
         });
       });
 
-      readStream.on("error", (error: Error) => {
+      readStream.on("error", async (error: Error) => {
         writeStream.destroy();
-        Encryptor.FS.removeFile(tempPath);
+        await Encryptor.FS.removeFile(tempPath);
         if (logStream)
           logStream.end(`❌ Error al leer archivo: ${error.message}\n`);
         reject(error);
@@ -271,7 +277,7 @@ class Encryptor {
     let leftover = Buffer.alloc(0);
 
     return new Promise((resolve, reject) => {
-      readStream.on("data", (chunk: Buffer | string) => {
+      readStream.on("data", async(chunk: Buffer | string) => {
         const chunkArray =
           typeof chunk === "string"
             ? sodium.from_string(chunk)
@@ -328,7 +334,7 @@ class Encryptor {
               );
               logStream.end();
             }
-            Encryptor.FS.removeFile(tempPath);
+            await Encryptor.FS.removeFile(tempPath);
             reject(err);
           }
         }
@@ -360,7 +366,7 @@ class Encryptor {
             const data = Encryptor.FS.readFile(tempPath);
             await Encryptor.FS.replaceFile(tempPath, restoredPath, data);
 
-            Encryptor.FS.removeFile(filePath);
+            await Encryptor.FS.removeFile(filePath);
 
             if (!props.file) {
               await Encryptor.STORAGE.delete(fileName);
@@ -378,27 +384,27 @@ class Encryptor {
               logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
               logStream.end();
             }
-            Encryptor.FS.removeFile(tempPath);
+            await Encryptor.FS.removeFile(tempPath);
             reject(err);
           }
         });
       });
 
-      readStream.on("error", (err) => {
+      readStream.on("error", async(err) => {
         if (logStream) {
           logStream.write(`❌ Error en readStream: ${err}\n`);
           logStream.end();
         }
-        Encryptor.FS.removeFile(tempPath);
+        await Encryptor.FS.removeFile(tempPath);
         reject(err);
       });
 
-      writeStream.on("error", (err) => {
+      writeStream.on("error", async(err) => {
         if (logStream) {
           logStream.write(`❌ Error en writeStream: ${err}\n`);
           logStream.end();
         }
-        Encryptor.FS.removeFile(tempPath);
+        await Encryptor.FS.removeFile(tempPath);
         reject(err);
       });
     });
