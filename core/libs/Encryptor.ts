@@ -10,6 +10,7 @@ import os, { tmpdir } from "os";
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
+  private static readonly tempDir = tmpdir();
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
@@ -122,8 +123,7 @@ class Encryptor {
     // Temp route and final route
     const dir = path.dirname(filePath);
     const baseName = path.basename(filePath, path.extname(filePath));
-    const tempDir = os.tmpdir();
-    const tempPath = path.join(tempDir, `${baseName}.enc.tmp`);
+    const tempPath = path.join(Encryptor.tempDir, `${baseName}.enc.tmp`);
     // const finalPath = path.join(dir, `${baseName}.enc`);
 
     const writeStream = Encryptor.FS.createWriteStream(tempPath);
@@ -199,7 +199,10 @@ class Encryptor {
               saved = await Encryptor.STORAGE.set(saved);
             }
             const encryptedFileName = saved.id + ".enc";
-            const renamedTempFile = path.join(tempDir, encryptedFileName);
+            const renamedTempFile = path.join(
+              Encryptor.tempDir,
+              encryptedFileName
+            );
             const destPath = path.join(dir, encryptedFileName);
 
             // Rename the temp file to the final file name
@@ -261,7 +264,7 @@ class Encryptor {
     const blockSize = chunkSize + macLength;
 
     const tempPath = path.join(
-      os.tmpdir(),
+      Encryptor.tempDir,
       path.basename(filePath).replace(".enc", ".dec.tmp")
     );
     const readStream = Encryptor.FS.createReadStream(filePath, blockSize);
