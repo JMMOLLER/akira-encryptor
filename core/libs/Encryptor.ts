@@ -127,6 +127,7 @@ class Encryptor {
     // const finalPath = path.join(dir, `${baseName}.enc`);
 
     const writeStream = Encryptor.FS.createWriteStream(tempPath);
+    let saved: StorageItemType | undefined;
 
     const logPath = filePath + ".encrypt.log";
     const logStream = Encryptor.LOG
@@ -185,7 +186,7 @@ class Encryptor {
         writeStream.end();
         writeStream.once("finish", async () => {
           try {
-            let saved: StorageItemType = {
+            saved = {
               encryptedName: this.encryptText(baseName),
               originalName: path.basename(filePath),
               path: path.resolve(filePath),
@@ -198,8 +199,8 @@ class Encryptor {
               saved = await Encryptor.STORAGE.set(saved);
             }
             const encryptedFileName = saved.id + ".enc";
-            const renamedTempFile = path.join(tempDir, encryptedFileName)
-            const destPath = path.join(dir, encryptedFileName)
+            const renamedTempFile = path.join(tempDir, encryptedFileName);
+            const destPath = path.join(dir, encryptedFileName);
 
             // Rename the temp file to the final file name
             await Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile);
@@ -214,6 +215,7 @@ class Encryptor {
 
             resolve(saved);
           } catch (err) {
+            if (saveOnEnd && saved) await Encryptor.STORAGE.delete(saved.id);
             if (logStream)
               logStream.end(
                 `❌ Error post‐proceso: ${(err as Error).message}\n`
@@ -277,7 +279,7 @@ class Encryptor {
     let leftover = Buffer.alloc(0);
 
     return new Promise((resolve, reject) => {
-      readStream.on("data", async(chunk: Buffer | string) => {
+      readStream.on("data", async (chunk: Buffer | string) => {
         const chunkArray =
           typeof chunk === "string"
             ? sodium.from_string(chunk)
@@ -390,7 +392,7 @@ class Encryptor {
         });
       });
 
-      readStream.on("error", async(err) => {
+      readStream.on("error", async (err) => {
         if (logStream) {
           logStream.write(`❌ Error en readStream: ${err}\n`);
           logStream.end();
@@ -399,7 +401,7 @@ class Encryptor {
         reject(err);
       });
 
-      writeStream.on("error", async(err) => {
+      writeStream.on("error", async (err) => {
         if (logStream) {
           logStream.write(`❌ Error en writeStream: ${err}\n`);
           logStream.end();

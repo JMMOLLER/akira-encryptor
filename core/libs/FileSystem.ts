@@ -114,7 +114,7 @@ export class FileSystem {
   ) {
     if (error.code === "EPERM") {
       console.error(
-        `Permission denied to ${text}. Please close any applications using it, try open the script as administrator, or exclude the script from antivirus.`
+        `\n❌ Permission denied to ${text}. Please close any applications using it, try open the script as administrator, or exclude the script from antivirus.`
       );
       return Promise.reject(error);
     }
@@ -218,7 +218,7 @@ export class FileSystem {
    * @param folderPath `string` - The path of the folder to be renamed.
    * @param newPath `string` - The new path for the folder.
    */
-  renameFolder(folderPath: string, newPath: string) {
+  private renameFolder(folderPath: string, newPath: string) {
     if (!fs.existsSync(folderPath)) {
       throw new Error(`Directory not found: ${folderPath}`);
     }
@@ -226,9 +226,7 @@ export class FileSystem {
     try {
       fs.renameSync(folderPath, newPath);
     } catch (error) {
-      throw new Error(
-        `Error renaming directory '${folderPath}': ${(error as Error).message}`
-      );
+      throw error;
     }
   }
 
