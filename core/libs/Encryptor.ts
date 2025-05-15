@@ -179,6 +179,7 @@ class Encryptor {
         writeStream.end();
         writeStream.once("finish", () =>
           this.onEncryptWriteStreamFinish({
+            onEnd: props.onEnd,
             saveOnEnd,
             logStream,
             filePath,
@@ -188,9 +189,15 @@ class Encryptor {
         );
       });
 
-      readStream.on("error", (error) =>
-        this.onEncryptReadStreamError({ writeStream, logStream, reject, error })
-      );
+      readStream.on("error", async (error) => {
+        await this.onEncryptReadStreamError({
+          writeStream,
+          logStream,
+          reject,
+          error
+        });
+        props.onEnd?.(error);
+      });
     });
   }
 
@@ -253,6 +260,7 @@ class Encryptor {
         writeStream.end(
           async () =>
             await this.onDecryptWriteStreamFinish({
+              onEnd: props.onEnd,
               file: props.file,
               logStream,
               filePath,
@@ -262,23 +270,25 @@ class Encryptor {
         );
       });
 
-      readStream.on("error", (error) =>
-        this.onDecryptStreamError({
+      readStream.on("error", async (error) => {
+        await this.onDecryptStreamError({
           streamName: "readStream",
           logStream,
           reject,
           error
-        })
-      );
+        });
+        props.onEnd?.(error);
+      });
 
-      writeStream.on("error", (error) =>
-        this.onDecryptStreamError({
+      writeStream.on("error", async (error) => {
+        await this.onDecryptStreamError({
           streamName: "writeStream",
           logStream,
           reject,
           error
-        })
-      );
+        });
+        props.onEnd?.(error);
+      });
     });
   }
 
@@ -322,6 +332,7 @@ class Encryptor {
       } else if (entry.isFile()) {
         try {
           const subFile = await this.encryptFile({
+            onEnd: props.onEnd,
             filePath: fullPath,
             saveOnEnd: false,
             onProgress
@@ -362,6 +373,10 @@ class Encryptor {
 
     await Encryptor.FS.safeRenameFolder(folderPath, encryptedPath);
 
+    if (saveOnEnd) {
+      props.onEnd?.();
+    }
+
     return Promise.resolve(saved);
   }
 
@@ -376,6 +391,7 @@ class Encryptor {
     props: EncryptorFuncion & { folder?: FolderItem }
   ): Promise<string> {
     const { filePath: folderPath, onProgress, folder } = props;
+    let error: Error | undefined = undefined;
 
     // This is bcs ora is only shown in the file encrypt/decrypt process
     if (this.operationFor !== "folder") {
@@ -389,7 +405,7 @@ class Encryptor {
 
     if (!currentFolder || currentFolder.type !== "folder") {
       throw new Error(
-        `No se encontró la carpeta en el almacenamiento: ${baseName}`
+        `No se encontró la carpeta en el registro: ${baseName}`
       );
     }
 
@@ -408,6 +424,7 @@ class Encryptor {
         // Decrypt file
         await this.decryptFile({
           filePath: fullPath + ".enc",
+          onEnd: props.onEnd,
           onProgress,
           file: item
         });
@@ -435,8 +452,13 @@ class Encryptor {
 
       return decryptedPath;
     } catch (err) {
+      error = err as Error;
       console.error(err);
       return folderPath;
+    } finally {
+      if (!folder) {
+        props.onEnd?.(error);
+      }
     }
   }
 
@@ -483,7 +505,7 @@ class Encryptor {
 
   private async onEncryptWriteStreamFinish(params: EncryptWriteStreamFinish) {
     const { saveOnEnd, logStream, filePath, resolve, reject } = params;
-    const isCalledFromFolder = saveOnEnd;
+    const isFileOperation = this.operationFor === "file";
 
     try {
       if (!this.fileBaseName) {
@@ -528,7 +550,7 @@ class Encryptor {
       const destPath = path.join(this.fileDir, encryptedFileName);
 
       // Rename the temp file to the final file name
-      if (isCalledFromFolder) {
+      if (isFileOperation) {
         this.renameStep = createSpinner("Renombrando archivo encriptado...");
       }
       await Promise.all([
@@ -546,7 +568,7 @@ class Encryptor {
       });
 
       // Move the temp file to the final destination
-      if (isCalledFromFolder) {
+      if (isFileOperation) {
         this.copyStep = createSpinner("Moviendo archivo encriptado...");
       }
       await Promise.all([
@@ -560,7 +582,7 @@ class Encryptor {
       });
 
       // Remove the original file
-      if (isCalledFromFolder) {
+      if (isFileOperation) {
         this.removeStep = createSpinner("Eliminando archivo original...");
       }
       await Promise.all([
@@ -578,18 +600,21 @@ class Encryptor {
       if (saveOnEnd && this.savedItem)
         await Encryptor.STORAGE.delete(this.savedItem.id);
 
-      if (isCalledFromFolder && this.saveStep)
+      if (isFileOperation && this.saveStep)
         this.saveStep.fail("Error al registrar el archivo.");
-      if (isCalledFromFolder && this.renameStep)
+      if (isFileOperation && this.renameStep)
         this.renameStep.fail("Error al renombrar el archivo.");
-      if (isCalledFromFolder && this.copyStep)
+      if (isFileOperation && this.copyStep)
         this.copyStep.fail("Error al mover el archivo.");
-      if (isCalledFromFolder && this.removeStep)
+      if (isFileOperation && this.removeStep)
         this.removeStep.fail("Error al eliminar el archivo original.");
 
       if (logStream)
         logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
       return reject(err);
+    } finally {
+      // bcs folder operation already handled the end
+      if (isFileOperation) params.onEnd?.();
     }
   }
 
@@ -672,7 +697,8 @@ class Encryptor {
 
   private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
     const { resolve, reject, filePath, file, logStream } = params;
-    const allowOra = this.operationFor === "file";
+    const isFileOperation = this.operationFor === "file";
+    let error: Error | undefined = undefined;
 
     try {
       if (!this.tempPath) {
@@ -698,7 +724,7 @@ class Encryptor {
       );
       const data = Encryptor.FS.readFile(this.tempPath);
 
-      if (allowOra) {
+      if (isFileOperation) {
         this.renameStep = createSpinner("Remplazando archivo original...");
       }
       await Promise.all([
@@ -708,7 +734,7 @@ class Encryptor {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");
       });
 
-      if (allowOra) {
+      if (isFileOperation) {
         this.removeStep = createSpinner("Eliminando archivo temporal...");
       }
       await Promise.all([
@@ -719,16 +745,16 @@ class Encryptor {
       });
 
       if (!file) {
-        if (allowOra) {
+        if (isFileOperation) {
           this.saveStep = createSpinner(
-            "Eliminando archivo del almacenamiento..."
+            "Eliminando archivo del registro..."
           );
         }
         await Promise.all([
           Encryptor.STORAGE.delete(fileName),
           delay(this.stepDelay)
         ]).then(() => {
-          this.saveStep?.succeed("Archivo eliminado del almacenamiento.");
+          this.saveStep?.succeed("Archivo eliminado del registro.");
         });
       }
 
@@ -740,20 +766,24 @@ class Encryptor {
       }
       resolve();
     } catch (err) {
+      error = err as Error;
       if (logStream) {
         logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
         logStream.end();
       }
 
-      if (allowOra && this.renameStep)
+      if (isFileOperation && this.renameStep)
         this.renameStep.fail("Error al reemplazar el archivo original.");
-      if (allowOra && this.removeStep)
+      if (isFileOperation && this.removeStep)
         this.removeStep.fail("Error al eliminar el archivo temporal.");
-      if (allowOra && this.saveStep)
-        this.saveStep.fail("Error al eliminar el archivo del almacenamiento.");
+      if (isFileOperation && this.saveStep)
+        this.saveStep.fail("Error al eliminar el archivo del registro.");
 
       if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
       reject(err);
+    } finally {
+      // bcs folder operation already handled the end
+      if (isFileOperation) params.onEnd?.(error);
     }
   }
 

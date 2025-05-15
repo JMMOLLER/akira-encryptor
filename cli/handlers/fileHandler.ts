@@ -47,26 +47,39 @@ async function handleFileAction(props: HanlderProps) {
     }
   };
 
+  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+    if (!error) {
+      createSpinner(
+        `Archivo '${filePath}' ${
+          action === "encrypt" ? "encriptado" : "desencriptado"
+        } correctamente.`
+      ).succeed();
+    } else {
+      progressBar.stop();
+      createSpinner(
+        `Error al ${
+          action === "encrypt" ? "encriptar" : "desencriptar"
+        } el archivo '${filePath}'.`
+      ).fail();
+    }
+  };
+
   try {
     const Encryptor = await EncryptorClass.init(password);
 
     if (action === "encrypt") {
       await Encryptor.encryptFile({
         filePath: path.normalize(filePath),
-        onProgress: handleProgress
+        onProgress: handleProgress,
+        onEnd: handleEnd
       });
     } else {
       await Encryptor.decryptFile({
         filePath: path.normalize(filePath),
-        onProgress: handleProgress
+        onProgress: handleProgress,
+        onEnd: handleEnd
       });
     }
-
-    createSpinner(
-      `Archivo '${filePath}' ${
-        action === "encrypt" ? "encriptado" : "desencriptado"
-      } correctamente.`
-    ).succeed();
   } catch (error) {
     progressBar.stop();
     console.error(`\n❌ Error al procesar el archivo:\n`, error);

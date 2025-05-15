@@ -17,6 +17,7 @@ declare global {
   interface EncryptorFuncion {
     filePath: Readonly<string>;
     onProgress: ProgressCallback;
+    onEnd?: (error?: Error) => void;
   }
 
   interface EncryptedDataStore {
@@ -71,6 +72,7 @@ declare global {
     macLength: number;
     chunkIndex: number;
     file?: FileItem;
+    onEnd: EncryptorFuncion["onEnd"]
   }
 
   type EncryptReadStreamError = Pick<
@@ -80,7 +82,7 @@ declare global {
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "saveOnEnd" | "logStream" | "filePath" | "resolve" | "reject"
+    "saveOnEnd" | "logStream" | "filePath" | "resolve" | "reject" | "onEnd"
   >;
 
   type EncryptReadStream = Pick<
@@ -105,7 +107,7 @@ declare global {
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "file" | "logStream" | "filePath" | "resolve" | "reject"
+    "file" | "logStream" | "filePath" | "resolve" | "reject" | "onEnd"
   >;
 
   type DecryptStreamError = Pick<

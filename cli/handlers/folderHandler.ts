@@ -69,13 +69,30 @@ async function handleFolderAction(props: HanlderProps) {
     }
   };
 
+  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+    if (!error) {
+      createSpinner(
+        `Carpeta '${folderPath}' ${
+          action === "encrypt" ? "encriptada" : "desencriptada"
+        } correctamente.`
+      ).succeed();
+    } else {
+      createSpinner(
+        `Error al ${
+          action === "encrypt" ? "encriptar" : "desencriptar"
+        } la carpeta '${folderPath}'.`
+      ).fail();
+    }
+  };
+
   try {
     const Encryptor = await EncryptorClass.init(password);
 
     if (action === "encrypt") {
       await Encryptor.encryptFolder({
         filePath: path.normalize(folderPath),
-        onProgress: handleProgress
+        onProgress: handleProgress,
+        onEnd: handleEnd
       });
     } else {
       const storage = Encryptor.getStorage();
@@ -88,18 +105,13 @@ async function handleFolderAction(props: HanlderProps) {
 
       await Encryptor.decryptFolder({
         filePath: path.normalize(folderPath),
-        onProgress: handleProgress
+        onProgress: handleProgress,
+        onEnd: handleEnd
       });
     }
 
     progressBarCurrent.stop();
     multibar.stop();
-
-    createSpinner(
-      `Carpeta '${folderPath}' ${
-        action === "encrypt" ? "encriptada" : "desencriptada"
-      } correctamente.`
-    ).succeed();
   } catch (error) {
     multibar.stop();
     console.error(
