@@ -1,5 +1,5 @@
+import { createContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
-import { createContext, useState, ReactNode, useEffect } from 'react'
 import useApp from 'antd/es/app/useApp'
 
 // Initialize the type for the context
@@ -11,39 +11,95 @@ export function PendingEncryptionProvider({ children }: { children: ReactNode })
   const { setItems } = useEncryptedItems()
   const { notification } = useApp()
 
+  const showEncryptionError = useCallback(
+    (fileType: string, msg: string) => {
+      return notification.error({
+        message: 'Error',
+        description: `Error al encriptar el ${fileType}: ${msg}`,
+        placement: 'topRight',
+        duration: 5
+      })
+    },
+    [notification]
+  )
+
+  const onProgressHandler = useCallback((_: unknown, data: ProgressCallbackProps) => {
+    setPendingEncryptedItems((prev) => {
+      const newMap = new Map(prev)
+      const item = newMap.get(data.itemId)
+
+      if (!item) return prev
+
+      item.percent = Math.floor((data.processedBytes / data.totalBytes) * 100)
+
+      return newMap
+    })
+  }, [])
+
+  const onProgressErrorHandler = useCallback((_: unknown, data: ProgressCallbackErrorProps) => {
+    setPendingEncryptedItems((prev) => {
+      const newMap = new Map(prev)
+      const item = newMap.get(data.itemId)
+
+      if (!item) return prev
+
+      item.status = 'error'
+      item.message = data.message
+      item.filePath = data.filePath
+
+      return newMap
+    })
+  }, [])
+
+  const onEncryptEndHandler = useCallback(
+    (_: unknown, data: EncryptEndEvent) => {
+      const { error, itemId, actionFor } = data
+      if (error) {
+        showEncryptionError(actionFor, error)
+      }
+
+      setPendingEncryptedItems((prev) => {
+        return new Map(prev.entries().filter(([key]) => key !== itemId))
+      })
+
+      // force to update the encrypted items
+      setItems(undefined)
+    },
+    [showEncryptionError, setItems]
+  )
+
+  // Show error notifications for pending items
   useEffect(() => {
-    const processEncryption = async () => {
-      const newMap = new Map(pendingEncryptedItems)
-      let hasEncrypted = false
-
-      for (const [key, value] of pendingEncryptedItems.entries()) {
-        const handleComplete = () => {
-          newMap.delete(key)
-          hasEncrypted = true
-          setItems(undefined)
-        }
-
-        if (value.percent >= 100) {
-          handleComplete()
-        } else if (value.status === 'error') {
-          notification.error({
-            message: 'Error',
-            description: `Error al encriptar el ${value.type}: ${value.message}`,
-            placement: 'topRight',
-            duration: 5
-          })
-          await new Promise((resolve) => setTimeout(resolve, 1000)) // Add 1-second delay
-          handleComplete()
-        }
-      }
-
-      if (hasEncrypted) {
-        setPendingEncryptedItems(newMap)
-      }
+    const errors = [...pendingEncryptedItems.entries()].filter(
+      ([_, value]) => value.status === 'error'
+    )
+    if (errors.length > 0) {
+      errors.forEach(([_, value]) => {
+        showEncryptionError(value.type, value.message || 'Error desconocido')
+      })
+      // Remove the items with error status from the pendingEncryptedItems
+      setPendingEncryptedItems((prev) => {
+        return new Map([...prev.entries()].filter(([_, value]) => value.status !== 'error'))
+      })
     }
+  }, [pendingEncryptedItems, showEncryptionError])
 
-    processEncryption()
-  }, [pendingEncryptedItems, setItems, notification])
+  // Register the listeners
+  useEffect(() => {
+    const unsubscribe = window.electron.ipcRenderer.on('onProgress', onProgressHandler)
+    const onErrorUnsubscribe = window.electron.ipcRenderer.on(
+      'onProgressError',
+      onProgressErrorHandler
+    )
+    const onOperationEnd = window.electron.ipcRenderer.on('onOperationEnd', onEncryptEndHandler)
+
+    return () => {
+      // Unregister the listeners
+      unsubscribe()
+      onOperationEnd()
+      onErrorUnsubscribe()
+    }
+  }, [onEncryptEndHandler, onProgressErrorHandler, onProgressHandler])
 
   return (
     <PendingEncryptionContext.Provider value={{ pendingEncryptedItems, setPendingEncryptedItems }}>

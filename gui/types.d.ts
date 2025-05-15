@@ -82,4 +82,10 @@ declare global {
   }
 
   type PrevModalType = ReturnType<useAppProps['modal']['info']>
+
+  type EncryptEndEvent = {
+    error: string | null
+    actionFor: CliType
+    itemId: string
+  }
 }

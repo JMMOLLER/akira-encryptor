@@ -19,9 +19,22 @@ export default function registerIpcMain() {
           })
         }
       }
-      const fileSendPayload = {
+      const handleEnd: EncryptorFuncion['onEnd'] = (err) => {
+        // send progress to renderer process
+        if (focusedWindow) {
+          focusedWindow.webContents.send('onOperationEnd', {
+            error: err ? (err instanceof Error ? err.message : String(err)) : null,
+            actionFor: props.actionFor,
+            itemId
+          })
+        }
+      }
+
+      // Payload to send to the encryptor
+      const fileSendPayload: EncryptorFuncion = {
         filePath: String(filePath),
-        onProgress: handleProgress
+        onProgress: handleProgress,
+        onEnd: handleEnd
       }
 
       switch (props.action) {
