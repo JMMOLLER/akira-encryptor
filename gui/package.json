@@ -22,12 +22,13 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@iconify-json/fluent-color": "^1.2.12",
+    "@iconify/react": "^6.0.0",
     "@tailwindcss/vite": "^4.1.4",
     "antd": "^5.24.7",
     "bcryptjs": "^3.0.2",
     "electron-conf": "^1.3.0",
     "electron-updater": "^6.3.9",
-    "react-icons": "^5.5.0",
     "tailwindcss": "^4.1.4",
     "tiny-uid": "^1.1.2"
   },
