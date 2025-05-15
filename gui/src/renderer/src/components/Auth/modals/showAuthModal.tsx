@@ -1,4 +1,5 @@
 import Register from '@renderer/components/Auth/Register'
+import { RiShieldCheckFill } from 'react-icons/ri'
 import { HookAPI } from 'antd/es/modal/useModal'
 import Login from '../Login'
 
@@ -20,9 +21,11 @@ function showAuthModal(props: ShowAuthModalProps) {
     title: `${type === 'login' ? 'Ingrese' : 'Registre'} su contraseña`,
     content:
       type === 'login' ? <Login handleClose={onSubmit} /> : <Register handleClose={onSubmit} />,
+    closable: false,
+    keyboard: false,
     centered: true,
     footer: null,
-    icon: null
+    icon: <RiShieldCheckFill className="mt-1! mr-1!" size={20} />
   })
 }
 
