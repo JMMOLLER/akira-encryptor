@@ -1,6 +1,5 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
-import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
-import { useUserConfig } from '@renderer/hooks/useUserConfig'
+import { useNewOperation } from '@renderer/hooks/useNewOperation'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { PlusOutlined } from '@ant-design/icons'
 import useApp from 'antd/es/app/useApp'
@@ -9,10 +8,9 @@ import uid from 'tiny-uid'
 
 function NewEncrypt() {
   const [status, setStatus] = useState<InputProps['status']>('')
-  const { setPendingEncryptedItems } = usePendingEncryption()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
-  const { userConfig } = useUserConfig()
+  const { newEncrypt } = useNewOperation()
   const { menuItem } = useMenuItem()
   const message = useApp().message
 
@@ -29,19 +27,10 @@ function NewEncrypt() {
 
     const id = uid()
 
-    setPendingEncryptedItems((prev) => {
-      return new Map(prev).set(id, {
-        type: menuItem === 'files' ? 'file' : 'folder',
-        status: 'loading',
-        percent: 0
-      })
-    })
-    window.electron.ipcRenderer.send('encryptor-action', {
+    newEncrypt({
       actionFor: menuItem === 'files' ? 'file' : 'folder',
-      password: userConfig.password,
-      action: 'encrypt',
-      filePath: pathVal,
-      itemId: id
+      srcPath: pathVal,
+      id
     })
     setIsModalOpen(false)
   }

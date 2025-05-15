@@ -1,6 +1,4 @@
-import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
-import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
-import { useUserConfig } from '@renderer/hooks/useUserConfig'
+import { useNewOperation } from '@renderer/hooks/useNewOperation'
 import cardActions from '@renderer/constants/cardActions'
 import { StorageItem } from '../../../../../types'
 import { Card, Popconfirm, Tooltip } from 'antd'
@@ -14,9 +12,7 @@ interface LoadCardProps {
 }
 
 const LoadCard = ({ encryptedItem }: LoadCardProps) => {
-  const { setPendingEncryptedItems } = usePendingEncryption()
-  const { setItems } = useEncryptedItems()
-  const { userConfig } = useUserConfig()
+  const { newDecrypt } = useNewOperation()
   const { message } = useApp()
 
   const renderActions = useMemo(
@@ -32,15 +28,29 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
               title="¿Estás seguro de que quieres continuar?"
               disabled={rest.disabled}
               style={{ color: 'red' }}
-              onConfirm={() =>
-                rest.onclick({
-                  setter: setPendingEncryptedItems,
-                  password: userConfig.password!,
-                  setEncryptedItems: setItems,
-                  item: encryptedItem,
-                  message
+              onConfirm={() => {
+                const lastSlashIndex =
+                  Math.max(
+                    encryptedItem.path.lastIndexOf('/'),
+                    encryptedItem.path.lastIndexOf('\\')
+                  ) + 1
+                if (lastSlashIndex < 0) {
+                  console.error('Invalid file path:', encryptedItem.path)
+                  message.error('Ruta de archivo no válida.')
+                  return
+                }
+
+                // Construct the file path for decryption
+                const basePath = encryptedItem.path.substring(0, lastSlashIndex)
+                const fileName = encryptedItem.id + (encryptedItem.type === 'file' ? '.enc' : '')
+                const filePath = `${basePath}${fileName}`
+
+                newDecrypt({
+                  actionFor: encryptedItem.type,
+                  id: encryptedItem.id,
+                  srcPath: filePath
                 })
-              }
+              }}
             >
               <Icon />
             </Popconfirm>
@@ -49,7 +59,7 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
           )}
         </Tooltip>
       )),
-    [encryptedItem, message, userConfig.password, setItems, setPendingEncryptedItems]
+    [encryptedItem, message, newDecrypt]
   )
 
   const renderDescription = useMemo(
