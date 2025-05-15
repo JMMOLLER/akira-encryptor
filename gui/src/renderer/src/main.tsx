@@ -1,6 +1,6 @@
 import './assets/main.css'
 
-import { PendingEncryptionProvider } from './contexts/PendingEncryption'
+import { PendingOperationProvider } from './contexts/PendingEncryption'
 import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import { MenuItemProvider } from './contexts/MenuItemContext'
 import { UserConfigProvider } from './contexts/UserConfig'
@@ -17,11 +17,11 @@ createRoot(document.getElementById('root')!).render(
       <AntdApp>
         <UserConfigProvider>
           <EncryptedItemProvider>
-            <PendingEncryptionProvider>
+            <PendingOperationProvider>
               <MenuItemProvider>
                 <App />
               </MenuItemProvider>
-            </PendingEncryptionProvider>
+            </PendingOperationProvider>
           </EncryptedItemProvider>
         </UserConfigProvider>
       </AntdApp>

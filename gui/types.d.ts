@@ -54,8 +54,9 @@ declare global {
   }
   type PendingStorage = Map<string, PendingItem>
   interface PendingEncryptContextType {
-    pendingEncryptedItems: PendingStorage
-    setPendingEncryptedItems: React.Dispatch<React.SetStateAction<PendingStorage>>
+    pendingItems: PendingStorage
+    removePendingItem: (id: string) => void
+    addPendingItem: (id: string, item: PendingItem) => void
   }
 
   interface ProgressCallbackProps {

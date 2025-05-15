@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function useNewOperation() {
-  const { setPendingEncryptedItems } = usePendingEncryption()
+  const { addPendingItem } = usePendingEncryption()
   const { setItems } = useEncryptedItems()
   const { userConfig } = useUserConfig()
 
@@ -21,12 +21,10 @@ export function useNewOperation() {
     const { actionFor, srcPath, id } = props
 
     // Set pending item
-    setPendingEncryptedItems((prev) => {
-      return new Map(prev).set(id, {
-        type: actionFor,
-        status: 'loading',
-        percent: 0
-      })
+    addPendingItem(id, {
+      type: actionFor,
+      status: 'loading',
+      percent: 0
     })
 
     // Set encrypted action to main process
@@ -43,12 +41,10 @@ export function useNewOperation() {
     const { actionFor, srcPath, id } = props
 
     // Set pending item
-    setPendingEncryptedItems((prev) => {
-      return new Map(prev).set(id, {
-        type: actionFor,
-        status: 'loading',
-        percent: 0
-      })
+    addPendingItem(id, {
+      type: actionFor,
+      status: 'loading',
+      percent: 0
     })
 
     // Remove from encrypted items
