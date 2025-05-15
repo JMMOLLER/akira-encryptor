@@ -14,6 +14,20 @@ class Encryptor {
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
+  /* ========================== ENCRYPT PROPERTIES ========================== */
+  private savedItem?: StorageItemType = undefined;
+  private fileBaseName?: string = undefined;
+  private fileDir?: string = undefined;
+  /* ========================== DECRYPT PROPERTIES ========================== */
+  private readonly nonceLength = sodium.crypto_secretbox_NONCEBYTES;
+  private readonly macLength = sodium.crypto_secretbox_MACBYTES;
+  private readonly chunkSize = 64 * 1024;
+  private leftover = Buffer.alloc(0);
+  /* ========================== COMMON PROPERTIES ========================== */
+  private fileStats?: StreamHandlerProps["stat"] = undefined;
+  private tempPath?: string = undefined;
+  private processedBytes = 0;
+  private totalFileSize = 0;
 
   private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
@@ -39,7 +53,7 @@ class Encryptor {
    * @description `[ES]` Genera un nonce para la cifrado.
    */
   generateNonce(): Uint8Array {
-    return sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+    return sodium.randombytes_buf(this.nonceLength);
   }
 
   /**
@@ -114,20 +128,22 @@ class Encryptor {
     props: EncryptorFuncion & { saveOnEnd?: boolean }
   ): Promise<FileItem> {
     const { filePath, onProgress, saveOnEnd = true } = props;
-    const stat = Encryptor.FS.getStatFile(filePath);
-    const totalSize = stat.size;
-    let processed = 0;
+    this.fileStats = Encryptor.FS.getStatFile(filePath);
+    this.totalFileSize = this.fileStats.size;
+    this.processedBytes = 0;
 
     const readStream = Encryptor.FS.createReadStream(filePath);
 
     // Temp route and final route
-    const dir = path.dirname(filePath);
-    const baseName = path.basename(filePath, path.extname(filePath));
-    const tempPath = path.join(Encryptor.tempDir, `${baseName}.enc.tmp`);
-    // const finalPath = path.join(dir, `${baseName}.enc`);
+    this.fileDir = path.dirname(filePath);
+    this.fileBaseName = path.basename(filePath, path.extname(filePath));
+    this.tempPath = path.join(
+      Encryptor.tempDir,
+      `${this.fileBaseName}.enc.tmp`
+    );
 
-    const writeStream = Encryptor.FS.createWriteStream(tempPath);
-    let saved: StorageItemType | undefined;
+    const writeStream = Encryptor.FS.createWriteStream(this.tempPath);
+    this.savedItem = undefined;
 
     const logPath = filePath + ".encrypt.log";
     const logStream = Encryptor.LOG
@@ -137,104 +153,36 @@ class Encryptor {
     return new Promise((resolve, reject) => {
       if (logStream) {
         logStream.write(`🟢 Inicio de cifrado: ${filePath}\n`);
-        logStream.write(`Tamaño total: ${totalSize} bytes\n`);
+        logStream.write(`Tamaño total: ${this.totalFileSize} bytes\n`);
       }
 
-      readStream.on("data", async (chunk: Buffer | string) => {
-        try {
-          const nonce = this.generateNonce();
-          const chunkArray =
-            typeof chunk === "string"
-              ? sodium.from_string(chunk)
-              : new Uint8Array(chunk);
-          const encryptedChunk = sodium.crypto_secretbox_easy(
-            chunkArray,
-            nonce,
-            this.SECRET_KEY
-          );
-
-          const lenBuf = Buffer.alloc(4);
-          lenBuf.writeUInt32BE(encryptedChunk.length, 0);
-
-          writeStream.write(Buffer.from(nonce));
-          writeStream.write(lenBuf);
-          writeStream.write(Buffer.from(encryptedChunk));
-
-          if (logStream) {
-            logStream.write(`📦 Chunk procesado: ${chunk.length} bytes\n`);
-            logStream.write(
-              ` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`
-            );
-            logStream.write(` - Encrypted Length: ${encryptedChunk.length}\n`);
-          }
-
-          processed += chunk.length;
-          onProgress?.(processed, totalSize);
-        } catch (err) {
-          readStream.destroy();
-          writeStream.destroy();
-          await Encryptor.FS.removeFile(tempPath);
-          if (logStream)
-            logStream.end(
-              `❌ Error al cifrar chunk: ${(err as Error).message}\n`
-            );
-          return reject(err);
-        }
-      });
+      readStream.on("data", (chunk) =>
+        this.onEncryptReadStream({
+          readStream,
+          writeStream,
+          onProgress,
+          logStream,
+          reject,
+          chunk
+        })
+      );
 
       readStream.on("end", () => {
         writeStream.end();
-        writeStream.once("finish", async () => {
-          try {
-            saved = {
-              encryptedName: this.encryptText(baseName),
-              originalName: path.basename(filePath),
-              path: path.resolve(filePath),
-              encryptedAt: new Date(),
-              id: generateUID(),
-              size: stat.size,
-              type: "file"
-            };
-            if (saveOnEnd) {
-              saved = await Encryptor.STORAGE.set(saved);
-            }
-            const encryptedFileName = saved.id + ".enc";
-            const renamedTempFile = path.join(
-              Encryptor.tempDir,
-              encryptedFileName
-            );
-            const destPath = path.join(dir, encryptedFileName);
-
-            // Rename the temp file to the final file name
-            await Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile);
-            // Move the temp file to the final destination
-            await Encryptor.FS.copyFile(renamedTempFile, destPath);
-            // Remove the original file
-            await Encryptor.FS.removeFile(filePath);
-
-            // if (logStream) {
-            //   logStream.end(`✅ Cifrado completo → ${finalPath}\n`);
-            // }
-
-            resolve(saved);
-          } catch (err) {
-            if (saveOnEnd && saved) await Encryptor.STORAGE.delete(saved.id);
-            if (logStream)
-              logStream.end(
-                `❌ Error post‐proceso: ${(err as Error).message}\n`
-              );
-            return reject(err);
-          }
-        });
+        writeStream.once("finish", () =>
+          this.onEncryptWriteStreamFinish({
+            saveOnEnd,
+            logStream,
+            filePath,
+            resolve,
+            reject
+          })
+        );
       });
 
-      readStream.on("error", async (error: Error) => {
-        writeStream.destroy();
-        await Encryptor.FS.removeFile(tempPath);
-        if (logStream)
-          logStream.end(`❌ Error al leer archivo: ${error.message}\n`);
-        reject(error);
-      });
+      readStream.on("error", (error) =>
+        this.onEncryptReadStreamError({ writeStream, logStream, reject, error })
+      );
     });
   }
 
@@ -254,21 +202,18 @@ class Encryptor {
     if (filePath.includes(".encrypt.log")) return Promise.resolve();
     if (filePath.includes(".dec.tmp")) return Promise.resolve();
 
-    const stat = Encryptor.FS.getStatFile(filePath);
-    const totalSize = stat.size;
-    let processed = 0;
+    this.fileStats = Encryptor.FS.getStatFile(filePath);
+    this.totalFileSize = this.fileStats.size;
+    this.processedBytes = 0;
 
-    const nonceLength = sodium.crypto_secretbox_NONCEBYTES;
-    const macLength = sodium.crypto_secretbox_MACBYTES;
-    const chunkSize = 64 * 1024;
-    const blockSize = chunkSize + macLength;
+    const blockSize = this.chunkSize + this.macLength;
 
-    const tempPath = path.join(
+    this.tempPath = path.join(
       Encryptor.tempDir,
       path.basename(filePath).replace(".enc", ".dec.tmp")
     );
     const readStream = Encryptor.FS.createReadStream(filePath, blockSize);
-    const writeStream = Encryptor.FS.createWriteStream(tempPath);
+    const writeStream = Encryptor.FS.createWriteStream(this.tempPath);
 
     // Logging
     const logPath = filePath + "decrypt.log";
@@ -277,144 +222,55 @@ class Encryptor {
       : undefined;
     if (logStream) {
       logStream.write(
-        `🟢 Inicio de descifrado: ${filePath}\nTamaño total: ${totalSize} bytes\n`
+        `🟢 Inicio de descifrado: ${filePath}\nTamaño total: ${this.totalFileSize} bytes\n`
       );
     }
 
     let chunkIndex = 0;
-    let leftover = Buffer.alloc(0);
+    this.leftover = Buffer.alloc(0);
 
     return new Promise((resolve, reject) => {
-      readStream.on("data", async (chunk: Buffer | string) => {
-        const chunkArray =
-          typeof chunk === "string"
-            ? sodium.from_string(chunk)
-            : new Uint8Array(chunk);
-        leftover = Buffer.concat([leftover, chunkArray]);
-
-        while (leftover.length >= nonceLength + 4 + macLength) {
-          try {
-            const chunkNonce = leftover.subarray(0, nonceLength);
-            const lengthBuffer = leftover.subarray(
-              nonceLength,
-              nonceLength + 4
-            );
-            const encryptedLength = lengthBuffer.readUInt32BE(0);
-
-            if (leftover.length < nonceLength + 4 + encryptedLength) {
-              break;
-            }
-
-            const encryptedChunk = leftover.subarray(
-              nonceLength + 4,
-              nonceLength + 4 + encryptedLength
-            );
-
-            leftover = leftover.subarray(nonceLength + 4 + encryptedLength);
-
-            const decrypted = sodium.crypto_secretbox_open_easy(
-              encryptedChunk,
-              chunkNonce,
-              this.SECRET_KEY
-            );
-
-            if (!decrypted) {
-              throw new Error("Error al descifrar un bloque del archivo.");
-            }
-
-            writeStream.write(Buffer.from(decrypted));
-
-            // Logging
-            if (logStream) {
-              logStream.write(`📦 Chunk #${chunkIndex++}\n`);
-              logStream.write(
-                ` - Nonce: ${Buffer.from(chunkNonce).toString("hex")}\n`
-              );
-              logStream.write(` - Encrypted Length: ${encryptedLength}\n`);
-            }
-
-            processed += nonceLength + 4 + encryptedLength;
-            onProgress?.(processed, totalSize);
-          } catch (err) {
-            if (logStream) {
-              logStream.write(
-                `❌ Error durante la descifrado de un bloque: ${err}\n`
-              );
-              logStream.end();
-            }
-            await Encryptor.FS.removeFile(tempPath);
-            reject(err);
-          }
-        }
-      });
+      readStream.on("data", (chunk) =>
+        this.onDecryptReadStream({
+          writeStream,
+          chunkIndex,
+          onProgress,
+          logStream,
+          chunk,
+          reject
+        })
+      );
 
       readStream.on("end", () => {
-        writeStream.end(async () => {
-          try {
-            const fileName = path.basename(filePath).replace(/\.enc$/, "");
-
-            const { originalName } =
-              props.file || Encryptor.STORAGE.get(fileName) || {};
-            const originalFileName = originalName;
-
-            if (!originalFileName) {
-              if (logStream) {
-                logStream.write(
-                  "❌ No se pudo descifrar el nombre del archivo.\n"
-                );
-                logStream.end();
-              }
-              throw new Error("No se pudo descifrar el nombre del archivo.");
-            }
-
-            const restoredPath = filePath.replace(
-              path.basename(filePath),
-              originalFileName
-            );
-            const data = Encryptor.FS.readFile(tempPath);
-            await Encryptor.FS.replaceFile(tempPath, restoredPath, data);
-
-            await Encryptor.FS.removeFile(filePath);
-
-            if (!props.file) {
-              await Encryptor.STORAGE.delete(fileName);
-            }
-
-            if (logStream) {
-              logStream.write(
-                `✅ Archivo descifrado correctamente.\nNombre original restaurado: ${originalFileName}\nRuta destino: ${restoredPath}\n`
-              );
-              logStream.end();
-            }
-            resolve();
-          } catch (err) {
-            if (logStream) {
-              logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
-              logStream.end();
-            }
-            await Encryptor.FS.removeFile(tempPath);
-            reject(err);
-          }
-        });
+        writeStream.end(
+          async () =>
+            await this.onDecryptWriteStreamFinish({
+              file: props.file,
+              logStream,
+              filePath,
+              resolve,
+              reject
+            })
+        );
       });
 
-      readStream.on("error", async (err) => {
-        if (logStream) {
-          logStream.write(`❌ Error en readStream: ${err}\n`);
-          logStream.end();
-        }
-        await Encryptor.FS.removeFile(tempPath);
-        reject(err);
-      });
+      readStream.on("error", (error) =>
+        this.onDecryptStreamError({
+          streamName: "readStream",
+          logStream,
+          reject,
+          error
+        })
+      );
 
-      writeStream.on("error", async (err) => {
-        if (logStream) {
-          logStream.write(`❌ Error en writeStream: ${err}\n`);
-          logStream.end();
-        }
-        await Encryptor.FS.removeFile(tempPath);
-        reject(err);
-      });
+      writeStream.on("error", (error) =>
+        this.onDecryptStreamError({
+          streamName: "writeStream",
+          logStream,
+          reject,
+          error
+        })
+      );
     });
   }
 
@@ -553,6 +409,257 @@ class Encryptor {
       console.error(`Error al renombrar carpeta ${folderPath}:`, err);
       return folderPath;
     }
+  }
+
+  /* ========================== STREAM HANDLERS ========================== */
+  private async onEncryptReadStream(params: EncryptReadStream) {
+    const { readStream, writeStream, logStream } = params;
+    const { chunk, onProgress, reject } = params;
+    try {
+      const nonce = this.generateNonce();
+      const chunkArray =
+        typeof chunk === "string"
+          ? sodium.from_string(chunk)
+          : new Uint8Array(chunk);
+      const encryptedChunk = sodium.crypto_secretbox_easy(
+        chunkArray,
+        nonce,
+        this.SECRET_KEY
+      );
+
+      const lenBuf = Buffer.alloc(4);
+      lenBuf.writeUInt32BE(encryptedChunk.length, 0);
+
+      writeStream.write(Buffer.from(nonce));
+      writeStream.write(lenBuf);
+      writeStream.write(Buffer.from(encryptedChunk));
+
+      if (logStream) {
+        logStream.write(`📦 Chunk procesado: ${chunk.length} bytes\n`);
+        logStream.write(` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`);
+        logStream.write(` - Encrypted Length: ${encryptedChunk.length}\n`);
+      }
+
+      this.processedBytes += chunk.length;
+      onProgress?.(this.processedBytes, this.totalFileSize);
+    } catch (err) {
+      readStream.destroy();
+      writeStream.destroy();
+      if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
+      if (logStream)
+        logStream.end(`❌ Error al cifrar chunk: ${(err as Error).message}\n`);
+      return reject(err);
+    }
+  }
+
+  private async onEncryptWriteStreamFinish(params: EncryptWriteStreamFinish) {
+    const { saveOnEnd, logStream, filePath, resolve, reject } = params;
+    try {
+      if (!this.fileBaseName) {
+        throw new Error("No se pudo obtener el nombre base del archivo.");
+      } else if (!this.fileStats) {
+        throw new Error("No se pudo obtener la información del archivo.");
+      } else if (!this.fileDir) {
+        throw new Error("No se pudo obtener la ruta del archivo.");
+      } else if (!this.tempPath) {
+        throw new Error("No se pudo obtener la ruta temporal del archivo.");
+      }
+
+      this.savedItem = {
+        encryptedName: this.encryptText(this.fileBaseName),
+        originalName: path.basename(filePath),
+        path: path.resolve(filePath),
+        encryptedAt: new Date(),
+        size: this.fileStats.size,
+        id: generateUID(),
+        type: "file"
+      };
+      if (saveOnEnd) {
+        await Promise.all([Encryptor.STORAGE.set(this.savedItem)]).then(
+          ([storageItem]) => {
+            this.savedItem = storageItem;
+            if (logStream) {
+              logStream.write(
+                `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
+              );
+              logStream.end();
+            }
+          }
+        );
+      }
+      const encryptedFileName = this.savedItem.id + ".enc";
+      const renamedTempFile = path.join(Encryptor.tempDir, encryptedFileName);
+      const destPath = path.join(this.fileDir, encryptedFileName);
+
+      // Rename the temp file to the final file name
+      await Promise.all([
+        Encryptor.FS.safeRenameFolder(this.tempPath, renamedTempFile)
+      ]).then(() => {
+        if (logStream) {
+          logStream.write(
+            `✅ Archivo encriptado renombrado: ${renamedTempFile}\n`
+          );
+        }
+      });
+
+      // Move the temp file to the final destination
+      await Promise.all([
+        Encryptor.FS.copyFile(renamedTempFile, destPath)
+      ]).then(() => {
+        if (logStream) {
+          logStream.write(`✅ Archivo encriptado movido: ${destPath}\n`);
+        }
+      });
+
+      // Remove the original file
+      await Promise.all([Encryptor.FS.removeFile(filePath)]).then(() => {
+        if (logStream) {
+          logStream.write(`✅ Archivo original eliminado: ${filePath}\n`);
+        }
+      });
+
+      resolve(this.savedItem);
+    } catch (err) {
+      if (saveOnEnd && this.savedItem)
+        await Encryptor.STORAGE.delete(this.savedItem.id);
+      if (logStream)
+        logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
+      return reject(err);
+    }
+  }
+
+  private async onEncryptReadStreamError(params: EncryptReadStreamError) {
+    const { writeStream, logStream, reject, error } = params;
+    writeStream.destroy();
+    if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
+    if (logStream)
+      logStream.end(`❌ Error al leer archivo: ${error.message}\n`);
+    reject(error);
+  }
+
+  private async onDecryptReadStream(params: DecryptReadStream) {
+    const { chunk, writeStream, logStream } = params;
+    let { chunkIndex } = params;
+
+    const chunkArray =
+      typeof chunk === "string"
+        ? sodium.from_string(chunk)
+        : new Uint8Array(chunk);
+    this.leftover = Buffer.concat([this.leftover, chunkArray]);
+
+    while (this.leftover.length >= this.nonceLength + 4 + this.macLength) {
+      try {
+        const chunkNonce = this.leftover.subarray(0, this.nonceLength);
+        const lengthBuffer = this.leftover.subarray(this.nonceLength, this.nonceLength + 4);
+        const encryptedLength = lengthBuffer.readUInt32BE(0);
+
+        if (this.leftover.length < this.nonceLength + 4 + encryptedLength) {
+          break;
+        }
+
+        const encryptedChunk = this.leftover.subarray(
+          this.nonceLength + 4,
+          this.nonceLength + 4 + encryptedLength
+        );
+
+        this.leftover = this.leftover.subarray(this.nonceLength + 4 + encryptedLength);
+
+        const decrypted = sodium.crypto_secretbox_open_easy(
+          encryptedChunk,
+          chunkNonce,
+          this.SECRET_KEY
+        );
+
+        if (!decrypted) {
+          throw new Error("Error al descifrar un bloque del archivo.");
+        }
+
+        writeStream.write(Buffer.from(decrypted));
+
+        // Logging
+        if (logStream) {
+          logStream.write(`📦 Chunk #${chunkIndex++}\n`);
+          logStream.write(
+            ` - Nonce: ${Buffer.from(chunkNonce).toString("hex")}\n`
+          );
+          logStream.write(` - Encrypted Length: ${encryptedLength}\n`);
+        }
+
+        this.processedBytes += this.nonceLength + 4 + encryptedLength;
+        params.onProgress?.(this.processedBytes, this.totalFileSize);
+      } catch (err) {
+        if (logStream) {
+          logStream.write(
+            `❌ Error durante la descifrado de un bloque: ${err}\n`
+          );
+          logStream.end();
+        }
+        if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
+        params.reject(err);
+      }
+    }
+  }
+
+  private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
+    const { resolve, reject, filePath, file, logStream } = params;
+
+    try {
+      if (!this.tempPath) {
+        throw new Error("No se pudo obtener la ruta temporal del archivo.");
+      }
+
+      const fileName = path.basename(filePath).replace(/\.enc$/, "");
+
+      const { originalName } = file || Encryptor.STORAGE.get(fileName) || {};
+      const originalFileName = originalName;
+
+      if (!originalFileName) {
+        if (logStream) {
+          logStream.write("❌ No se pudo descifrar el nombre del archivo.\n");
+          logStream.end();
+        }
+        throw new Error("No se pudo descifrar el nombre del archivo.");
+      }
+
+      const restoredPath = filePath.replace(
+        path.basename(filePath),
+        originalFileName
+      );
+      const data = Encryptor.FS.readFile(this.tempPath);
+      await Encryptor.FS.replaceFile(this.tempPath, restoredPath, data);
+
+      await Encryptor.FS.removeFile(filePath);
+
+      if (!file) {
+        await Encryptor.STORAGE.delete(fileName);
+      }
+
+      if (logStream) {
+        logStream.write(
+          `✅ Archivo descifrado correctamente.\nNombre original restaurado: ${originalFileName}\nRuta destino: ${restoredPath}\n`
+        );
+        logStream.end();
+      }
+      resolve();
+    } catch (err) {
+      if (logStream) {
+        logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
+        logStream.end();
+      }
+      if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
+      reject(err);
+    }
+  }
+
+  private async onDecryptStreamError(params: DecryptStreamError) {
+    const { reject, streamName, error, logStream } = params;
+
+    if (logStream) {
+      logStream.write(`❌ Error en ${streamName}: ${error}\n`);
+      logStream.end();
+    }
+    if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
+    reject(error);
   }
 }
 
