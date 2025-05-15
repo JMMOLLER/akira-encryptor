@@ -1,10 +1,10 @@
 {
   "folders": [
     {
-      "path": "gui"
+      "path": "."
     },
     {
-      "path": "."
+      "path": "gui"
     }
   ],
   "settings": {}
