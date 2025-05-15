@@ -1,8 +1,10 @@
 import generateSecretKey from "@utils/generateSecretKey";
+import createSpinner from "@utils/createSpinner";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
+import delay from "@utils/delay";
 import Storage from "./Storage";
 import { tmpdir } from "os";
 import path from "path";
@@ -25,9 +27,15 @@ class Encryptor {
   private leftover = Buffer.alloc(0);
   /* ========================== COMMON PROPERTIES ========================== */
   private fileStats?: StreamHandlerProps["stat"] = undefined;
+  private operationFor: CliType = "file";
   private tempPath?: string = undefined;
   private processedBytes = 0;
   private totalFileSize = 0;
+  private stepDelay = 300;
+  private renameStep?: CliSpinner;
+  private removeStep?: CliSpinner;
+  private saveStep?: CliSpinner;
+  private copyStep?: CliSpinner;
 
   private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
@@ -292,6 +300,12 @@ class Encryptor {
       return a.name.localeCompare(b.name);
     });
 
+    // This is bcs ora is only shown in the file encrypt/decrypt process
+    if (this.operationFor !== "folder") {
+      this.operationFor = "folder";
+      this.stepDelay = 0;
+    }
+
     const size = Encryptor.FS.getFolderSize(folderPath);
     const content: StorageItemType[] = [];
 
@@ -333,7 +347,16 @@ class Encryptor {
     };
 
     if (saveOnEnd) {
-      saved = await Encryptor.STORAGE.set(saved);
+      // Return to default delay bcs process is finished
+      this.stepDelay = 300;
+      this.saveStep = createSpinner("Registrando carpeta encriptada...");
+      await Promise.all([
+        Encryptor.STORAGE.set(saved),
+        delay(this.stepDelay)
+      ]).then(([storageItem]) => {
+        saved = storageItem;
+        this.saveStep?.succeed("Carpeta encriptada registrada correctamente.");
+      });
     }
     const encryptedPath = path.join(path.dirname(folderPath), saved.id);
 
@@ -354,6 +377,12 @@ class Encryptor {
   ): Promise<string> {
     const { filePath: folderPath, onProgress, folder } = props;
 
+    // This is bcs ora is only shown in the file encrypt/decrypt process
+    if (this.operationFor !== "folder") {
+      this.operationFor = "folder";
+      this.stepDelay = 0;
+    }
+
     // If the folder is not passed, get it from storage
     const baseName = path.basename(folderPath);
     const currentFolder = folder || Encryptor.STORAGE.get(baseName);
@@ -372,8 +401,8 @@ class Encryptor {
         // Decrypt subfolder recursively
         await this.decryptFolder({
           filePath: fullPath,
-          onProgress,
-          folder: item
+          folder: item,
+          onProgress
         });
       } else if (item.type === "file") {
         // Decrypt file
@@ -388,9 +417,9 @@ class Encryptor {
     // Decrypt name of the current folder
     const originalName = this.decryptText(currentFolder.encryptedName);
     if (!originalName) {
-      console.warn(
+      createSpinner(
         `No se pudo descifrar el nombre de la carpeta: ${currentFolder.id}`
-      );
+      ).warn();
       return folderPath;
     }
 
@@ -402,11 +431,11 @@ class Encryptor {
       await Encryptor.FS.safeRenameFolder(folderPath, decryptedPath);
 
       // Delete the folder from storage
-      Encryptor.STORAGE.delete(currentFolder.id);
+      await Encryptor.STORAGE.delete(currentFolder.id);
 
       return decryptedPath;
     } catch (err) {
-      console.error(`Error al renombrar carpeta ${folderPath}:`, err);
+      console.error(err);
       return folderPath;
     }
   }
@@ -454,6 +483,8 @@ class Encryptor {
 
   private async onEncryptWriteStreamFinish(params: EncryptWriteStreamFinish) {
     const { saveOnEnd, logStream, filePath, resolve, reject } = params;
+    const isCalledFromFolder = saveOnEnd;
+
     try {
       if (!this.fileBaseName) {
         throw new Error("No se pudo obtener el nombre base del archivo.");
@@ -469,32 +500,44 @@ class Encryptor {
         encryptedName: this.encryptText(this.fileBaseName),
         originalName: path.basename(filePath),
         path: path.resolve(filePath),
-        encryptedAt: new Date(),
         size: this.fileStats.size,
+        encryptedAt: new Date(),
         id: generateUID(),
         type: "file"
       };
       if (saveOnEnd) {
-        await Promise.all([Encryptor.STORAGE.set(this.savedItem)]).then(
-          ([storageItem]) => {
-            this.savedItem = storageItem;
-            if (logStream) {
-              logStream.write(
-                `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
-              );
-              logStream.end();
-            }
+        this.saveStep = createSpinner("Registrando archivo encriptado...");
+        await Promise.all([
+          Encryptor.STORAGE.set(this.savedItem),
+          delay(this.stepDelay)
+        ]).then(([storageItem]) => {
+          this.saveStep?.succeed(
+            "Archivo encriptado registrado correctamente."
+          );
+          this.savedItem = storageItem;
+          if (logStream) {
+            logStream.write(
+              `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
+            );
+            logStream.end();
           }
-        );
+        });
       }
       const encryptedFileName = this.savedItem.id + ".enc";
       const renamedTempFile = path.join(Encryptor.tempDir, encryptedFileName);
       const destPath = path.join(this.fileDir, encryptedFileName);
 
       // Rename the temp file to the final file name
+      if (isCalledFromFolder) {
+        this.renameStep = createSpinner("Renombrando archivo encriptado...");
+      }
       await Promise.all([
-        Encryptor.FS.safeRenameFolder(this.tempPath, renamedTempFile)
+        Encryptor.FS.safeRenameFolder(this.tempPath, renamedTempFile),
+        delay(this.stepDelay)
       ]).then(() => {
+        this.renameStep?.succeed(
+          "Archivo encriptado renombrado correctamente."
+        );
         if (logStream) {
           logStream.write(
             `✅ Archivo encriptado renombrado: ${renamedTempFile}\n`
@@ -503,16 +546,28 @@ class Encryptor {
       });
 
       // Move the temp file to the final destination
+      if (isCalledFromFolder) {
+        this.copyStep = createSpinner("Moviendo archivo encriptado...");
+      }
       await Promise.all([
-        Encryptor.FS.copyFile(renamedTempFile, destPath)
+        Encryptor.FS.copyFile(renamedTempFile, destPath),
+        delay(this.stepDelay)
       ]).then(() => {
+        this.copyStep?.succeed("Archivo encriptado movido correctamente.");
         if (logStream) {
           logStream.write(`✅ Archivo encriptado movido: ${destPath}\n`);
         }
       });
 
       // Remove the original file
-      await Promise.all([Encryptor.FS.removeFile(filePath)]).then(() => {
+      if (isCalledFromFolder) {
+        this.removeStep = createSpinner("Eliminando archivo original...");
+      }
+      await Promise.all([
+        Encryptor.FS.removeFile(filePath),
+        delay(this.stepDelay)
+      ]).then(() => {
+        this.removeStep?.succeed("Archivo original eliminado correctamente.");
         if (logStream) {
           logStream.write(`✅ Archivo original eliminado: ${filePath}\n`);
         }
@@ -522,6 +577,16 @@ class Encryptor {
     } catch (err) {
       if (saveOnEnd && this.savedItem)
         await Encryptor.STORAGE.delete(this.savedItem.id);
+
+      if (isCalledFromFolder && this.saveStep)
+        this.saveStep.fail("Error al registrar el archivo.");
+      if (isCalledFromFolder && this.renameStep)
+        this.renameStep.fail("Error al renombrar el archivo.");
+      if (isCalledFromFolder && this.copyStep)
+        this.copyStep.fail("Error al mover el archivo.");
+      if (isCalledFromFolder && this.removeStep)
+        this.removeStep.fail("Error al eliminar el archivo original.");
+
       if (logStream)
         logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
       return reject(err);
@@ -550,7 +615,10 @@ class Encryptor {
     while (this.leftover.length >= this.nonceLength + 4 + this.macLength) {
       try {
         const chunkNonce = this.leftover.subarray(0, this.nonceLength);
-        const lengthBuffer = this.leftover.subarray(this.nonceLength, this.nonceLength + 4);
+        const lengthBuffer = this.leftover.subarray(
+          this.nonceLength,
+          this.nonceLength + 4
+        );
         const encryptedLength = lengthBuffer.readUInt32BE(0);
 
         if (this.leftover.length < this.nonceLength + 4 + encryptedLength) {
@@ -562,7 +630,9 @@ class Encryptor {
           this.nonceLength + 4 + encryptedLength
         );
 
-        this.leftover = this.leftover.subarray(this.nonceLength + 4 + encryptedLength);
+        this.leftover = this.leftover.subarray(
+          this.nonceLength + 4 + encryptedLength
+        );
 
         const decrypted = sodium.crypto_secretbox_open_easy(
           encryptedChunk,
@@ -602,6 +672,7 @@ class Encryptor {
 
   private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
     const { resolve, reject, filePath, file, logStream } = params;
+    const allowOra = this.operationFor === "file";
 
     try {
       if (!this.tempPath) {
@@ -626,12 +697,39 @@ class Encryptor {
         originalFileName
       );
       const data = Encryptor.FS.readFile(this.tempPath);
-      await Encryptor.FS.replaceFile(this.tempPath, restoredPath, data);
 
-      await Encryptor.FS.removeFile(filePath);
+      if (allowOra) {
+        this.renameStep = createSpinner("Remplazando archivo original...");
+      }
+      await Promise.all([
+        Encryptor.FS.replaceFile(this.tempPath, restoredPath, data),
+        delay(this.stepDelay)
+      ]).then(() => {
+        this.renameStep?.succeed("Archivo original reemplazado correctamente.");
+      });
+
+      if (allowOra) {
+        this.removeStep = createSpinner("Eliminando archivo temporal...");
+      }
+      await Promise.all([
+        Encryptor.FS.removeFile(filePath),
+        delay(this.stepDelay)
+      ]).then(() => {
+        this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
+      });
 
       if (!file) {
-        await Encryptor.STORAGE.delete(fileName);
+        if (allowOra) {
+          this.saveStep = createSpinner(
+            "Eliminando archivo del almacenamiento..."
+          );
+        }
+        await Promise.all([
+          Encryptor.STORAGE.delete(fileName),
+          delay(this.stepDelay)
+        ]).then(() => {
+          this.saveStep?.succeed("Archivo eliminado del almacenamiento.");
+        });
       }
 
       if (logStream) {
@@ -646,6 +744,14 @@ class Encryptor {
         logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
         logStream.end();
       }
+
+      if (allowOra && this.renameStep)
+        this.renameStep.fail("Error al reemplazar el archivo original.");
+      if (allowOra && this.removeStep)
+        this.removeStep.fail("Error al eliminar el archivo temporal.");
+      if (allowOra && this.saveStep)
+        this.saveStep.fail("Error al eliminar el archivo del almacenamiento.");
+
       if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
       reject(err);
     }

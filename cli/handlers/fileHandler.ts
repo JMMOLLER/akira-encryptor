@@ -1,3 +1,4 @@
+import createSpinner from "@utils/createSpinner";
 import type { ProgressCallback } from "types";
 import formatBytes from "@utils/formatBytes";
 import EncryptorClass from "@libs/Encryptor";
@@ -43,11 +44,6 @@ async function handleFileAction(props: HanlderProps) {
 
     if (processed >= total) {
       progressBar.stop();
-      console.log(
-        `✅ Archivo '${filePath}' ${
-          action === "encrypt" ? "encriptado" : "desencriptado"
-        } correctamente.`
-      );
     }
   };
 
@@ -65,6 +61,12 @@ async function handleFileAction(props: HanlderProps) {
         onProgress: handleProgress
       });
     }
+
+    createSpinner(
+      `Archivo '${filePath}' ${
+        action === "encrypt" ? "encriptado" : "desencriptado"
+      } correctamente.`
+    ).succeed();
   } catch (error) {
     progressBar.stop();
     console.error(`\n❌ Error al procesar el archivo:\n`, error);

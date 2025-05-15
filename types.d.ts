@@ -1,4 +1,5 @@
 import type { ReadableStream, WritableStream } from "stream";
+import type createSpinner from "@utils/createSpinner";
 import type { Low } from "lowdb";
 import type { Stats } from "fs";
 
@@ -111,4 +112,6 @@ declare global {
     StreamHandlerProps,
     "streamName" | "error" | "reject" | "logStream"
   >;
+
+  type CliSpinner = ReturnType<typeof createSpinner>
 }
