@@ -26,6 +26,7 @@ class Encryptor {
   private readonly macLength = sodium.crypto_secretbox_MACBYTES;
   private readonly chunkSize = 64 * 1024;
   private leftover = Buffer.alloc(0);
+  private iterations = 0;
   /* ========================== COMMON PROPERTIES ========================== */
   private fileStats?: StreamHandlerProps["stat"] = undefined;
   private operationFor: CliType = "file";
@@ -137,6 +138,16 @@ class Encryptor {
     props: EncryptorFuncion & { saveOnEnd?: boolean }
   ): Promise<FileItem> {
     const { filePath, onProgress, saveOnEnd = true } = props;
+
+    // prevent encrypting the file again
+    if (path.extname(filePath) === ".enc") {
+      const error = new Error(
+        "El archivo ya está cifrado. No se puede volver a cifrar."
+      );
+      error.name = "FileAlreadyEncrypted";
+      return Promise.reject(error);
+    }
+
     this.fileStats = Encryptor.FS.getStatFile(filePath);
     this.totalFileSize = this.fileStats.size;
     this.processedBytes = 0;
@@ -320,6 +331,8 @@ class Encryptor {
     const size = Encryptor.FS.getFolderSize(folderPath);
     const content: StorageItem[] = [];
 
+    let skippedFiles = 0;
+
     for (const entry of entries) {
       const fullPath = path.join(folderPath, entry.name);
 
@@ -340,7 +353,11 @@ class Encryptor {
           });
           content.push(subFile);
         } catch (err) {
-          console.error(`Error al cifrar archivo ${fullPath}:`, err);
+          if (err instanceof Error && err.name === "FileAlreadyEncrypted") {
+            skippedFiles++;
+          } else {
+            console.error(`Error al cifrar archivo ${fullPath}:`, err);
+          }
         }
       }
     }
@@ -376,6 +393,11 @@ class Encryptor {
 
     if (saveOnEnd) {
       props.onEnd?.();
+      if (skippedFiles > 0) {
+        createSpinner(
+          `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
+        ).warn();
+      }
     }
 
     return Promise.resolve(saved);
@@ -400,6 +422,11 @@ class Encryptor {
       this.stepDelay = 0;
     }
 
+    // calculate the number of processed files in each iteration
+    if (!folder) {
+      this.iterations = Encryptor.FS.readDir(folderPath).length;
+    }
+
     // If the folder is not passed, get it from storage
     const baseName = path.basename(folderPath);
     const currentFolder = folder || Encryptor.STORAGE.get(baseName);
@@ -411,6 +438,7 @@ class Encryptor {
     // Process the content of the folder
     for (const item of currentFolder.content) {
       const fullPath = path.join(folderPath, item.id);
+      this.iterations--;
 
       if (item.type === "folder") {
         // Decrypt subfolder recursively
@@ -457,6 +485,11 @@ class Encryptor {
     } finally {
       if (!folder) {
         props.onEnd?.(error);
+        if (this.iterations > 0) {
+          createSpinner(
+            `Se omitieron ${this.iterations} archivo(s) porque no se encontraban registrados en el almacenamiento.`
+          ).warn();
+        }
       }
     }
   }
