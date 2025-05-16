@@ -7,6 +7,7 @@ import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
 import delay from "@utils/delay";
 import Storage from "./Storage";
+import hidefile from "hidefile";
 import { tmpdir } from "os";
 import path from "path";
 
@@ -64,6 +65,64 @@ class Encryptor {
    */
   generateNonce(): Uint8Array {
     return sodium.randombytes_buf(this.nonceLength);
+  }
+
+  async hideStoredItem(itemId: string) {
+    try {
+      if (/[/\\]/.test(itemId)) {
+        itemId = path.basename(itemId);
+      }
+
+      const id = itemId.replace(/\.enc$/, "");
+      const item = Encryptor.STORAGE.get(id);
+      if (item && item.isHidden) return true;
+      else if (!item) {
+        throw new Error("No se encontró el elemento en el almacenamiento.");
+      }
+
+      const newPath = hidefile.hideSync(
+        item.path.replace(path.basename(item.path), id + ".enc")
+      );
+      if (typeof newPath !== "string") {
+        throw new Error("El resultado obtenido no es el esperado.");
+      }
+
+      item.isHidden = true;
+      await Encryptor.STORAGE.replace(id, item);
+      return true;
+    } catch (err) {
+      console.error("Error al ocultar el archivo:", err);
+      return false;
+    }
+  }
+
+  async revealStoredItem(itemId: string) {
+    try {
+      if (/[/\\]/.test(itemId)) {
+        itemId = path.basename(itemId).replace(/^\./, "");
+      }
+
+      const id = itemId.replace(/\.enc$/, "");
+      const item = Encryptor.STORAGE.get(id);
+      if (item && !item.isHidden) return true;
+      else if (!item) {
+        throw new Error("No se encontró el elemento en el almacenamiento.");
+      }
+
+      const newPath = hidefile.revealSync(
+        item.path.replace(path.basename(item.path), "." + id + ".enc")
+      );
+      if (typeof newPath !== "string") {
+        throw new Error("El resultado obtenido no es el esperado.");
+      }
+
+      item.isHidden = false;
+      await Encryptor.STORAGE.replace(id, item);
+      return true;
+    } catch (err) {
+      console.error("Error al revelar el archivo:", err);
+      return false;
+    }
   }
 
   /**

@@ -33,6 +33,7 @@ declare global {
     encryptedName: string;
     originalName?: string;
     encryptedAt?: Date;
+    isHidden?: boolean;
     size?: number;
     path: string;
     id: string;

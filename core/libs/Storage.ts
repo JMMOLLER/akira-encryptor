@@ -50,7 +50,11 @@ class Storage {
   async set(item: Omit<FolderItem, "id">): Promise<FolderItem>;
   async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItem> {
     const newId = generateUID();
-    const newItem = {...item, id: newId} as StorageItem;
+    const newItem = {
+      ...item,
+      isHidden: !!item.isHidden,
+      id: newId
+    } as StorageItem;
 
     Storage.db.data.encryptedItems.set(newItem.id, newItem);
     await Storage.db.write();
