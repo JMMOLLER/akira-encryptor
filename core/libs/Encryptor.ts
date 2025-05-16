@@ -2,6 +2,7 @@ import generateSecretKey from "@utils/generateSecretKey";
 import createSpinner from "@utils/createSpinner";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
+import type { StorageItem } from "types";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
 import delay from "@utils/delay";
@@ -17,7 +18,7 @@ class Encryptor {
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
   /* ========================== ENCRYPT PROPERTIES ========================== */
-  private savedItem?: StorageItemType = undefined;
+  private savedItem?: StorageItem = undefined;
   private fileBaseName?: string = undefined;
   private fileDir?: string = undefined;
   /* ========================== DECRYPT PROPERTIES ========================== */
@@ -317,7 +318,7 @@ class Encryptor {
     }
 
     const size = Encryptor.FS.getFolderSize(folderPath);
-    const content: StorageItemType[] = [];
+    const content: StorageItem[] = [];
 
     for (const entry of entries) {
       const fullPath = path.join(folderPath, entry.name);
@@ -346,7 +347,7 @@ class Encryptor {
 
     // Encrypt the name of the current folder
     const encryptedName = this.encryptText(path.basename(folderPath));
-    let saved: StorageItemType = {
+    let saved: StorageItem = {
       originalName: path.basename(folderPath),
       encryptedAt: new Date(),
       id: generateUID(),
@@ -404,9 +405,7 @@ class Encryptor {
     const currentFolder = folder || Encryptor.STORAGE.get(baseName);
 
     if (!currentFolder || currentFolder.type !== "folder") {
-      throw new Error(
-        `No se encontró la carpeta en el registro: ${baseName}`
-      );
+      throw new Error(`No se encontró la carpeta en el registro: ${baseName}`);
     }
 
     // Process the content of the folder
@@ -746,9 +745,7 @@ class Encryptor {
 
       if (!file) {
         if (isFileOperation) {
-          this.saveStep = createSpinner(
-            "Eliminando archivo del registro..."
-          );
+          this.saveStep = createSpinner("Eliminando archivo del registro...");
         }
         await Promise.all([
           Encryptor.STORAGE.delete(fileName),

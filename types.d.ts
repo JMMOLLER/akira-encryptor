@@ -26,7 +26,6 @@ declare global {
     };
   }
 
-  type StorageItemType = StorageItem;
   type LowStoreType = Low<{ encryptedItems: Map<string, StorageItem> }>;
   type EncryptorFunc = (text: string) => string;
 
