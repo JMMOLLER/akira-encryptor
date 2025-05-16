@@ -61,6 +61,18 @@ class Storage {
     Storage.db.data.encryptedItems.delete(id);
     return await Storage.db.write();
   }
+
+  async replace(id: string, item: StorageItem) {
+    const existingItem = this.get(id);
+    if (!existingItem) {
+      throw new Error(`Item with id ${id} not found`);
+    }
+
+    const newItem: StorageItem = { ...item, id };
+    Storage.db.data.encryptedItems.set(id, newItem);
+    await Storage.db.write();
+    return newItem;
+  }
 }
 
 export default Storage;
