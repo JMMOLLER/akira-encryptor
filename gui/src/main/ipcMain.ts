@@ -2,6 +2,8 @@ import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from 'electron'
 import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
+let isDialogOpen = false
+
 export default function registerIpcMain() {
   ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
     const focusedWindow = BrowserWindow.getFocusedWindow()
@@ -64,21 +66,31 @@ export default function registerIpcMain() {
     }
   })
 
-  ipcMain.handle('open-explorer', async (_event: IpcMainInvokeEvent, props: OpenExplorerProps) => {
+  ipcMain.handle('open-explorer', async (event: IpcMainInvokeEvent, props: OpenExplorerProps) => {
+    if (isDialogOpen) return null
+    isDialogOpen = true
     const {
       filters = [{ name: 'Todos los archivos', extensions: ['*'] }],
       title = 'Selecciona un archivo',
       properties
     } = props
 
-    const result = await dialog.showOpenDialog({
-      properties,
-      filters,
-      title
-    })
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const result = await dialog.showOpenDialog(win!, {
+        properties,
+        filters,
+        title
+      })
 
-    if (result.canceled) return null
-    return result.filePaths
+      if (result.canceled) return null
+      return result.filePaths
+    } catch (error) {
+      console.error('Error opening file dialog:', error)
+      return null
+    } finally {
+      isDialogOpen = false
+    }
   })
 
   ipcMain.handle('get-encrypted-content', async (_event: IpcMainInvokeEvent, password: string) => {
