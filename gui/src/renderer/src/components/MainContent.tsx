@@ -4,8 +4,8 @@ import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { Layout, Spin, Typography } from 'antd'
 import { Content } from 'antd/es/layout/layout'
 import PendingContent from './PendingContent'
-import EncryptedItem from './EncryptedItem'
 import NewEncrypt from './NewEncrypt'
+import ItemCard from './ItemCard'
 
 function MainContent() {
   const [selectedItem, setSelectedItem] = useState<string>()
@@ -48,9 +48,7 @@ function MainContent() {
               <span className="p-10" />
             </Spin>
           ) : (
-            encItems.map((encryptedItem, index) => (
-              <EncryptedItem key={index} item={encryptedItem} />
-            ))
+            encItems.map((encryptedItem, index) => <ItemCard key={index} item={encryptedItem} />)
           )}
         </div>
       </Content>
