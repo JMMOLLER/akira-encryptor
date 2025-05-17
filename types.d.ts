@@ -26,6 +26,9 @@ declare global {
     };
   }
 
+  // This type is used in core and gui 
+  type StorageItemType = StorageItem;
+
   type LowStoreType = Low<{ encryptedItems: Map<string, StorageItem> }>;
   type EncryptorFunc = (text: string) => string;
 

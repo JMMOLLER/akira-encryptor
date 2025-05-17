@@ -1,6 +1,5 @@
 import MapAdapter from "@adapters/MapAdapter";
 import generateUID from "@utils/generateUID";
-import type { StorageItem } from "types";
 import { JSONFile } from "lowdb/node";
 import { env } from "@configs/env";
 import { Low } from "lowdb";
@@ -48,13 +47,13 @@ class Storage {
    */
   async set(item: Omit<FileItem, "id">): Promise<FileItem>;
   async set(item: Omit<FolderItem, "id">): Promise<FolderItem>;
-  async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItem> {
+  async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItemType> {
     const newId = generateUID();
     const newItem = {
       ...item,
       isHidden: !!item.isHidden,
       id: newId
-    } as StorageItem;
+    } as StorageItemType;
 
     Storage.db.data.encryptedItems.set(newItem.id, newItem);
     await Storage.db.write();
@@ -66,13 +65,13 @@ class Storage {
     return await Storage.db.write();
   }
 
-  async replace(id: string, item: StorageItem) {
+  async replace(id: string, item: StorageItemType) {
     const existingItem = this.get(id);
     if (!existingItem) {
       throw new Error(`Item with id ${id} not found`);
     }
 
-    const newItem: StorageItem = { ...item, id };
+    const newItem: StorageItemType = { ...item, id };
     Storage.db.data.encryptedItems.set(id, newItem);
     await Storage.db.write();
     return newItem;

@@ -2,7 +2,6 @@ import generateSecretKey from "@utils/generateSecretKey";
 import createSpinner from "@utils/createSpinner";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
-import type { StorageItem } from "types";
 import sodium from "libsodium-wrappers";
 import { env } from "@configs/env";
 import delay from "@utils/delay";
@@ -19,7 +18,7 @@ class Encryptor {
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
   /* ========================== ENCRYPT PROPERTIES ========================== */
-  private savedItem?: StorageItem = undefined;
+  private savedItem?: StorageItemType = undefined;
   private fileBaseName?: string = undefined;
   private fileDir?: string = undefined;
   /* ========================== DECRYPT PROPERTIES ========================== */
@@ -388,7 +387,7 @@ class Encryptor {
     }
 
     const size = Encryptor.FS.getFolderSize(folderPath);
-    const content: StorageItem[] = [];
+    const content: StorageItemType[] = [];
 
     let skippedFiles = 0;
 
@@ -423,7 +422,7 @@ class Encryptor {
 
     // Encrypt the name of the current folder
     const encryptedName = this.encryptText(path.basename(folderPath));
-    let saved: StorageItem = {
+    let saved: StorageItemType = {
       originalName: path.basename(folderPath),
       encryptedAt: new Date(),
       id: generateUID(),
