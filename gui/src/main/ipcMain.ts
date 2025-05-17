@@ -110,4 +110,31 @@ export default function registerIpcMain() {
       window.webContents.openDevTools()
     }
   })
+
+  ipcMain.handle(
+    'visibility-action',
+    async (_event: IpcMainInvokeEvent, props: VisibilityActions) => {
+      const { action, itemId, password } = props
+      try {
+        const encryptor = await Encryptor.init(password)
+        const storage = encryptor.getStorage()
+        const item = storage.get(itemId)
+        if (!item) {
+          throw new Error('Item not found')
+        }
+        if (action === 'show') {
+          await encryptor.revealStoredItem(itemId)
+        } else {
+          await encryptor.hideStoredItem(itemId)
+        }
+        return { error: null, success: true }
+      } catch (error) {
+        console.error('Error in visibility action:', error)
+        return {
+          error: (error as Error).message,
+          success: false
+        }
+      }
+    }
+  )
 }

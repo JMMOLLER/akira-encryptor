@@ -1,10 +1,13 @@
+import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { useNewOperation } from '@renderer/hooks/useNewOperation'
-import cardActions from '@renderer/constants/cardActions'
+import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { StorageItem } from '../../../../../types'
 import { Card, Popconfirm, Tooltip } from 'antd'
+import generateUID from '@utils/generateUID'
 import formatBytes from '@utils/formatBytes'
 import * as Icons from '@ant-design/icons'
 import useApp from 'antd/es/app/useApp'
+import delay from '@utils/delay'
 import { useMemo } from 'react'
 
 interface LoadCardProps {
@@ -12,52 +15,87 @@ interface LoadCardProps {
 }
 
 const EncryptedItem = ({ item }: LoadCardProps) => {
+  const password = useUserConfig().userConfig.password!
   const { newDecrypt } = useNewOperation()
+  const { setItems } = useEncryptedItems()
   const { message } = useApp()
 
-  const renderActions = useMemo(
-    () =>
-      cardActions.map(({ Icon, key, title, ...rest }) => (
-        <Tooltip
-          className={rest.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-          title={rest.disabled ? undefined : title}
-          key={key}
+  const renderActions = useMemo(() => {
+    const handleVisibilityClick = async () => {
+      const id = generateUID()
+      message.open({
+        type: 'loading',
+        content: 'Alternando visibilidad del contenido...',
+        key: `toggle-visibility-${id}`
+      })
+
+      const [res] = await Promise.all([
+        await window.api.changeVisibility({
+          action: item.isHidden ? 'show' : 'hide',
+          password: password,
+          itemId: item.id
+        }),
+        delay(500)
+      ])
+      message.destroy(`toggle-visibility-${id}`)
+
+      if (res.error) {
+        message.error('Error al alternar la visibilidad del contenido.')
+      } else {
+        message.success('Contenido alternado con éxito.')
+        setItems(undefined)
+      }
+    }
+
+    return [
+      // Toggle visibility action
+      <Tooltip title={item.isHidden ? 'Mostrar elemento' : 'Ocultar elemento'} key={'visibility'}>
+        {!item.isHidden ? (
+          <Icons.EyeOutlined onClick={handleVisibilityClick} />
+        ) : (
+          <Icons.EyeInvisibleOutlined onClick={handleVisibilityClick} />
+        )}
+      </Tooltip>,
+      // Decrypt action
+      <Tooltip title="Desencriptar" key="decrypt">
+        <Popconfirm
+          title="¿Estás seguro de que quieres continuar?"
+          style={{ color: 'red' }}
+          onConfirm={() => {
+            if (item.isHidden) {
+              message.info('Cambia la visibilidad del elemento antes de desencriptarlo.')
+              return
+            }
+
+            const lastSlashIndex =
+              Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\')) + 1
+            if (lastSlashIndex < 0) {
+              console.error('Invalid file path:', item.path)
+              message.error('Ruta de archivo no válida.')
+              return
+            }
+
+            // Construct the file path for decryption
+            const basePath = item.path.substring(0, lastSlashIndex)
+            const fileName = item.id + (item.type === 'file' ? '.enc' : '')
+            const filePath = `${basePath}${fileName}`
+
+            newDecrypt({
+              actionFor: item.type,
+              id: item.id,
+              srcPath: filePath
+            })
+          }}
         >
-          {rest.popconfirm ? (
-            <Popconfirm
-              title="¿Estás seguro de que quieres continuar?"
-              disabled={rest.disabled}
-              style={{ color: 'red' }}
-              onConfirm={() => {
-                const lastSlashIndex =
-                  Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\')) + 1
-                if (lastSlashIndex < 0) {
-                  console.error('Invalid file path:', item.path)
-                  message.error('Ruta de archivo no válida.')
-                  return
-                }
-
-                // Construct the file path for decryption
-                const basePath = item.path.substring(0, lastSlashIndex)
-                const fileName = item.id + (item.type === 'file' ? '.enc' : '')
-                const filePath = `${basePath}${fileName}`
-
-                newDecrypt({
-                  actionFor: item.type,
-                  id: item.id,
-                  srcPath: filePath
-                })
-              }}
-            >
-              <Icon />
-            </Popconfirm>
-          ) : (
-            <Icon disabled={rest.disabled} />
-          )}
-        </Tooltip>
-      )),
-    [item, message, newDecrypt]
-  )
+          <Icons.KeyOutlined />
+        </Popconfirm>
+      </Tooltip>,
+      // Info action
+      <Tooltip className="opacity-50 cursor-not-allowed" title="Información" key="info">
+        <Icons.InfoCircleOutlined />
+      </Tooltip>
+    ]
+  }, [item, message, newDecrypt, setItems, password])
 
   const renderDescription = useMemo(
     () => (

@@ -21,6 +21,7 @@ declare global {
   // Define this function in the preload.ts file
   interface ElectronIpcAPI {
     getEncryptedContent: (password: string) => Promise<[string, StorageItem][] | Error>
+    changeVisibility: (props: VisibilityActions) => Promise<ChangeVisibilityResponse>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
     openDevTools: () => void
@@ -88,5 +89,15 @@ declare global {
     error: string | null
     actionFor: CliType
     itemId: string
+  }
+
+  type VisibilityActions = {
+    action: 'show' | 'hide'
+    password: string
+    itemId: string
+  }
+  type ChangeVisibilityResponse = {
+    error: string | null
+    success: boolean
   }
 }

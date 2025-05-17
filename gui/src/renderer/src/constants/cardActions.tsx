@@ -3,13 +3,12 @@ import { AntdIconProps } from '@ant-design/icons/lib/components/AntdIcon'
 import { MessageInstance } from 'antd/es/message/interface'
 
 type OnClickProps = {
-  message: MessageInstance
   item: StorageItemType
   password: string
 }
 
 type CardAction = {
-  onclick?: (props: OnClickProps) => void
+  onclick?: (props: OnClickProps, msg: MessageInstance) => void
   Icon: React.FC<Omit<AntdIconProps, 'ref'>>
   popconfirm?: boolean
   disabled?: boolean
@@ -20,7 +19,6 @@ type CardAction = {
 const cardActions: CardAction[] = [
   {
     key: 'view',
-    disabled: true,
     Icon: EyeOutlined,
     title: 'Ver contenido',
     onclick: () => {

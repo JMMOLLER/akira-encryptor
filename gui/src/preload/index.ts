@@ -11,7 +11,8 @@ const api = {
   openDevTools: () => ipcRenderer.send('open-devtools'),
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),
   encryptorAction: (props: EncryptFileProps) => ipcRenderer.invoke('encryptor-action', props),
-  getEncryptedContent: (password: string) => ipcRenderer.invoke('get-encrypted-content', password)
+  getEncryptedContent: (password: string) => ipcRenderer.invoke('get-encrypted-content', password),
+  changeVisibility: (props: VisibilityActions) => ipcRenderer.invoke('visibility-action', props)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
