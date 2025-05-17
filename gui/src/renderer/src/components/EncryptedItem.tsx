@@ -8,10 +8,10 @@ import useApp from 'antd/es/app/useApp'
 import { useMemo } from 'react'
 
 interface LoadCardProps {
-  encryptedItem: StorageItem
+  item: StorageItem
 }
 
-const LoadCard = ({ encryptedItem }: LoadCardProps) => {
+const EncryptedItem = ({ item }: LoadCardProps) => {
   const { newDecrypt } = useNewOperation()
   const { message } = useApp()
 
@@ -30,24 +30,21 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
               style={{ color: 'red' }}
               onConfirm={() => {
                 const lastSlashIndex =
-                  Math.max(
-                    encryptedItem.path.lastIndexOf('/'),
-                    encryptedItem.path.lastIndexOf('\\')
-                  ) + 1
+                  Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\')) + 1
                 if (lastSlashIndex < 0) {
-                  console.error('Invalid file path:', encryptedItem.path)
+                  console.error('Invalid file path:', item.path)
                   message.error('Ruta de archivo no válida.')
                   return
                 }
 
                 // Construct the file path for decryption
-                const basePath = encryptedItem.path.substring(0, lastSlashIndex)
-                const fileName = encryptedItem.id + (encryptedItem.type === 'file' ? '.enc' : '')
+                const basePath = item.path.substring(0, lastSlashIndex)
+                const fileName = item.id + (item.type === 'file' ? '.enc' : '')
                 const filePath = `${basePath}${fileName}`
 
                 newDecrypt({
-                  actionFor: encryptedItem.type,
-                  id: encryptedItem.id,
+                  actionFor: item.type,
+                  id: item.id,
                   srcPath: filePath
                 })
               }}
@@ -59,7 +56,7 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
           )}
         </Tooltip>
       )),
-    [encryptedItem, message, newDecrypt]
+    [item, message, newDecrypt]
   )
 
   const renderDescription = useMemo(
@@ -67,28 +64,28 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
       <ul>
         <li className="truncate">
           <span className="font-semibold">Nombre:</span>{' '}
-          {encryptedItem.originalName && encryptedItem.originalName.length > 28 ? (
-            <Tooltip title={encryptedItem.originalName}>
-              <span>{encryptedItem.originalName}</span>
+          {item.originalName && item.originalName.length > 28 ? (
+            <Tooltip title={item.originalName}>
+              <span>{item.originalName}</span>
             </Tooltip>
           ) : (
-            <span>{encryptedItem.originalName}</span>
+            <span>{item.originalName}</span>
           )}
         </li>
         <li>
-          <span className="font-semibold">Tamaño:</span> {formatBytes(encryptedItem.size || 0)}
+          <span className="font-semibold">Tamaño:</span> {formatBytes(item.size || 0)}
         </li>
       </ul>
     ),
-    [encryptedItem]
+    [item]
   )
 
   const renderAvatar = useMemo(() => {
     const className = 'w-8 h-8 text-5xl'
-    if (encryptedItem.type === 'folder') {
+    if (item.type === 'folder') {
       return <Icons.FolderOpenOutlined className={className} />
     }
-    const extension = encryptedItem.originalName?.split('.').pop()?.toLowerCase()
+    const extension = item.originalName?.split('.').pop()?.toLowerCase()
     const imgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
     const audioExtensions = ['mp3', 'wav', 'aac', 'flac', 'ogg']
     const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv']
@@ -102,12 +99,12 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
     }
 
     return <Icons.FileUnknownOutlined className={className} />
-  }, [encryptedItem])
+  }, [item])
 
   return (
     <Card className="w-[350px] h-min" actions={renderActions}>
       <Card.Meta
-        title={encryptedItem.type === 'file' ? 'Archivo Encriptado' : 'Carpeta Encriptada'}
+        title={item.type === 'file' ? 'Archivo Encriptado' : 'Carpeta Encriptada'}
         description={renderDescription}
         avatar={renderAvatar}
       />
@@ -115,4 +112,4 @@ const LoadCard = ({ encryptedItem }: LoadCardProps) => {
   )
 }
 
-export default LoadCard
+export default EncryptedItem
