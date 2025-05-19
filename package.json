@@ -9,6 +9,7 @@
     "test": "bun vitest",
     "start": "bun run cli/main.ts",
     "debug": "bunx tsx cli/main.ts",
+    "typecheck": "bun tsc --noEmit -p tsconfig.json",
     "build": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=cli/dist/main.cjs --format=cjs --external:fswin --external:hidefile",
     "build:win": "bun run build && node scripts/build/generate-windows-binary.js"
   },
