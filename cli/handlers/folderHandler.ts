@@ -2,8 +2,10 @@ import collectFileSizes from "@utils/collectFileSizes";
 import createBar from "@utils/createProgressBar";
 import createSpinner from "@utils/createSpinner";
 import type { ProgressCallback } from "types";
+import { askForHideItem } from "@cli/prompts";
 import formatBytes from "@utils/formatBytes";
 import EncryptorClass from "@libs/Encryptor";
+import type Encryptor from "@libs/Encryptor";
 import cliProgress from "cli-progress";
 import path from "path";
 
@@ -89,22 +91,27 @@ async function handleFolderAction(props: HanlderProps) {
     const Encryptor = await EncryptorClass.init(password);
 
     if (action === "encrypt") {
-      await Encryptor.encryptFolder({
+      const item = await Encryptor.encryptFolder({
         filePath: path.normalize(folderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
+
+      // Ask if the user wants to hide the folder
+      await askForHideItem({
+        actionFor: "folder",
+        Encryptor,
+        item
+      });
     } else {
-      const storage = Encryptor.getStorage();
-      const storedFolderData = storage.get(path.basename(folderPath));
-      if (!storedFolderData) {
-        throw new Error(
-          `No se encontró la carpeta '${folderPath}' en el almacenamiento.`
-        );
-      }
+      // If the folder is hidden, we need to reveal it first
+      const resolverdFolderPath = await handleIsHiddenFile(
+        folderPath,
+        Encryptor
+      );
 
       await Encryptor.decryptFolder({
-        filePath: path.normalize(folderPath),
+        filePath: path.normalize(resolverdFolderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
@@ -122,6 +129,21 @@ async function handleFolderAction(props: HanlderProps) {
     );
     return;
   }
+}
+
+async function handleIsHiddenFile(folderPath: string, Encryptor: Encryptor) {
+  const storage = Encryptor.getStorage();
+  const id = path.basename(folderPath).replace(/^\./, "");
+  const item = storage.get(id);
+
+  if (item?.isHidden) {
+    const status = await Encryptor.revealStoredItem(item.id);
+    if (status) {
+      return folderPath.replace(path.basename(folderPath), item.id);
+    }
+  }
+
+  return folderPath;
 }
 
 export default handleFolderAction;

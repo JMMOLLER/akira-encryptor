@@ -1,8 +1,32 @@
 import normalizePath from "@utils/normalizePath";
 import { FileSystem } from "@libs/FileSystem";
+import type Encryptor from "@libs/Encryptor";
 import { env } from "@configs/env";
 import inquirer from "inquirer";
 import fs from "fs";
+
+interface HidePromptOptions {
+  actionFor: CliType;
+  Encryptor: Encryptor;
+  item: FileItem | FolderItem;
+}
+
+export async function askForHideItem(props: HidePromptOptions) {
+  const { actionFor, Encryptor, item } = props;
+  const { hide } = await inquirer.prompt<{ hide: boolean }>([
+    {
+      type: "confirm",
+      name: "hide",
+      message: `¿Desea ocultar ${
+        actionFor === "file" ? "el archivo" : "la carpeta"
+      }`,
+      default: false
+    }
+  ]);
+  if (hide) {
+    await Encryptor.hideStoredItem(item.id);
+  }
+}
 
 export async function askForOtherOperation() {
   process.stdout.write("\n");
