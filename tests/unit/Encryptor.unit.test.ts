@@ -1,12 +1,32 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import EncryptorClass from "@libs/Encryptor";
+import path from "path";
+import fs from "fs";
 
 let Encryptor: EncryptorClass;
+const tempDir = path.resolve(__dirname, "tmp");
+const testFolderPath = path.join(tempDir, "test-dir");
+const testFilePath = path.join(tempDir, "test-file.txt");
 
 beforeAll(async () => {
   Encryptor = await (
     await import("@libs/Encryptor")
   ).default.init("mypassword");
+
+  // Crear el directorio temporal y el archivo de prueba
+  fs.mkdirSync(tempDir, { recursive: true });
+  fs.writeFileSync(testFilePath, "Contenido secreto para pruebas.");
+  // Crear un archivo de prueba dentro de una carpeta
+  fs.mkdirSync(testFolderPath, { recursive: true });
+  fs.writeFileSync(
+    path.join(testFolderPath, "test-file.txt"),
+    "Contenido secreto en el directorio."
+  );
+});
+
+afterAll(async () => {
+  // Eliminar archivo y carpeta temporal
+  fs.rmSync(tempDir, { recursive: true, force: true });
 });
 
 describe("Encryptor", () => {
@@ -51,5 +71,73 @@ describe("Encryptor", () => {
     const invalidEncryptedText = "invalid_base64_string";
 
     expect(() => Encryptor.decryptText(invalidEncryptedText)).toThrow();
+  });
+
+  it("should encrypt and decrypt file correctly", async () => {
+    const originalContent = fs.readFileSync(testFilePath, "utf-8");
+    const res = await Encryptor.encryptFile({
+      filePath: testFilePath,
+      onProgress: () => {}
+    });
+
+    const encryptedFilePath = testFilePath.replace(
+      path.basename(testFilePath),
+      `${res.id}.enc`
+    );
+    const existTempFile = fs.existsSync(testFilePath);
+    const existsEncTempFile = fs.existsSync(encryptedFilePath);
+
+    expect(existTempFile).toBe(false);
+    expect(existsEncTempFile).toBe(true);
+
+    await Encryptor.decryptFile({
+      filePath: encryptedFilePath,
+      onProgress: () => {}
+    });
+
+    const decryptedFilePath = fs.existsSync(testFilePath);
+    expect(decryptedFilePath).toBe(true);
+
+    const decryptedContent = fs.readFileSync(testFilePath, "utf-8");
+    expect(decryptedContent).toBe(originalContent);
+  });
+
+  it("should encrypt and decrypt folder correctly", async () => {
+    const dirInfo = fs.readdirSync(testFolderPath);
+    const originalContentFile = fs.readFileSync(
+      path.join(testFolderPath, "test-file.txt"),
+      "utf-8"
+    );
+
+    const res = await Encryptor.encryptFolder({
+      filePath: testFolderPath,
+      onProgress: () => {}
+    });
+
+    const encryptedFolderPath = path.join(tempDir, res.id);
+    const existTempFile = fs.existsSync(
+      path.join(testFolderPath, "test-file.txt")
+    );
+    const existsEncTempFile = fs.existsSync(encryptedFolderPath);
+
+    expect(existTempFile).toBe(false);
+    expect(existsEncTempFile).toBe(true);
+
+    await Encryptor.decryptFolder({
+      filePath: encryptedFolderPath,
+      onProgress: () => {}
+    });
+
+    const decryptedFolderPath = fs.existsSync(testFolderPath);
+    expect(decryptedFolderPath).toBe(true);
+
+    const lastDirInfo = fs.readdirSync(testFolderPath);
+    expect(lastDirInfo).toEqual(dirInfo);
+
+    const decryptedContentFile = fs.readFileSync(
+      path.join(testFolderPath, "test-file.txt"),
+      "utf-8"
+    );
+    expect(decryptedContentFile).toBe(originalContentFile);
   });
 });
