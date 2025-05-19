@@ -14,9 +14,11 @@ class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
   private static readonly tempDir = tmpdir();
+  private DEFAULT_STEP_DELAY = 300;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
+  private SILENT = false;
   /* ========================== ENCRYPT PROPERTIES ========================== */
   private savedItem?: StorageItemType = undefined;
   private fileBaseName?: string = undefined;
@@ -33,7 +35,7 @@ class Encryptor {
   private tempPath?: string = undefined;
   private processedBytes = 0;
   private totalFileSize = 0;
-  private stepDelay = 300;
+  private stepDelay = 0;
   private renameStep?: CliSpinner;
   private removeStep?: CliSpinner;
   private saveStep?: CliSpinner;
@@ -48,12 +50,17 @@ class Encryptor {
    * @description `[ES]` Inicializa la instancia de Encryptor y el almacenamiento.
    * @param password `string` - The password used to generate the secret key.
    */
-  static async init(password: string) {
+  static async init(password: string, options?: EncryptorOptions) {
     await sodium.ready;
     const instance = new Encryptor(password);
+    if (options) {
+      instance.DEFAULT_STEP_DELAY = options.minDelayPerStep || 300;
+      instance.SILENT = options.silent || false;
+    }
     Encryptor.STORAGE = await Storage.init(
       instance.encryptText.bind(instance),
-      instance.decryptText.bind(instance)
+      instance.decryptText.bind(instance),
+      options?.libraryPath
     );
     return instance;
   }
@@ -378,7 +385,7 @@ class Encryptor {
       return a.name.localeCompare(b.name);
     });
 
-    // This is bcs ora is only shown in the file encrypt/decrypt process
+    // This is bcs spinners should only be displayed for file encryption/decryption processes.
     if (this.operationFor !== "folder") {
       this.operationFor = "folder";
       this.stepDelay = 0;
@@ -433,8 +440,10 @@ class Encryptor {
 
     if (saveOnEnd) {
       // Return to default delay bcs process is finished
-      this.stepDelay = 300;
-      this.saveStep = createSpinner("Registrando carpeta encriptada...");
+      this.stepDelay = this.DEFAULT_STEP_DELAY;
+      if (!this.SILENT) {
+        this.saveStep = createSpinner("Registrando carpeta encriptada...");
+      }
       await Promise.all([
         Encryptor.STORAGE.set(saved),
         delay(this.stepDelay)
@@ -449,7 +458,7 @@ class Encryptor {
 
     if (saveOnEnd) {
       props.onEnd?.();
-      if (skippedFiles > 0) {
+      if (skippedFiles > 0 && !this.SILENT) {
         createSpinner(
           `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
         ).warn();
@@ -517,9 +526,11 @@ class Encryptor {
     // Decrypt name of the current folder
     const originalName = this.decryptText(currentFolder.encryptedName);
     if (!originalName) {
-      createSpinner(
-        `No se pudo descifrar el nombre de la carpeta: ${currentFolder.id}`
-      ).warn();
+      if (!this.SILENT) {
+        createSpinner(
+          `No se pudo descifrar el nombre de la carpeta: ${currentFolder.id}`
+        ).warn();
+      }
       return folderPath;
     }
 
@@ -541,7 +552,7 @@ class Encryptor {
     } finally {
       if (!folder) {
         props.onEnd?.(error);
-        if (this.iterations > 0) {
+        if (this.iterations > 0 && !this.SILENT) {
           createSpinner(
             `Se omitieron ${this.iterations} archivo(s) porque no se encontraban registrados en el almacenamiento.`
           ).warn();
@@ -616,7 +627,9 @@ class Encryptor {
         type: "file"
       };
       if (saveOnEnd) {
-        this.saveStep = createSpinner("Registrando archivo encriptado...");
+        if (!this.SILENT) {
+          this.saveStep = createSpinner("Registrando archivo encriptado...");
+        }
         await Promise.all([
           Encryptor.STORAGE.set(this.savedItem),
           delay(this.stepDelay)
@@ -638,7 +651,7 @@ class Encryptor {
       const destPath = path.join(this.fileDir, encryptedFileName);
 
       // Rename the temp file to the final file name
-      if (isFileOperation) {
+      if (isFileOperation && !this.SILENT) {
         this.renameStep = createSpinner("Renombrando archivo encriptado...");
       }
       await Promise.all([
@@ -656,7 +669,7 @@ class Encryptor {
       });
 
       // Move the temp file to the final destination
-      if (isFileOperation) {
+      if (isFileOperation && !this.SILENT) {
         this.copyStep = createSpinner("Moviendo archivo encriptado...");
       }
       await Promise.all([
@@ -670,7 +683,7 @@ class Encryptor {
       });
 
       // Remove the original file
-      if (isFileOperation) {
+      if (isFileOperation && !this.SILENT) {
         this.removeStep = createSpinner("Eliminando archivo original...");
       }
       await Promise.all([
@@ -812,7 +825,7 @@ class Encryptor {
       );
       const data = Encryptor.FS.readFile(this.tempPath);
 
-      if (isFileOperation) {
+      if (isFileOperation && !this.SILENT) {
         this.renameStep = createSpinner("Remplazando archivo original...");
       }
       await Promise.all([
@@ -822,7 +835,7 @@ class Encryptor {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");
       });
 
-      if (isFileOperation) {
+      if (isFileOperation && !this.SILENT) {
         this.removeStep = createSpinner("Eliminando archivo temporal...");
       }
       await Promise.all([
@@ -833,7 +846,7 @@ class Encryptor {
       });
 
       if (!file) {
-        if (isFileOperation) {
+        if (isFileOperation && !this.SILENT) {
           this.saveStep = createSpinner("Eliminando archivo del registro...");
         }
         await Promise.all([

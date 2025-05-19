@@ -26,7 +26,7 @@ declare global {
     };
   }
 
-  // This type is used in core and gui 
+  // This type is used in core and gui
   type StorageItemType = StorageItem;
 
   type LowStoreType = Low<{ encryptedItems: Map<string, StorageItem> }>;
@@ -75,7 +75,7 @@ declare global {
     macLength: number;
     chunkIndex: number;
     file?: FileItem;
-    onEnd: EncryptorFuncion["onEnd"]
+    onEnd: EncryptorFuncion["onEnd"];
   }
 
   type EncryptReadStreamError = Pick<
@@ -118,5 +118,26 @@ declare global {
     "streamName" | "error" | "reject" | "logStream"
   >;
 
-  type CliSpinner = ReturnType<typeof createSpinner>
+  type CliSpinner = ReturnType<typeof createSpinner>;
+
+  interface EncryptorOptions {
+    /**
+     * @description `[ESP]` - Permite modificar el tiempo minimo que se muestra el spinner.
+     * @description `[ENG]` - Allows you to modify the minimum time the spinner is shown.
+     * @default 300
+     */
+    minDelayPerStep?: number;
+    /**
+     * @description `[ESP]` - Indica si debe mostrar mensajes del progreso en la consola.
+     * @description `[ENG]` - Indicates whether to show progress messages in the console.
+     * @default false
+     */
+    silent?: boolean;
+    /**
+     * @description `[ESP]` - Permite modificar la ubicación de la libreria de encryptor.
+     * @description `[ENG]` - Allows you to modify the location of the encryptor library.
+     * @default "./library.json"
+     */
+    libraryPath?: string;
+  }
 }
