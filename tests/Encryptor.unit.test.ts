@@ -12,7 +12,11 @@ const testFilePath = path.join(tempDir, "test-file.txt");
 beforeAll(async () => {
   Encryptor = await (
     await import("@libs/Encryptor")
-  ).default.init("mypassword");
+  ).default.init("mypassword", {
+    libraryPath: tempDir + "/test-library.json",
+    minDelayPerStep: 0,
+    silent: true
+  });
 
   // Crear el directorio temporal y el archivo de prueba
   fs.mkdirSync(tempDir, { recursive: true });

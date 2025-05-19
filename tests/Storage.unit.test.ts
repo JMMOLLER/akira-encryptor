@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from "vitest";
 import Encryptor from "@libs/Encryptor";
 import Storage from "@libs/Storage";
+import path from "path";
+import fs from "fs";
 
+const storagePath = path.resolve(__dirname, "../../test-storage.json");
 const testItem: StorageItemType = {
   encryptedName: "test.txt",
   path: "test.txt",
@@ -9,6 +12,12 @@ const testItem: StorageItemType = {
   id: "mock-uid",
   type: "file"
 };
+
+afterAll(() => {
+  fs.rmSync(storagePath, {
+    force: true
+  });
+});
 
 describe("Storage", () => {
   let storage: Storage;
@@ -18,7 +27,8 @@ describe("Storage", () => {
     encryptor = await Encryptor.init("mypassword");
     storage = await Storage.init(
       encryptor.encryptText.bind(encryptor),
-      encryptor.decryptText.bind(encryptor)
+      encryptor.decryptText.bind(encryptor),
+      "test-storage.json"
     );
     vi.clearAllMocks();
   });
@@ -49,14 +59,6 @@ describe("Storage", () => {
     const result = storage.get(testItem.id);
     expect(removeSpy).toHaveBeenCalledWith(testItem.id);
     expect(result).toBeUndefined();
-  });
-
-  it("should encrypt and decrypt data correctly", async () => {
-    const encryptedName = encryptor.encryptText(testItem.encryptedName);
-    const decryptedName = encryptor.decryptText(encryptedName);
-
-    expect(encryptedName).not.toEqual(testItem.encryptedName);
-    expect(decryptedName).toEqual(testItem.encryptedName);
   });
 
   it("should handle non-existent items gracefully", async () => {
