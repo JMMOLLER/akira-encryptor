@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import EncryptorClass from "@libs/Encryptor";
+import hidefile from "hidefile";
 import path from "path";
 import fs from "fs";
 
@@ -139,5 +140,61 @@ describe("Encryptor", () => {
       "utf-8"
     );
     expect(decryptedContentFile).toBe(originalContentFile);
+  });
+
+  it("should hide and unhide files correctly", async () => {
+    const res = await Encryptor.encryptFile({
+      filePath: testFilePath,
+      onProgress: () => {}
+    });
+    const encHiddenFilePath = testFilePath.replace(
+      path.basename(testFilePath),
+      `.${res.id}.enc`
+    );
+
+    const encryptedFilePath = testFilePath.replace(
+      path.basename(testFilePath),
+      `${res.id}.enc`
+    );
+
+    let hideStatus = await Encryptor.hideStoredItem(encryptedFilePath);
+    expect(hideStatus).toBe(true);
+    const isHidden = hidefile.isHiddenSync(encHiddenFilePath);
+    expect(isHidden).toBe(true);
+
+    hideStatus = await Encryptor.revealStoredItem(encHiddenFilePath);
+    expect(hideStatus).toBe(true);
+    const isVisible = hidefile.isHiddenSync(encryptedFilePath);
+    expect(isVisible).toBe(false);
+
+    await Encryptor.decryptFile({
+      filePath: encryptedFilePath,
+      onProgress: () => {}
+    });
+  });
+
+  it("should hide and unhide folders correctly", async () => {
+    const res = await Encryptor.encryptFolder({
+      filePath: testFolderPath,
+      onProgress: () => {}
+    });
+    const encHiddenFolderPath = path.join(tempDir, `.${res.id}`);
+
+    const encFolderPath = path.join(tempDir, res.id);
+
+    let hideStatus = await Encryptor.hideStoredItem(encFolderPath);
+    expect(hideStatus).toBe(true);
+    const isHidden = hidefile.isHiddenSync(encHiddenFolderPath);
+    expect(isHidden).toBe(true);
+
+    hideStatus = await Encryptor.revealStoredItem(encHiddenFolderPath);
+    expect(hideStatus).toBe(true);
+    const isVisible = hidefile.isHiddenSync(encFolderPath);
+    expect(isVisible).toBe(false);
+
+    await Encryptor.decryptFolder({
+      filePath: encFolderPath,
+      onProgress: () => {}
+    });
   });
 });
