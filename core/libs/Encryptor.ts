@@ -14,11 +14,11 @@ class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
   private static readonly tempDir = tmpdir();
-  private DEFAULT_STEP_DELAY = 300;
+  private DEFAULT_STEP_DELAY!: number;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
-  private SILENT = false;
+  private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
   private savedItem?: StorageItemType = undefined;
   private fileBaseName?: string = undefined;
@@ -31,15 +31,15 @@ class Encryptor {
   private iterations = 0;
   /* ========================== COMMON PROPERTIES ========================== */
   private fileStats?: StreamHandlerProps["stat"] = undefined;
+  private stepDelay = this.DEFAULT_STEP_DELAY;
   private operationFor: CliType = "file";
   private tempPath?: string = undefined;
-  private processedBytes = 0;
-  private totalFileSize = 0;
-  private stepDelay = 0;
   private renameStep?: CliSpinner;
   private removeStep?: CliSpinner;
   private saveStep?: CliSpinner;
   private copyStep?: CliSpinner;
+  private processedBytes = 0;
+  private totalFileSize = 0;
 
   private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
@@ -52,11 +52,12 @@ class Encryptor {
    */
   static async init(password: string, options?: EncryptorOptions) {
     await sodium.ready;
+
     const instance = new Encryptor(password);
-    if (options) {
-      instance.DEFAULT_STEP_DELAY = options.minDelayPerStep || 300;
-      instance.SILENT = options.silent || false;
-    }
+    instance.DEFAULT_STEP_DELAY = options?.minDelayPerStep || 300;
+    instance.stepDelay = instance.DEFAULT_STEP_DELAY;
+    instance.SILENT = options?.silent || false;
+
     Encryptor.STORAGE = await Storage.init(
       instance.encryptText.bind(instance),
       instance.decryptText.bind(instance),
