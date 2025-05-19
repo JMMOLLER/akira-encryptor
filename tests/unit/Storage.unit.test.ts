@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import Encryptor from "@libs/Encryptor";
 import Storage from "@libs/Storage";
 
-const testItem: StorageItem = {
+const testItem: StorageItemType = {
   encryptedName: "test.txt",
+  path: "test.txt",
+  isHidden: false,
   id: "mock-uid",
   type: "file"
 };
