@@ -66,28 +66,36 @@ class Encryptor {
     return sodium.randombytes_buf(this.nonceLength);
   }
 
+  private visibilityHelper(itemId: string) {
+    const id = path
+      .basename(itemId)
+      .replace(/^\./, "")
+      .replace(/\.enc$/, "");
+    const item = Encryptor.STORAGE.get(id);
+
+    if (!item) {
+      throw new Error("No se encontró el elemento en el almacenamiento.");
+    }
+
+    const name = item.isHidden ? `.${id}` : id;
+    const finalName = item.type === "file" ? `${name}.enc` : name;
+    const itemPath = item.path.replace(path.basename(item.path), finalName);
+
+    return { item, itemPath };
+  }
+
   async hideStoredItem(itemId: string) {
     try {
-      if (/[/\\]/.test(itemId)) {
-        itemId = path.basename(itemId);
-      }
+      const { item, itemPath } = this.visibilityHelper(itemId);
+      if (item.isHidden) return;
 
-      const id = itemId.replace(/\.enc$/, "");
-      const item = Encryptor.STORAGE.get(id);
-      if (item && item.isHidden) return true;
-      else if (!item) {
-        throw new Error("No se encontró el elemento en el almacenamiento.");
-      }
-
-      const newPath = hidefile.hideSync(
-        item.path.replace(path.basename(item.path), id + ".enc")
-      );
+      const newPath = hidefile.hideSync(itemPath);
       if (typeof newPath !== "string") {
         throw new Error("El resultado obtenido no es el esperado.");
       }
 
       item.isHidden = true;
-      await Encryptor.STORAGE.replace(id, item);
+      await Encryptor.STORAGE.replace(item.id, item);
       return true;
     } catch (err) {
       console.error("Error al ocultar el archivo:", err);
@@ -97,26 +105,16 @@ class Encryptor {
 
   async revealStoredItem(itemId: string) {
     try {
-      if (/[/\\]/.test(itemId)) {
-        itemId = path.basename(itemId).replace(/^\./, "");
-      }
+      const { item, itemPath } = this.visibilityHelper(itemId);
+      if (!item.isHidden) return;
 
-      const id = itemId.replace(/\.enc$/, "");
-      const item = Encryptor.STORAGE.get(id);
-      if (item && !item.isHidden) return true;
-      else if (!item) {
-        throw new Error("No se encontró el elemento en el almacenamiento.");
-      }
-
-      const newPath = hidefile.revealSync(
-        item.path.replace(path.basename(item.path), "." + id + ".enc")
-      );
+      const newPath = hidefile.revealSync(itemPath);
       if (typeof newPath !== "string") {
         throw new Error("El resultado obtenido no es el esperado.");
       }
 
       item.isHidden = false;
-      await Encryptor.STORAGE.replace(id, item);
+      await Encryptor.STORAGE.replace(item.id, item);
       return true;
     } catch (err) {
       console.error("Error al revelar el archivo:", err);
