@@ -1,6 +1,6 @@
 {
   "name": "akira-encryptor-gui",
-  "version": "0.3.0-alpha",
+  "version": "0.2.0-alpha",
   "description": "A GUI for Akira Encryptor",
   "main": "./out/main/index.js",
   "author": "JMMOLLER",
