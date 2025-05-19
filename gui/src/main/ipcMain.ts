@@ -10,7 +10,10 @@ export default function registerIpcMain() {
     const { password, filePath, itemId } = props
 
     try {
-      const encryptor = await Encryptor.init(password)
+      const encryptor = await Encryptor.init(password, {
+        minDelayPerStep: 0,
+        silent: true
+      })
       const handleProgress: ProgressCallback = (processedBytes, totalBytes) => {
         // send progress to renderer process
         if (focusedWindow) {
