@@ -4,7 +4,7 @@ import Storage from "@libs/Storage";
 import path from "path";
 import fs from "fs";
 
-const storagePath = path.resolve(__dirname, "../../test-storage.json");
+const storagePath = path.resolve(__dirname, "../test-storage.json");
 const testItem: StorageItemType = {
   encryptedName: "test.txt",
   path: "test.txt",
