@@ -1,11 +1,13 @@
 import { LockOutlined } from '@ant-design/icons'
 import { Button, Form, Input } from 'antd'
+import { useId } from 'react'
 
 interface LoginProps {
   handleClose?: (values: Record<string, unknown>) => void
 }
 
 function Login({ handleClose }: LoginProps) {
+  const name = 'login-' + useId()
   const [form] = Form.useForm()
 
   const onFinish = (values: { password: string }) => {
@@ -14,7 +16,7 @@ function Login({ handleClose }: LoginProps) {
   }
 
   return (
-    <Form className="-mb-5!" form={form} name="login" onFinish={onFinish}>
+    <Form className="-mb-5!" form={form} name={name} onFinish={onFinish}>
       <Form.Item
         rules={[
           {

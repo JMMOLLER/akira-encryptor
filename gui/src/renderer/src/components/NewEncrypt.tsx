@@ -77,7 +77,7 @@ function NewEncrypt() {
         onOk={handleOk}
         centered
       >
-        <Form name="basic" className="[&_.ant-form-item-has-error]:mb-0! *:mb-4!">
+        <Form name="new-encrypt" className="[&_.ant-form-item-has-error]:mb-0! *:mb-4!">
           <Form.Item
             help={
               status === 'error'
