@@ -1,6 +1,5 @@
 import { usePendingEncryption } from './usePendingEncrypt'
 import { useEncryptedItems } from './useEncryptedItems'
-import { useUserConfig } from './useUserConfig'
 
 interface Props {
   actionFor: EncryptFileProps['actionFor']
@@ -11,7 +10,6 @@ interface Props {
 export function useNewOperation() {
   const { addPendingItem } = usePendingEncryption()
   const { setItems } = useEncryptedItems()
-  const { userConfig } = useUserConfig()
 
   /**
    * @description `[ESP]` Crea una nueva operación de encriptación. Agrega un nuevo elemento a la lista de elementos pendientes. LLama a la función `encryptor-action` en el proceso principal.
@@ -29,7 +27,6 @@ export function useNewOperation() {
 
     // Set encrypted action to main process
     window.electron.ipcRenderer.send('encryptor-action', {
-      password: userConfig.password,
       actionFor: actionFor,
       filePath: srcPath,
       action: 'encrypt',
@@ -56,7 +53,6 @@ export function useNewOperation() {
 
     // Send decrypt action to main process
     window.electron.ipcRenderer.send('encryptor-action', {
-      password: userConfig.password,
       filePath: srcPath,
       action: 'decrypt',
       itemId: id,

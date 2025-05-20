@@ -8,10 +8,9 @@ import delay from '@utils/delay'
 
 interface Props {
   item: StorageItemType
-  password: string
 }
 
-const useItemCardActions = ({ item, password }: Props) => {
+const useItemCardActions = ({ item }: Props) => {
   const { newDecrypt } = useNewOperation()
   const { setItems } = useEncryptedItems()
   const { message } = useApp()
@@ -27,7 +26,6 @@ const useItemCardActions = ({ item, password }: Props) => {
     const [res] = await Promise.all([
       window.api.changeVisibility({
         action: item.isHidden ? 'show' : 'hide',
-        password,
         itemId: item.id
       }),
       delay(500)

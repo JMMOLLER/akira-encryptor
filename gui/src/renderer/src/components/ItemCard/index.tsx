@@ -1,5 +1,4 @@
 import useItemCardActions from '@renderer/hooks/useItemCardActions'
-import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import ItemCardDescription from './ItemCardDescription'
 import ItemCardAvatar from './ItemCardAvatar'
 import { Card } from 'antd'
@@ -9,8 +8,7 @@ interface ItemCardProps {
 }
 
 const ItemCard = ({ item }: ItemCardProps) => {
-  const password = useUserConfig().userConfig.password!
-  const actions = useItemCardActions({ item, password })
+  const actions = useItemCardActions({ item })
 
   return (
     <Card className="w-[350px] h-min" actions={actions}>
