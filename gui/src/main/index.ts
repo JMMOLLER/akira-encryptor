@@ -101,9 +101,12 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-const conf = new Conf<Partial<ConfStoreType>>({
+const conf = new Conf<ConfStoreType>({
   defaults: {
-    userConfig: {}
+    userConfig: {
+      coreReady: false,
+      hashedPassword: undefined
+    }
   },
 
   schema: {
@@ -114,15 +117,21 @@ const conf = new Conf<Partial<ConfStoreType>>({
         properties: {
           hashedPassword: {
             type: 'string',
-            minLength: 4,
             nullable: true
+          },
+          coreReady: {
+            type: 'boolean',
+            default: false
           }
         },
-        nullable: true
+        required: ['coreReady']
       }
     },
-    additionalProperties: false
+    required: ['userConfig']
   }
 }) // --> Que dolor de cabeza es definir esta vaina. 🫠
 
+// set initial values
+conf.set('userConfig.coreReady', false)
+// register the renderer listener
 conf.registerRendererListener()

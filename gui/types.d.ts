@@ -13,16 +13,16 @@ declare global {
   type EncryptFileProps = {
     action: 'encrypt' | 'decrypt'
     actionFor: 'file' | 'folder'
-    password: string
     filePath: string
     itemId: string
   }
 
   // Define this function in the preload.ts file
   interface ElectronIpcAPI {
-    getEncryptedContent: (password: string) => Promise<[string, StorageItem][] | Error>
-    changeVisibility: (props: VisibilityActions) => Promise<ChangeVisibilityResponse>
+    changeVisibility: (props: VisibilityActions) => Promise<IpcResponseStatus>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
+    getEncryptedContent: () => Promise<[string, StorageItem][] | Error>
+    initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
     openDevTools: () => void
   }
@@ -72,11 +72,11 @@ declare global {
   }
 
   interface ConfStoreType {
-    userConfig: Omit<UserConfig, 'password'>
+    userConfig: UserConfig
   }
   interface UserConfig {
     hashedPassword?: string
-    password?: string
+    coreReady: boolean
   }
   interface UserConfigContext {
     userConfig: UserConfig & { isLoggedIn: boolean }
@@ -93,10 +93,9 @@ declare global {
 
   type VisibilityActions = {
     action: 'show' | 'hide'
-    password: string
     itemId: string
   }
-  type ChangeVisibilityResponse = {
+  type IpcResponseStatus = {
     error: string | null
     success: boolean
   }

@@ -2,18 +2,31 @@ import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from 'electron'
 import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
+let PASSWORD: Buffer
+let ENCRYPTOR: Encryptor
 let isDialogOpen = false
 
 export default function registerIpcMain() {
-  ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
-    const focusedWindow = BrowserWindow.getFocusedWindow()
-    const { password, filePath, itemId } = props
-
+  ipcMain.handle('initialize-encryptor', async (_event: IpcMainInvokeEvent, password: string) => {
     try {
-      const encryptor = await Encryptor.init(password, {
+      // Using a buffer to have better memory control of the password.
+      PASSWORD = Buffer.from(password, 'utf-8')
+      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), {
         minDelayPerStep: 0,
         silent: true
       })
+      return { error: null, success: true }
+    } catch (error) {
+      console.error('Error initializing encryptor:', error)
+      return { error: (error as Error).message, success: false }
+    }
+  })
+
+  ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
+    const focusedWindow = BrowserWindow.getFocusedWindow()
+    const { filePath, itemId } = props
+
+    try {
       const handleProgress: ProgressCallback = (processedBytes, totalBytes) => {
         // send progress to renderer process
         if (focusedWindow) {
@@ -45,13 +58,13 @@ export default function registerIpcMain() {
       switch (props.action) {
         case 'encrypt':
           props.actionFor === 'file'
-            ? await encryptor.encryptFile(fileSendPayload)
-            : await encryptor.encryptFolder(fileSendPayload)
+            ? await ENCRYPTOR.encryptFile(fileSendPayload)
+            : await ENCRYPTOR.encryptFolder(fileSendPayload)
           break
         case 'decrypt':
           props.actionFor === 'file'
-            ? await encryptor.decryptFile(fileSendPayload)
-            : await encryptor.decryptFolder(fileSendPayload)
+            ? await ENCRYPTOR.decryptFile(fileSendPayload)
+            : await ENCRYPTOR.decryptFolder(fileSendPayload)
           break
         default:
           throw new Error('Acción no válida')
@@ -96,11 +109,9 @@ export default function registerIpcMain() {
     }
   })
 
-  ipcMain.handle('get-encrypted-content', async (_event: IpcMainInvokeEvent, password: string) => {
+  ipcMain.handle('get-encrypted-content', async (_event: IpcMainInvokeEvent) => {
     try {
-      const encryptor = await Encryptor.init(password)
-      const content = encryptor.getStorage()
-
+      const content = ENCRYPTOR.getStorage()
       return Array.from(content.entries())
     } catch (error) {
       return error
@@ -117,18 +128,17 @@ export default function registerIpcMain() {
   ipcMain.handle(
     'visibility-action',
     async (_event: IpcMainInvokeEvent, props: VisibilityActions) => {
-      const { action, itemId, password } = props
+      const { action, itemId } = props
       try {
-        const encryptor = await Encryptor.init(password)
-        const storage = encryptor.getStorage()
+        const storage = ENCRYPTOR.getStorage()
         const item = storage.get(itemId)
         if (!item) {
           throw new Error('Item not found')
         }
         if (action === 'show') {
-          await encryptor.revealStoredItem(itemId)
+          await ENCRYPTOR.revealStoredItem(itemId)
         } else {
-          await encryptor.hideStoredItem(itemId)
+          await ENCRYPTOR.hideStoredItem(itemId)
         }
         return { error: null, success: true }
       } catch (error) {

@@ -14,10 +14,7 @@ export function EncryptedItemProvider({ children }: { children: ReactNode }) {
 
   const fetchEncryptedItems = useCallback(async () => {
     try {
-      const [res] = await Promise.all([
-        window.api.getEncryptedContent(userConfig.password!),
-        delay(250)
-      ])
+      const [res] = await Promise.all([window.api.getEncryptedContent(), delay(250)])
       if (res instanceof Error) {
         throw new Error(res.message)
       }
@@ -27,14 +24,14 @@ export function EncryptedItemProvider({ children }: { children: ReactNode }) {
       console.error('Error loading encrypted items:', error)
       message.error('Ocurrió un error al cargar los elementos cifrados')
     }
-  }, [message, userConfig.password])
+  }, [message])
 
   useEffect(() => {
     if (!userConfig.isLoggedIn) return
-    if (encryptedItems === undefined) {
+    if (encryptedItems === undefined && userConfig.coreReady) {
       fetchEncryptedItems()
     }
-  }, [encryptedItems, fetchEncryptedItems, userConfig.isLoggedIn])
+  }, [encryptedItems, fetchEncryptedItems, userConfig])
 
   return (
     <EncryptedItemContext.Provider value={{ encryptedItems, setItems }}>

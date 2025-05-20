@@ -1,13 +1,13 @@
 import { createContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react'
 import showAuthModal from '@renderer/components/Auth/modals/showAuthModal'
+import useInitializeCore from '@renderer/hooks/useInitializeCore'
 import { Conf } from 'electron-conf/renderer'
 import useApp from 'antd/es/app/useApp'
 import bcrypt from 'bcryptjs'
 
 const conf = new Conf<ConfStoreType>()
 const userConf = await conf.get('userConfig')
-// conf.set('userConfig', {})
-// console.log('User config:', userConf)
+console.log('User config:', userConf)
 
 // Initialize the type for the context
 const UserConfigContext = createContext<UserConfigContext | undefined>(undefined)
@@ -15,8 +15,9 @@ const UserConfigContext = createContext<UserConfigContext | undefined>(undefined
 // Provider component for the context
 export function UserConfigProvider({ children }: { children: ReactNode }) {
   const [userConfig, setUserConfig] = useState<UserConfig>(userConf as UserConfig)
-  const prevModal = useRef<PrevModalType>(null)
+  const { initializeCore } = useInitializeCore()
   const [isLoggedIn, setLogin] = useState(false)
+  const prevModal = useRef<PrevModalType>(null)
   const { modal, message } = useApp()
 
   /**
@@ -28,7 +29,6 @@ export function UserConfigProvider({ children }: { children: ReactNode }) {
     (newConfig: Partial<UserConfig>) => {
       // Merge the new config with the existing one
       const mergedConfig = { ...userConfig, ...newConfig }
-      delete mergedConfig.password
 
       // Save the new config to the store
       console.log('Updating user config', mergedConfig)
@@ -43,7 +43,7 @@ export function UserConfigProvider({ children }: { children: ReactNode }) {
     [userConfig]
   )
 
-  // Check if the user is registered
+  // Handle the case when the user is not registered
   useEffect(() => {
     if (userConfig.hashedPassword) return
     else if (prevModal.current) {
@@ -55,19 +55,23 @@ export function UserConfigProvider({ children }: { children: ReactNode }) {
     prevModal.current = showAuthModal({
       type: 'register',
       modal,
-      onSubmit: ({ password }) => {
+      onSubmit: async ({ password }) => {
         if (!password || typeof password !== 'string') {
           message.error('Se generó un error al registrar la contraseña')
           return
         }
-        updateUserConfig({ hashedPassword: bcrypt.hashSync(password, 10), password })
-        setLogin(true)
+        const res = await initializeCore(password)
+        updateUserConfig({
+          hashedPassword: bcrypt.hashSync(password, 10),
+          coreReady: res.success
+        })
+        setLogin(res.success)
         prevModal.current?.destroy()
       }
     })
-  }, [userConfig.hashedPassword, updateUserConfig, modal, message])
+  }, [userConfig.hashedPassword, updateUserConfig, modal, message, initializeCore])
 
-  // Check if the user is logged in
+  // Handle the case when the user is registered but not logged in
   useEffect(() => {
     if (!userConfig.hashedPassword || isLoggedIn) return
     else if (prevModal.current) {
@@ -78,15 +82,16 @@ export function UserConfigProvider({ children }: { children: ReactNode }) {
     // Show the login modal and save the ref
     prevModal.current = showAuthModal({
       type: 'login',
-      onSubmit: ({ password }) => {
+      onSubmit: async ({ password }) => {
         if (!password || typeof password !== 'string') {
           message.error('Se generó un error al validar su contraseña')
           return
         }
         const isValid = bcrypt.compareSync(password, userConfig.hashedPassword!)
         if (isValid) {
-          setLogin(true)
-          updateUserConfig({ password })
+          const res = await initializeCore(password)
+          updateUserConfig({ coreReady: res.success })
+          setLogin(res.success)
           prevModal.current?.destroy()
         } else {
           message.error('Contraseña incorrecta')
@@ -94,7 +99,7 @@ export function UserConfigProvider({ children }: { children: ReactNode }) {
       },
       modal
     })
-  }, [isLoggedIn, userConfig.hashedPassword, updateUserConfig, modal, message])
+  }, [isLoggedIn, userConfig.hashedPassword, updateUserConfig, modal, message, initializeCore])
 
   return (
     <UserConfigContext.Provider

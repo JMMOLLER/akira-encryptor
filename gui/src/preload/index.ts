@@ -10,6 +10,7 @@ exposeConf()
 const api = {
   openDevTools: () => ipcRenderer.send('open-devtools'),
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),
+  initEncryptor: (password: string) => ipcRenderer.invoke('initialize-encryptor', password),
   encryptorAction: (props: EncryptFileProps) => ipcRenderer.invoke('encryptor-action', props),
   getEncryptedContent: (password: string) => ipcRenderer.invoke('get-encrypted-content', password),
   changeVisibility: (props: VisibilityActions) => ipcRenderer.invoke('visibility-action', props)
