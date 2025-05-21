@@ -16,11 +16,13 @@ declare global {
     filePath: string
     itemId: string
   }
+  type BackupActionProps = Omit<EncryptFileProps, 'action' | 'actionFor'>
 
   // Define this function in the preload.ts file
   interface ElectronIpcAPI {
     changeVisibility: (props: VisibilityActions) => Promise<IpcResponseStatus>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
+    backupAction: (props: BackupActionProps) => Promise<IpcResponseStatus>
     getEncryptedContent: () => Promise<[string, StorageItem][] | Error>
     initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
@@ -76,6 +78,8 @@ declare global {
   }
   interface UserConfig {
     hashedPassword?: string
+    autoBackup: boolean
+    backupPath: string
     coreReady: boolean
   }
   interface UserConfigContext {
@@ -99,4 +103,15 @@ declare global {
     error: string | null
     success: boolean
   }
+
+  type CompressionLvl = '-mx=0' | '-mx=1' | '-mx=3' | '-mx=5' | '-mx=7' | '-mx=9'
+  type CompressionAlgorithm =
+    | '-m0=copy'
+    | '-m0=lzma'
+    | '-m0=lzma2'
+    | '-m0=ppmd'
+    | '-m0=bzip2'
+    | '-m0=deflate'
+    | '-m0=bcj'
+    | '-m0=bcj2'
 }

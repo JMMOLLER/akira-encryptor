@@ -3,7 +3,7 @@ import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { Conf } from 'electron-conf/main'
 import registerIpcMain from './ipcMain'
-import { join } from 'path'
+import path, { join } from 'path'
 import fs from 'fs'
 
 function createWindow(): void {
@@ -101,10 +101,12 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-const conf = new Conf<ConfStoreType>({
+const conf = new Conf<Partial<ConfStoreType>>({
   defaults: {
     userConfig: {
       coreReady: false,
+      autoBackup: true,
+      backupPath: path.join(app.getPath('userData'), 'Backups'),
       hashedPassword: undefined
     }
   },
@@ -114,6 +116,7 @@ const conf = new Conf<ConfStoreType>({
     properties: {
       userConfig: {
         type: 'object',
+        nullable: true,
         properties: {
           hashedPassword: {
             type: 'string',
@@ -122,12 +125,19 @@ const conf = new Conf<ConfStoreType>({
           coreReady: {
             type: 'boolean',
             default: false
+          },
+          autoBackup: {
+            type: 'boolean',
+            default: true
+          },
+          backupPath: {
+            type: 'string',
+            default: path.join(app.getPath('userData'), 'Backups')
           }
         },
-        required: ['coreReady']
+        required: ['coreReady', 'autoBackup', 'backupPath']
       }
-    },
-    required: ['userConfig']
+    }
   }
 }) // --> Que dolor de cabeza es definir esta vaina. 🫠
 
@@ -135,3 +145,12 @@ const conf = new Conf<ConfStoreType>({
 conf.set('userConfig.coreReady', false)
 // register the renderer listener
 conf.registerRendererListener()
+
+function ensureBackupFolder() {
+  const backupPath = conf.get<string, string>('userConfig.backupPath')
+  if (!fs.existsSync(backupPath)) {
+    fs.mkdirSync(backupPath, { recursive: true })
+  }
+  return backupPath
+}
+ensureBackupFolder()
