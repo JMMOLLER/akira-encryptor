@@ -14,7 +14,7 @@ declare global {
   type CliAction = "encrypt" | "decrypt";
   type CliType = "file" | "folder";
 
-  type JsonPrimitive = string | number | boolean | null;
+  type JsonPrimitive = string | number | boolean | null | undefined;
   type PrimitiveOrArray = JsonPrimitive | JsonPrimitive[];
   type JsonValue = PrimitiveOrArray | Record<string, PrimitiveOrArray>;
 

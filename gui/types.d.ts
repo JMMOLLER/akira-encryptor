@@ -11,18 +11,21 @@ declare global {
   }
 
   type EncryptFileProps = {
+    extraProps?: Record<string, JsonValue>
     action: 'encrypt' | 'decrypt'
     actionFor: 'file' | 'folder'
     filePath: string
     itemId: string
   }
-  type BackupActionProps = Omit<EncryptFileProps, 'action' | 'actionFor'>
+  type BackupActionProps = Omit<EncryptFileProps, 'action' | 'actionFor'> & {
+    action: 'create' | 'delete'
+  }
 
   // Define this function in the preload.ts file
   interface ElectronIpcAPI {
     changeVisibility: (props: VisibilityActions) => Promise<IpcResponseStatus>
     openExplorer: (props: OpenExplorerProps) => Promise<string[] | string | null>
-    backupAction: (props: BackupActionProps) => Promise<IpcResponseStatus>
+    backupAction: (props: BackupActionProps) => Promise<IpcResponseStatus & { dest: string }>
     getEncryptedContent: () => Promise<[string, StorageItem][] | Error>
     initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
@@ -90,8 +93,10 @@ declare global {
   type PrevModalType = ReturnType<useAppProps['modal']['info']>
 
   type EncryptEndEvent = {
+    extraProps?: Record<string, JsonValue>
     error: string | null
     actionFor: CliType
+    action: CliAction
     itemId: string
   }
 

@@ -53,9 +53,26 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
 
   const onEncryptEndHandler = useCallback(
     (_: unknown, data: EncryptEndEvent) => {
-      const { error, itemId, actionFor } = data
+      const { error, itemId, actionFor, action } = data
       if (error) {
         showEncryptionError(actionFor, error)
+      } else if (!error && action === 'decrypt' && data.extraProps) {
+        window.api
+          .backupAction({
+            filePath: data.extraProps.backupPath as string,
+            action: 'delete',
+            itemId
+          })
+          .then(({ error }) => {
+            if (!error) return
+            console.error('Error deleting backup after decryption:', error)
+            notification.error({
+              message: 'Error',
+              description: `Error al eliminar la copia de seguridad: ${error || 'Error desconocido'}.`,
+              placement: 'topRight',
+              duration: 5
+            })
+          })
       }
 
       setPendingItems((prev) => {
@@ -65,7 +82,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
       // force to update the encrypted items
       setItems(undefined)
     },
-    [showEncryptionError, setItems]
+    [showEncryptionError, setItems, notification]
   )
 
   // Show error notifications for pending items

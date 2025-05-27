@@ -19,6 +19,7 @@ export function EncryptedItemProvider({ children }: { children: ReactNode }) {
         throw new Error(res.message)
       }
       const parsed = new Map(res)
+      console.log('Encrypted items loaded:', Array.from(parsed.values()))
       setItems(parsed)
     } catch (error) {
       console.error('Error loading encrypted items:', error)

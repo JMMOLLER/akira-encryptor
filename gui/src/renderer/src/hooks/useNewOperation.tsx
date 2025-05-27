@@ -5,6 +5,7 @@ import useApp from 'antd/es/app/useApp'
 
 interface Props {
   actionFor: EncryptFileProps['actionFor']
+  extraProps?: Record<string, JsonValue>
   srcPath: string
   id: string
 }
@@ -21,6 +22,7 @@ export function useNewOperation() {
    */
   const newEncrypt = async (props: Props) => {
     const { actionFor, srcPath, id } = props
+    let backupPath: string | undefined = undefined
 
     if (userConfig.autoBackup) {
       message.open({
@@ -32,8 +34,10 @@ export function useNewOperation() {
 
       const res = await window.api.backupAction({
         filePath: srcPath,
+        action: 'create',
         itemId: id
       })
+      console.log(res)
 
       let skipBackupOnError = false
       if (res.error || !res.success) {
@@ -47,20 +51,22 @@ export function useNewOperation() {
             content: '¿Desea continuar con la operación de encriptación?',
             cancelText: 'No',
             okText: 'Sí',
-            onOk: () => {
+            onOk: () => resolve(false),
+            onCancel: () => {
               skipBackupOnError = true
               resolve(true)
             }
           })
         })
       } else {
+        backupPath = res.dest
         message.success({
           key: id,
           content: 'Copia de seguridad creada con éxito'
         })
       }
 
-      if (!skipBackupOnError) return
+      if (skipBackupOnError) return
     }
 
     // Set pending item
@@ -75,12 +81,16 @@ export function useNewOperation() {
       actionFor: actionFor,
       filePath: srcPath,
       action: 'encrypt',
-      itemId: id
+      itemId: id,
+      extraProps: {
+        backupPath
+      }
     })
   }
 
   const newDecrypt = (props: Props) => {
     const { actionFor, srcPath, id } = props
+    let backupPath: string | undefined = undefined
 
     // Set pending item
     addPendingItem(id, {
@@ -92,6 +102,7 @@ export function useNewOperation() {
     // Remove from encrypted items
     setItems((prev) => {
       const newMap = new Map(prev)
+      backupPath = newMap.get(id)?.extraProps?.backupPath as string | undefined
       newMap.delete(id)
       return newMap
     })
@@ -101,7 +112,10 @@ export function useNewOperation() {
       filePath: srcPath,
       action: 'decrypt',
       itemId: id,
-      actionFor
+      actionFor,
+      extraProps: {
+        backupPath
+      }
     })
   }
 
