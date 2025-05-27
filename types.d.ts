@@ -14,10 +14,21 @@ declare global {
   type CliAction = "encrypt" | "decrypt";
   type CliType = "file" | "folder";
 
+  type JsonPrimitive = string | number | boolean | null;
+  type PrimitiveOrArray = JsonPrimitive | JsonPrimitive[];
+  type JsonValue = PrimitiveOrArray | Record<string, PrimitiveOrArray>;
+
   interface EncryptorFuncion {
     filePath: Readonly<string>;
     onProgress: ProgressCallback;
     onEnd?: (error?: Error) => void;
+    /**
+     * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
+     * @description `[ENG]` - Allows saving extra properties in the `Storage`.
+     * @note `[ESP]` - Para usarse, debe establecer `allowExtraProps` a `true` cuando se inicializa la clase.
+     * @note `[ENG]` - To use this, `allowExtraProps` must be set to true when initializing the class.
+     */
+    extraProps?: Record<string, JsonValue>;
   }
 
   interface EncryptedDataStore {
@@ -33,6 +44,7 @@ declare global {
   type EncryptorFunc = (text: string) => string;
 
   interface Item {
+    extraProps?: Record<string, JsonValue>;
     encryptedName: string;
     originalName?: string;
     encryptedAt?: Date;
@@ -76,6 +88,7 @@ declare global {
     chunkIndex: number;
     file?: FileItem;
     onEnd: EncryptorFuncion["onEnd"];
+    extraProps?: Record<string, JsonValue>;
   }
 
   type EncryptReadStreamError = Pick<
@@ -85,7 +98,13 @@ declare global {
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "saveOnEnd" | "logStream" | "filePath" | "resolve" | "reject" | "onEnd"
+    | "extraProps"
+    | "saveOnEnd"
+    | "logStream"
+    | "filePath"
+    | "resolve"
+    | "reject"
+    | "onEnd"
   >;
 
   type EncryptReadStream = Pick<
@@ -139,5 +158,12 @@ declare global {
      * @default "./library.json"
      */
     libraryPath?: string;
+
+    /**
+     * @description `[ESP]` - Permite indicar a la clase `Encryptor` que puede guardar propiedades extra en el `Storage`.
+     * @description `[ENG]` - Allows the `Encryptor` class to save extra properties in the `Storage`.
+     * @default false
+     */
+    allowExtraProps?: boolean;
   }
 }

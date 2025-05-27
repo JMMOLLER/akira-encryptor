@@ -15,6 +15,7 @@ class Encryptor {
   private static readonly FS = FileSystem.getInstance();
   private static readonly tempDir = tmpdir();
   private DEFAULT_STEP_DELAY!: number;
+  private ALLOW_EXTRA_PROPS!: boolean;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private static LOG = env.LOG;
@@ -55,6 +56,7 @@ class Encryptor {
 
     const instance = new Encryptor(password);
     instance.DEFAULT_STEP_DELAY = options?.minDelayPerStep || 300;
+    instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
 
@@ -255,6 +257,7 @@ class Encryptor {
         writeStream.end();
         writeStream.once("finish", () =>
           this.onEncryptWriteStreamFinish({
+            extraProps: props.extraProps,
             onEnd: props.onEnd,
             saveOnEnd,
             logStream,
@@ -445,6 +448,13 @@ class Encryptor {
       if (!this.SILENT) {
         this.saveStep = createSpinner("Registrando carpeta encriptada...");
       }
+      if (this.ALLOW_EXTRA_PROPS && props.extraProps) {
+        saved.extraProps = props.extraProps;
+      } else if (props.extraProps && !this.ALLOW_EXTRA_PROPS) {
+        createSpinner(
+          "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
+        ).warn();
+      }
       await Promise.all([
         Encryptor.STORAGE.set(saved),
         delay(this.stepDelay)
@@ -630,6 +640,13 @@ class Encryptor {
       if (saveOnEnd) {
         if (!this.SILENT) {
           this.saveStep = createSpinner("Registrando archivo encriptado...");
+        }
+        if (this.ALLOW_EXTRA_PROPS && params.extraProps) {
+          this.savedItem.extraProps = params.extraProps;
+        } else if (params.extraProps && !this.ALLOW_EXTRA_PROPS) {
+          createSpinner(
+            "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
+          ).warn();
         }
         await Promise.all([
           Encryptor.STORAGE.set(this.savedItem),
