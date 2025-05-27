@@ -1,4 +1,4 @@
-import { usePendingEncryption } from './usePendingEncrypt'
+import { usePendingOperation } from './usePendingOperation'
 import { useEncryptedItems } from './useEncryptedItems'
 import { useUserConfig } from './useUserConfig'
 import useApp from 'antd/es/app/useApp'
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function useNewOperation() {
-  const { addPendingItem } = usePendingEncryption()
+  const { addPendingItem } = usePendingOperation()
   const { setItems } = useEncryptedItems()
   const { userConfig } = useUserConfig()
   const { message, modal } = useApp()

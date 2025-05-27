@@ -1,10 +1,10 @@
-import { usePendingEncryption } from '@renderer/hooks/usePendingEncrypt'
+import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
 import SkeletonCard from './SkeletonCard'
 import { Typography } from 'antd'
 import { useMemo } from 'react'
 
 function PendingContent() {
-  const { pendingItems } = usePendingEncryption()
+  const { pendingItems } = usePendingOperation()
   const values = useMemo(() => {
     if (!pendingItems) return []
     return Array.from(pendingItems.values())

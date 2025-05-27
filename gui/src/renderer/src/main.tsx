@@ -1,6 +1,6 @@
 import './assets/main.css'
 
-import { PendingOperationProvider } from './contexts/PendingEncryption'
+import { PendingOperationProvider } from './contexts/PendingOperationContext'
 import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import fluentColorIcons from '@iconify-json/fluent-color/icons.json'
 import { MenuItemProvider } from './contexts/MenuItemContext'
