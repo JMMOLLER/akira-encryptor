@@ -29,7 +29,13 @@ declare global {
     getEncryptedContent: () => Promise<[string, StorageItem][] | Error>
     initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
+    openPath: (targetPath: string) => void
     openDevTools: () => void
+  }
+
+  interface DrawerContext {
+    showDrawer: (_: { title?: string; content: React.ReactNode }) => void
+    hideDrawer: () => void
   }
 
   type MenuItemOptions = 'files' | 'folders' | 'settings'

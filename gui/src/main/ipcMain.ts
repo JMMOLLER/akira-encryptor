@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 import { Conf } from 'electron-conf/main'
@@ -205,4 +205,12 @@ export default function registerIpcMain() {
       }
     }
   )
+
+  ipcMain.on('open-path', (_event: IpcMainInvokeEvent, targetPath: string) => {
+    if (fs.existsSync(targetPath)) {
+      shell.showItemInFolder(path.resolve(targetPath))
+    } else {
+      console.error('Ruta no encontrada:', targetPath)
+    }
+  })
 }

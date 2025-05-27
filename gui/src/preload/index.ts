@@ -9,6 +9,7 @@ exposeConf()
 // Define the actions in the ipcMain.ts file
 const api = {
   openDevTools: () => ipcRenderer.send('open-devtools'),
+  openPath: (targetPath: string) => ipcRenderer.send('open-path', targetPath),
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),
   backupAction: (props: BackupActionProps) => ipcRenderer.invoke('backup-action', props),
   initEncryptor: (password: string) => ipcRenderer.invoke('initialize-encryptor', password),
