@@ -1,16 +1,17 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import { ProgressCallback } from '../../../types'
+import CONF from '@gui/configs/electronConf'
 import Encryptor from '@core/libs/Encryptor'
-import { Conf } from 'electron-conf/main'
 import { path7za } from '7zip-bin'
 import node7z from 'node-7z'
 import moment from 'moment'
 import path from 'path'
 import fs from 'fs'
 
+const USER_CONFIG = CONF.get('userConfig')
+
 const COMPRESSION_ALGORITHM: CompressionAlgorithm = '-m0=lzma2'
 const COMPRESSION_LVL: CompressionLvl = '-mx=5'
-const CONF = new Conf<ConfStoreType>()
 let isDialogOpen = false
 let ENCRYPTOR: Encryptor
 let PASSWORD: Buffer
@@ -40,8 +41,8 @@ export default function registerIpcMain() {
 
       if (props.action === 'create') {
         const dest = path.join(
-          CONF.get('userConfig.backupPath'),
-          `backup_${itemId}_${moment().format('YYYY-MM-DD_HH-mm-ss')}.7z`
+          USER_CONFIG.backupPath,
+          `backup_${itemId}_${moment().format('HH-mm-ss_DD-MM-YYYY')}.7z`
         )
         console.log('Generate backup: ', { src, dest })
 

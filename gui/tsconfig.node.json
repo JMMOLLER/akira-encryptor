@@ -1,6 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "../core/**/*", "../types.d.ts", "types.d.ts"],
+  "include": ["electron.vite.config.*", "src/**/*", "../core/**/*", "../types.d.ts", "types.d.ts"],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
@@ -8,8 +8,10 @@
     "baseUrl": "./src",
     "paths": {
       "@core/*": ["../../core/*"],
-      "@utils/*": ["../../core/utils/*"],
+      "@gui/utils/*": ["./utils/*"],
       "@libs/*": ["../../core/libs/*"],
+      "@gui/configs/*": ["./configs/*"],
+      "@utils/*": ["../../core/utils/*"],
       "@configs/*": ["../../core/configs/*"],
       "@adapters/*": ["../../core/adapters/*"],
     },

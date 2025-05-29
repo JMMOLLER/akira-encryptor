@@ -1,9 +1,9 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
-import { Conf } from 'electron-conf/main'
 import registerIpcMain from './ipcMain'
-import path, { join } from 'path'
+import '@gui/configs/electronConf'
+import path from 'path'
 import fs from 'fs'
 
 function createWindow(): void {
@@ -17,7 +17,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
@@ -36,7 +36,7 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
 }
 
@@ -86,7 +86,7 @@ app.on('ready', () => {
 app.on('window-all-closed', () => {
   if (import.meta.env.MODE === 'development') {
     try {
-      const envPath = join(__dirname, '../../.env')
+      const envPath = path.join(__dirname, '../../.env')
       if (fs.existsSync(envPath)) {
         fs.unlinkSync(envPath) // Remove the .env file
       }
@@ -101,56 +101,3 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-const conf = new Conf<Partial<ConfStoreType>>({
-  defaults: {
-    userConfig: {
-      coreReady: false,
-      autoBackup: true,
-      backupPath: path.join(app.getPath('userData'), 'Backups'),
-      hashedPassword: undefined
-    }
-  },
-
-  schema: {
-    type: 'object',
-    properties: {
-      userConfig: {
-        type: 'object',
-        nullable: true,
-        properties: {
-          hashedPassword: {
-            type: 'string',
-            nullable: true
-          },
-          coreReady: {
-            type: 'boolean',
-            default: false
-          },
-          autoBackup: {
-            type: 'boolean',
-            default: true
-          },
-          backupPath: {
-            type: 'string',
-            default: path.join(app.getPath('userData'), 'Backups')
-          }
-        },
-        required: ['coreReady', 'autoBackup', 'backupPath']
-      }
-    }
-  }
-}) // --> Que dolor de cabeza es definir esta vaina. 🫠
-
-// set initial values
-conf.set('userConfig.coreReady', false)
-// register the renderer listener
-conf.registerRendererListener()
-
-function ensureBackupFolder() {
-  const backupPath = conf.get<string, string>('userConfig.backupPath')
-  if (!fs.existsSync(backupPath)) {
-    fs.mkdirSync(backupPath, { recursive: true })
-  }
-  return backupPath
-}
-ensureBackupFolder()
