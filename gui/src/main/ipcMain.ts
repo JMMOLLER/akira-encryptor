@@ -43,7 +43,7 @@ export default function registerIpcMain() {
       if (props.action === 'create') {
         const dest = path.join(
           USER_CONFIG.backupPath,
-          `backup_${itemId}_${moment().format('HH-mm-ss_DD-MM-YYYY')}.7z`
+          `backup_${itemId}_${moment().format('DD-MM-YYYY_HH-mm-ss')}.7z`
         )
         console.log('Generate backup: ', { src, dest })
 
