@@ -90,6 +90,7 @@ declare global {
     autoBackup: boolean
     backupPath: string
     coreReady: boolean
+    maxThreads: number
   }
   interface UserConfigContext {
     userConfig: UserConfig & { isLoggedIn: boolean }

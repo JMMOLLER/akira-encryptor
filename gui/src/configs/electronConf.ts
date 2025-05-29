@@ -1,4 +1,5 @@
 import ensureBackupFolder from '@gui/utils/ensureBackupFolder'
+import calculateThreads from '@gui/utils/calculateThreads'
 import { Conf } from 'electron-conf/main'
 
 const CONF = new Conf<Partial<ConfStoreType>>({
@@ -6,6 +7,7 @@ const CONF = new Conf<Partial<ConfStoreType>>({
     userConfig: {
       coreReady: false,
       autoBackup: true,
+      maxThreads: calculateThreads(50),
       backupPath: ensureBackupFolder(),
       hashedPassword: undefined
     }
@@ -34,8 +36,12 @@ const CONF = new Conf<Partial<ConfStoreType>>({
             type: 'string',
             default: ensureBackupFolder()
           },
+          maxThreads: {
+            type: 'number',
+            default: calculateThreads(50)
+          }
         },
-        required: ['coreReady', 'autoBackup', 'backupPath']
+        required: ['coreReady', 'autoBackup', 'backupPath', 'maxThreads']
       }
     }
   }

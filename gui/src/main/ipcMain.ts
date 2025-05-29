@@ -12,6 +12,7 @@ const USER_CONFIG = CONF.get('userConfig')
 
 const COMPRESSION_ALGORITHM: CompressionAlgorithm = '-m0=lzma2'
 const COMPRESSION_LVL: CompressionLvl = '-mx=5'
+const MAX_THREADS = USER_CONFIG.maxThreads
 let isDialogOpen = false
 let ENCRYPTOR: Encryptor
 let PASSWORD: Buffer
@@ -50,7 +51,7 @@ export default function registerIpcMain() {
           $bin: path7za,
           recursive: true,
           password: PASSWORD.toString(),
-          $raw: [COMPRESSION_LVL, COMPRESSION_ALGORITHM, '-mhe=on']
+          $raw: [COMPRESSION_LVL, COMPRESSION_ALGORITHM, `-mmt=${MAX_THREADS}`, '-mhe=on']
         })
 
         return await new Promise((resolve, reject) => {
