@@ -8,6 +8,7 @@
     "baseUrl": "./src",
     "paths": {
       "@core/*": ["../../core/*"],
+      "@workers/*": ["./workers/*"],
       "@gui/utils/*": ["./utils/*"],
       "@libs/*": ["../../core/libs/*"],
       "@gui/configs/*": ["./configs/*"],
@@ -15,6 +16,5 @@
       "@configs/*": ["../../core/configs/*"],
       "@adapters/*": ["../../core/adapters/*"],
     },
-
   }
 }

@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
-import { ProgressCallback } from '../../../types'
+import encryptorWorker from '@workers/encryptor.worker?nodeWorker'
 import CONF from '@gui/configs/electronConf'
 import Encryptor from '@core/libs/Encryptor'
 import { path7za } from '7zip-bin'
@@ -74,69 +74,45 @@ export default function registerIpcMain() {
     }
   })
 
-  // TODO: Add WorkerThread for this action
   ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
     const focusedWindow = BrowserWindow.getFocusedWindow()
-    const filePath = String(props.filePath)
-    const { itemId, extraProps } = props
 
-    try {
-      const handleProgress: ProgressCallback = (processedBytes, totalBytes) => {
-        // send progress to renderer process
-        if (focusedWindow) {
-          focusedWindow.webContents.send('onProgress', {
-            processedBytes,
-            totalBytes,
-            itemId
-          })
-        }
-      }
-      const handleEnd: EncryptorFuncion['onEnd'] = (err) => {
-        // send progress to renderer process
-        if (focusedWindow) {
-          focusedWindow.webContents.send('onOperationEnd', {
-            error: err ? (err instanceof Error ? err.message : String(err)) : null,
-            actionFor: props.actionFor,
-            action: props.action,
-            extraProps,
-            itemId
-          })
-        }
-      }
-
-      // Payload to send to the encryptor
-      const fileSendPayload: EncryptorFuncion = {
-        filePath: filePath,
-        onProgress: handleProgress,
-        onEnd: handleEnd,
-        extraProps
-      }
-
-      switch (props.action) {
-        case 'encrypt':
-          props.actionFor === 'file'
-            ? await ENCRYPTOR.encryptFile(fileSendPayload)
-            : await ENCRYPTOR.encryptFolder(fileSendPayload)
-          break
-        case 'decrypt':
-          props.actionFor === 'file'
-            ? await ENCRYPTOR.decryptFile(fileSendPayload)
-            : await ENCRYPTOR.decryptFolder(fileSendPayload)
-          break
-        default:
-          throw new Error('Acción no válida')
-      }
-    } catch (error) {
-      // Send error to renderer process
-      if (focusedWindow) {
-        focusedWindow.webContents.send('onProgressError', {
-          message: (error as Error).message,
-          filePath,
-          itemId
-        })
-      }
-      console.error(error)
+    const onProgress = (progressData: string) => {
+      focusedWindow?.webContents.send('onProgress', progressData)
     }
+    const onEnd = (endData: string) => {
+      focusedWindow?.webContents.send('onOperationEnd', endData)
+    }
+    const onError = (errorData: unknown) => {
+      focusedWindow?.webContents.send('onProgressError', errorData)
+      console.error(errorData)
+    }
+
+    const worker = encryptorWorker({
+      workerData: { ...props, filePath: props.filePath.toString(), password: PASSWORD }
+    })
+      .on('message', (message) => {
+        switch (message.type) {
+          case 'progress':
+            onProgress(message)
+            break
+          case 'end':
+            onEnd(message)
+            worker.terminate()
+            break
+          case 'error':
+            onError(message)
+            worker.terminate()
+            break
+        }
+      })
+      .on('error', (err) => {
+        onError({ message: err.message, filePath: props.filePath, itemId: props.itemId })
+      })
+      .once('exit', () => {
+        ENCRYPTOR.refreshStorage()
+        console.log('Update storage after worker exit.')
+      })
   })
 
   ipcMain.handle('open-explorer', async (event: IpcMainInvokeEvent, props: OpenExplorerProps) => {

@@ -11,12 +11,13 @@ export default defineConfig({
     resolve: {
       alias: {
         '@core': corePath,
+        '@workers': resolve('src/workers'),
         '@libs': resolve(corePath, 'libs'),
         '@gui/utils': resolve('src/utils'),
         '@utils': resolve(corePath, 'utils'),
+        '@gui/configs': resolve('src/configs'),
         '@configs': resolve(corePath, 'configs'),
-        '@adapters': resolve(corePath, 'adapters'),
-        '@gui/configs': resolve('src/configs')
+        '@adapters': resolve(corePath, 'adapters')
       }
     },
     define: {
@@ -32,7 +33,8 @@ export default defineConfig({
         '@configs': resolve(corePath, 'configs'),
         '@renderer': resolve('src/renderer/src'),
         '@utils': resolve(corePath, 'utils'),
-        '@gui/utils': resolve('src/utils')
+        '@gui/utils': resolve('src/utils'),
+        '@workers': resolve('src/workers')
       }
     },
     plugins: [react(), tailwindcss()]
