@@ -41,6 +41,10 @@ class Storage {
     return Storage.db.data.encryptedItems.get(id);
   }
 
+  async refresh() {
+    await Storage.db.read();
+  }
+
   /**
    * @description `[ENG]` Store an item in the storage. If the item has an `id`, it will be replaced.
    * @description `[ESP]` Almacena un elemento en el almacenamiento. Si el elemento tiene un `id`, será reemplazado.

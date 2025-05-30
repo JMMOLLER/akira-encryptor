@@ -194,6 +194,14 @@ class Encryptor {
   }
 
   /**
+   * @description `[ENG]` Refreshes the storage to ensure it is up-to-date.
+   * @description `[ES]` Actualiza el almacenamiento para asegurarse de que esté al día.
+   */
+  async refreshStorage() {
+    await Encryptor.STORAGE.refresh();
+  }
+
+  /**
    * @description `[ENG]` Encrypts a file using the secret key and saves it with a new name.
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    * @param filePath `string` - The path of the file to be encrypted (read-only).
