@@ -1,18 +1,14 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import encryptorWorker from '@workers/encryptor.worker?nodeWorker'
+import runBackupWorker from './helpers/runBackupWorker'
 import CONF from '@gui/configs/electronConf'
 import Encryptor from '@core/libs/Encryptor'
-import { path7za } from '7zip-bin'
-import node7z from 'node-7z'
 import moment from 'moment'
 import path from 'path'
 import fs from 'fs'
 
 const USER_CONFIG = CONF.get('userConfig')
 
-const COMPRESSION_ALGORITHM: CompressionAlgorithm = '-m0=lzma2'
-const COMPRESSION_LVL: CompressionLvl = '-mx=5'
-const MAX_THREADS = USER_CONFIG.maxThreads
 let isDialogOpen = false
 let ENCRYPTOR: Encryptor
 let PASSWORD: Buffer
@@ -34,43 +30,33 @@ export default function registerIpcMain() {
     }
   })
 
-  //TODO: Add WorkerThread for this action
-  ipcMain.handle('backup-action', async (_event: IpcMainInvokeEvent, props: BackupActionProps) => {
-    try {
-      const src = String(props.filePath)
-      const { itemId } = props
+  ipcMain.handle('backup-action', async (_event, props: BackupActionProps) => {
+    const src = String(props.filePath)
+    const { itemId, action } = props
 
-      if (props.action === 'create') {
-        const dest = path.join(
-          USER_CONFIG.backupPath,
-          `backup_${itemId}_${moment().format('DD-MM-YYYY_HH-mm-ss')}.7z`
-        )
-        console.log('Generate backup: ', { src, dest })
+    if (action === 'create') {
+      const dest = path.join(
+        USER_CONFIG.backupPath,
+        `backup_${itemId}_${moment().format('DD-MM-YYYY_HH-mm-ss')}.7z`
+      )
+      console.log('Generate backup:', { src, dest })
 
-        const proc = node7z.add(dest, src, {
-          $bin: path7za,
-          recursive: true,
-          password: PASSWORD.toString(),
-          $raw: [COMPRESSION_LVL, COMPRESSION_ALGORITHM, `-mmt=${MAX_THREADS}`, '-mhe=on']
-        })
-
-        return await new Promise((resolve, reject) => {
-          proc.on('error', (err: Error) => {
-            reject({ error: err, success: false, dest: null })
-          })
-          proc.on('end', () => {
-            // If has an error, it will not reach this point
-            resolve({ error: null, success: true, dest })
-          })
-        })
-      } else {
-        console.log('Remove backup: ', { src })
+      try {
+        const result = await runBackupWorker({ src, dest, password: PASSWORD })
+        return { error: null, success: true, dest: result.dest }
+      } catch (error) {
+        console.error('Worker error:', error)
+        return { error: (error as Error).message, success: false, dest: null }
+      }
+    } else {
+      try {
+        console.log('Remove backup:', { src })
         fs.rmSync(src, { force: true, maxRetries: 3 })
         return { error: null, success: true, dest: null }
+      } catch (error) {
+        console.error('Error removing backup:', error)
+        return { error: (error as Error).message, success: false }
       }
-    } catch (error) {
-      console.error('Error in backup action:', error)
-      return { error: (error as Error).message, success: false }
     }
   })
 

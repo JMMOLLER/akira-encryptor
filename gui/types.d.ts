@@ -1,6 +1,7 @@
 import type { ItemType } from 'antd/es/menu/interface'
 import { useAppProps } from 'antd/es/app/context'
 import type { OpenDialogOptions } from 'electron'
+import { SevenZipOptions } from 'node-7z'
 import { StorageItem } from '../types'
 
 declare global {
@@ -126,4 +127,15 @@ declare global {
     | '-m0=deflate'
     | '-m0=bcj'
     | '-m0=bcj2'
+
+  interface BackupWorkerProps {
+    node7zOptions: Omit<SevenZipOptions, '$bin' | 'password'>
+    /**
+     * @note Node.js worker threads do not support `Buffer` directly,
+     * so Node.js casts `Buffer` to `Uint8Array`.
+     */
+    password: Uint8Array
+    dest: string
+    src: string
+  }
 }
