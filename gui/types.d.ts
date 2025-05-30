@@ -87,6 +87,8 @@ declare global {
     userConfig: UserConfig
   }
   interface UserConfig {
+    compressionAlgorithm: CompressionAlgorithm
+    compressionLvl: CompressionLvl
     hashedPassword?: string
     autoBackup: boolean
     backupPath: string

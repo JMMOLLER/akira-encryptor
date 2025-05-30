@@ -9,7 +9,9 @@ const CONF = new Conf<Partial<ConfStoreType>>({
       autoBackup: true,
       maxThreads: calculateThreads(50),
       backupPath: ensureBackupFolder(),
-      hashedPassword: undefined
+      compressionAlgorithm: '-m0=lzma2',
+      hashedPassword: undefined,
+      compressionLvl: '-mx=5'
     }
   },
 
@@ -39,6 +41,14 @@ const CONF = new Conf<Partial<ConfStoreType>>({
           maxThreads: {
             type: 'number',
             default: calculateThreads(50)
+          },
+          compressionAlgorithm: {
+            type: 'string',
+            default: '-m0=lzma2'
+          },
+          compressionLvl: {
+            type: 'string',
+            default: '-mx=5'
           }
         },
         required: ['coreReady', 'autoBackup', 'backupPath', 'maxThreads']

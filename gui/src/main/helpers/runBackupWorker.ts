@@ -10,8 +10,8 @@ type Result = Omit<Props, 'password' | 'src'>
 
 const USER_CONFIG = CONF.get('userConfig')
 
-const COMPRESSION_ALGORITHM: CompressionAlgorithm = '-m0=lzma2'
-const COMPRESSION_LVL: CompressionLvl = '-mx=5'
+const COMPRESSION_ALGORITHM = USER_CONFIG.compressionAlgorithm
+const COMPRESSION_LVL = USER_CONFIG.compressionLvl
 const MAX_THREADS = USER_CONFIG.maxThreads
 
 export default function runBackupWorker({ src, dest, password }: Props): Promise<Result> {
