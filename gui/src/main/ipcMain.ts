@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
-import encryptorWorker from '@workers/encryptor.worker?nodeWorker'
+import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
 import CONF from '@gui/configs/electronConf'
 import Encryptor from '@core/libs/Encryptor'
@@ -74,31 +74,17 @@ export default function registerIpcMain() {
       console.error(errorData)
     }
 
-    const worker = encryptorWorker({
-      workerData: { ...props, filePath: props.filePath.toString(), password: PASSWORD }
-    })
-      .on('message', (message) => {
-        switch (message.type) {
-          case 'progress':
-            onProgress(message)
-            break
-          case 'end':
-            onEnd(message)
-            worker.terminate()
-            break
-          case 'error':
-            onError(message)
-            worker.terminate()
-            break
-        }
-      })
-      .on('error', (err) => {
-        onError({ message: err.message, filePath: props.filePath, itemId: props.itemId })
-      })
-      .once('exit', () => {
+    runEncryptorWorker({
+      ...props,
+      password: PASSWORD,
+      onProgress,
+      onError,
+      onEnd,
+      onExit: () => {
         ENCRYPTOR.refreshStorage()
         console.log('Update storage after worker exit.')
-      })
+      }
+    })
   })
 
   ipcMain.handle('open-explorer', async (event: IpcMainInvokeEvent, props: OpenExplorerProps) => {
