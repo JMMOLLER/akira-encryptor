@@ -3,6 +3,7 @@
   "include": [
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*.tsx",
+    "src/renderer/src/**/*.ts",
     "src/preload/*.d.ts",
     "../core/utils/*",
     "types.d.ts",
