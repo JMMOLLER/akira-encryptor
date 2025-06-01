@@ -9,8 +9,6 @@ import { Menu } from 'antd'
 
 const defaultSelectedKey: MenuItemOptions[] = ['files']
 
-// TODO: La idea es que al hacer click en conf se seleccione y cuando lo cierres regrese la seleccion al previo seleccionado, ahora mismo al seleccionar conf se queda seleccionado y no vuelve a la seleccion previa.
-
 function Aside() {
   const [collapsed, setCollapsed] = useState(false)
   const { menuItem, setMenuItem } = useMenuItem()
