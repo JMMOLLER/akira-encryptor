@@ -56,7 +56,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
       const { error, itemId, actionFor, action } = data
       if (error) {
         showEncryptionError(actionFor, error)
-      } else if (!error && action === 'decrypt' && data.extraProps) {
+      } else if (!error && action === 'decrypt' && data.extraProps?.backupPath) {
         window.api
           .backupAction({
             filePath: data.extraProps.backupPath as string,

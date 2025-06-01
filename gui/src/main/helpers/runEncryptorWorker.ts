@@ -4,12 +4,11 @@ type RunEncryptorWorkerParams = EncryptFileProps & {
   onProgress: (data: string) => void
   onError: (data: unknown) => void
   onEnd: (data: string) => void
-  onExit: () => void
   password: Buffer
 }
 
 export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
-  const { onProgress, onEnd, onError, onExit, ...rest } = props
+  const { onProgress, onEnd, onError, ...rest } = props
   const worker = encryptorWorker({
     workerData: {
       ...rest,
@@ -37,6 +36,6 @@ export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
       onError({ message: err.message, filePath: rest.filePath, itemId: rest.itemId })
     })
     .once('exit', () => {
-      onExit()
+      console.log('Encryptor worker exited')
     })
 }

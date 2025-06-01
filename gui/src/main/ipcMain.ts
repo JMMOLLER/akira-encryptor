@@ -66,7 +66,8 @@ export default function registerIpcMain() {
     const onProgress = (progressData: string) => {
       focusedWindow?.webContents.send('onProgress', progressData)
     }
-    const onEnd = (endData: string) => {
+    const onEnd = async (endData: string) => {
+      await ENCRYPTOR.refreshStorage()
       focusedWindow?.webContents.send('onOperationEnd', endData)
     }
     const onError = (errorData: unknown) => {
@@ -79,11 +80,7 @@ export default function registerIpcMain() {
       password: PASSWORD,
       onProgress,
       onError,
-      onEnd,
-      onExit: () => {
-        ENCRYPTOR.refreshStorage()
-        console.log('Update storage after worker exit.')
-      }
+      onEnd
     })
   })
 
