@@ -139,6 +139,11 @@ declare global {
      * so Node.js casts `Buffer` to `Uint8Array`.
      */
     password: Uint8Array
+    /**
+     * Path to the 7z binary.
+     * @note This is used by the `node-7z` library.
+     */
+    $bin: string
     dest: string
     src: string
   }

@@ -1,5 +1,4 @@
 import { parentPort, workerData as wd } from 'worker_threads'
-import { path7za } from '7zip-bin'
 import { add } from 'node-7z'
 
 if (!parentPort) throw new Error('IllegalState')
@@ -11,7 +10,7 @@ async function main() {
   const password = Buffer.from(workerData.password)
 
   const proc = add(dest, src, {
-    $bin: path7za,
+    $bin: workerData.$bin,
     password: password.toString(),
     ...node7zOptions
   })

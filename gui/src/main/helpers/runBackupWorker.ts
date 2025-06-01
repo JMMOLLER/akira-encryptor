@@ -1,5 +1,7 @@
 import getCompressionOptions from '@gui/utils/getCompressionOptions'
 import backupWorker from '@workers/backup.worker?nodeWorker'
+import { is } from '@electron-toolkit/utils'
+import { path7za } from '7zip-bin'
 
 interface Props {
   password: Buffer
@@ -14,6 +16,7 @@ export default function runBackupWorker({ src, dest, password }: Props): Promise
   return new Promise((resolve, reject) => {
     const worker = backupWorker({
       workerData: {
+        $bin: is.dev ? path7za : path7za.replace('app.asar', 'app.asar.unpacked'),
         node7zOptions: {
           $raw: [level, algorithm, `-mmt=${maxThreads}`, '-mhe=on']
         },
