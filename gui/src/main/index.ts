@@ -1,3 +1,4 @@
+import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
@@ -37,6 +38,16 @@ function createWindow(): void {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
+  }
+
+  if (is.dev) {
+    installExtension(REACT_DEVELOPER_TOOLS)
+      .then((manifest) => {
+        console.log(`Added Extension:  ${manifest.name}`)
+      })
+      .catch((err) => {
+        console.error('An error occurred while installing React DevTools:', err)
+      })
   }
 }
 
