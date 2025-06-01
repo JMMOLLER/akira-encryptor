@@ -1,4 +1,4 @@
-import { algorithmOptions, compressionLevels, marks } from '@renderer/constants/SettingsForm.const'
+import { algorithmOptions, compressionLevels, marks } from '../constants/settingsForm.const'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { Form, Modal, Select, Slider, Switch } from 'antd'
