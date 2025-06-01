@@ -1,3 +1,5 @@
+import calculateUsageFromThreads from '@gui/utils/calculateUsageFromThreads'
+import calculateThreads from '@gui/utils/calculateThreads'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 import { exposeConf } from 'electron-conf/preload'
@@ -8,6 +10,8 @@ exposeConf()
 // Custom APIs for renderer
 // Define the actions in the ipcMain.ts file
 const api = {
+  calculateThreads,
+  calculateUsageFromThreads,
   openDevTools: () => ipcRenderer.send('open-devtools'),
   openPath: (targetPath: string) => ipcRenderer.send('open-path', targetPath),
   openExplorer: (props: OpenExplorerProps) => ipcRenderer.invoke('open-explorer', props),

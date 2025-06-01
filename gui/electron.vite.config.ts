@@ -25,7 +25,12 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        '@gui/utils': resolve('src/utils')
+      }
+    }
   },
   renderer: {
     resolve: {

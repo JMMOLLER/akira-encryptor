@@ -1,6 +1,4 @@
-import { createContext, useState, ReactNode, useEffect, useRef } from 'react'
-import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
-import useApp from 'antd/es/app/useApp'
+import { createContext, useState, ReactNode, useRef } from 'react'
 
 // Initialize the type for the context
 const MenuItemContext = createContext<MenuItemContextType | undefined>(undefined)
@@ -9,28 +7,15 @@ const MenuItemContext = createContext<MenuItemContextType | undefined>(undefined
 export function MenuItemProvider({ children }: { children: ReactNode }) {
   const [menuItem, setMenuItem] = useState<MenuItemOptions>('files')
   const lastItem = useRef<MenuItemOptions>(menuItem)
-  const { setItems } = useEncryptedItems()
-  const { modal } = useApp()
 
-  useEffect(() => {
-    // Save the last selected item
+  const changeMenuItem = (item?: MenuItemOptions) => {
+    if (!item) return setMenuItem(lastItem.current)
     lastItem.current = menuItem
-
-    // Reset items when the menu items change between 'files' and 'folders'
-    if (menuItem === 'settings') {
-      modal.confirm({
-        title: '¿Estás seguro de que quieres salir de la configuración?',
-        content:
-          'No podrás volver a la configuración sin reiniciar la aplicación. Además, no deberías poder ver esto aún. 🤨'
-      })
-      return
-    }
-
-    setItems(undefined)
-  }, [menuItem, setItems, modal])
+    setMenuItem(item)
+  }
 
   return (
-    <MenuItemContext.Provider value={{ menuItem, setMenuItem }}>
+    <MenuItemContext.Provider value={{ menuItem, setMenuItem: changeMenuItem }}>
       {children}
     </MenuItemContext.Provider>
   )

@@ -30,6 +30,8 @@ declare global {
     getEncryptedContent: () => Promise<[string, StorageItem][] | Error>
     initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
+    calculateUsageFromThreads: (threads: number) => number
+    calculateThreads: (usage: number) => number
     openPath: (targetPath: string) => void
     openDevTools: () => void
   }
@@ -43,7 +45,7 @@ declare global {
 
   interface MenuItemContextType {
     menuItem: MenuItemOptions
-    setMenuItem: (val: MenuItemOptions) => void
+    setMenuItem: (val?: MenuItemOptions) => void
   }
 
   type CustomItemType = ItemType & {

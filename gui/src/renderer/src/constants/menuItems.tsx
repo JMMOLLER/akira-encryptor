@@ -18,8 +18,7 @@ const items: CustomItemType[] = [
   {
     key: 'settings',
     icon: <Icons.SettingOutlined />,
-    label: 'Ajustes',
-    disabled: true
+    label: 'Ajustes'
   }
 ]
 
