@@ -14,7 +14,7 @@ asarUnpack:
   - node_modules/7zip-bin/**/7za.exe
 win:
   target:
-    # - portable
+    - portable
     - nsis
   executableName: akira-encryptor
 nsis:
