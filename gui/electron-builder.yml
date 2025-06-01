@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 win:
   target:
-    - portable
+    # - portable
     - nsis
   executableName: akira-encryptor
 nsis:
@@ -24,10 +24,10 @@ nsis:
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    - NSPublicFolderUsageDescription: Application requests access to the user's Public folder.
+    - NSDesktopFolderUsageDescription: Application requests access to the user's Desktop folder.
   notarize: false
 dmg:
   artifactName: ${productName}-${version}.${ext}
