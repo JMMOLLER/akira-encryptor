@@ -130,9 +130,16 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
     })
   }, [])
 
+  const findByPath = useCallback(
+    (filePath: string) => {
+      return [...pendingItems.entries()].find(([_, value]) => value.filePath === filePath)?.[1]
+    },
+    [pendingItems]
+  )
+
   return (
     <PendingOperationContext.Provider
-      value={{ pendingItems, addPendingItem: addItem, removePendingItem: removeItem }}
+      value={{ pendingItems, addPendingItem: addItem, removePendingItem: removeItem, findByPath }}
     >
       {children}
     </PendingOperationContext.Provider>

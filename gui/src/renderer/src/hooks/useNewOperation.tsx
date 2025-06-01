@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function useNewOperation() {
-  const { addPendingItem } = usePendingOperation()
+  const { addPendingItem, findByPath } = usePendingOperation()
   const [backuping, setBacking] = useState(false)
   const { setItems } = useEncryptedItems()
   const { userConfig } = useUserConfig()
@@ -30,6 +30,12 @@ export function useNewOperation() {
       // This message is only for the developer, this case should be handled in a view component with `hasBackupInProgress`.
       console.warn(
         'No se puede iniciar una nueva operación de encriptación mientras hay una copia de seguridad en progreso.'
+      )
+      return
+    } else if (findByPath(srcPath)) {
+      // This message is only for the developer, this case should be handled in a view component with `findByPath`.
+      console.warn(
+        'Ya existe una operación pendiente para este archivo o carpeta. Por favor, espere a que se complete.'
       )
       return
     }
@@ -85,6 +91,7 @@ export function useNewOperation() {
     addPendingItem(id, {
       type: actionFor,
       status: 'loading',
+      filePath: srcPath,
       percent: 0
     })
 

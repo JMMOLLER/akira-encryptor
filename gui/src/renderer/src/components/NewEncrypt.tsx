@@ -1,4 +1,5 @@
 import { Button, FloatButton, Form, Input, InputProps, Modal, Space } from 'antd'
+import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
 import { useNewOperation } from '@renderer/hooks/useNewOperation'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { PlusOutlined } from '@ant-design/icons'
@@ -7,9 +8,13 @@ import { useState } from 'react'
 import uid from 'tiny-uid'
 
 function NewEncrypt() {
-  const [status, setStatus] = useState<InputProps['status']>('')
+  const [status, setStatus] = useState<{ type: InputProps['status']; message: string }>({
+    type: '',
+    message: ''
+  })
   const { newEncrypt, hasBackupInProgress } = useNewOperation()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const { findByPath } = usePendingOperation()
   const [pathVal, setPathVal] = useState('')
   const { menuItem } = useMenuItem()
   const message = useApp().message
@@ -47,9 +52,16 @@ function NewEncrypt() {
     setIsModalOpen(false)
   }
 
+  const resetStatus = () => {
+    setStatus({
+      type: '',
+      message: ''
+    })
+  }
+
   const handleReset = () => {
     setPathVal('')
-    setStatus('')
+    resetStatus()
   }
 
   const handleClick = async () => {
@@ -62,10 +74,18 @@ function NewEncrypt() {
       properties: menuItem === 'files' ? ['openFile'] : ['openDirectory']
     })
     if (!archivo) {
-      setStatus('error')
+      setStatus({
+        type: 'error',
+        message: `Por favor seleccione ${menuItem === 'files' ? 'un archivo' : 'una carpeta'}`
+      })
+    } else if (findByPath(archivo.toString())) {
+      setStatus({
+        type: 'error',
+        message: `Ya existe una operación pendiente para el ${menuItem === 'files' ? 'archivo' : 'directorio'} seleccionado.`
+      })
     } else {
-      setPathVal(archivo as string)
-      setStatus('')
+      setPathVal(archivo.toString())
+      resetStatus()
     }
   }
 
@@ -80,7 +100,7 @@ function NewEncrypt() {
       />
       <Modal
         title={`Encriptar ${menuItem === 'files' ? 'Nuevo Archivo' : 'Nueva Carpeta'}`}
-        okButtonProps={{ disabled: status === 'error' || pathVal === '' }}
+        okButtonProps={{ disabled: status.type === 'error' || pathVal === '' }}
         onCancel={handleCancel}
         open={isModalOpen}
         onOk={handleOk}
@@ -88,16 +108,12 @@ function NewEncrypt() {
       >
         <Form name="new-encrypt" className="[&_.ant-form-item-has-error]:mb-0! *:mb-4!">
           <Form.Item
-            help={
-              status === 'error'
-                ? `Por favor seleccione ${menuItem === 'files' ? 'un archivo' : 'una carpeta'}`
-                : ''
-            }
             label={`Ingrese la ruta ${menuItem === 'files' ? 'del archivo' : 'de la carpeta'}::`}
+            help={status.type === 'error' ? status.message : ''}
+            validateStatus={status.type}
             wrapperCol={{ span: 24 }}
             labelCol={{ span: 24 }}
             className="inline-flex"
-            validateStatus={status}
             name="path"
           >
             <Space.Compact className="w-full">

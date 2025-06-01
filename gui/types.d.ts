@@ -72,6 +72,7 @@ declare global {
     pendingItems: PendingStorage
     removePendingItem: (id: string) => void
     addPendingItem: (id: string, item: PendingItem) => void
+    findByPath: (filePath: string) => PendingItem | undefined
   }
 
   interface ProgressCallbackProps {
