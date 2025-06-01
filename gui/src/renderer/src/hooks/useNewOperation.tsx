@@ -2,6 +2,7 @@ import { usePendingOperation } from './usePendingOperation'
 import { useEncryptedItems } from './useEncryptedItems'
 import { useUserConfig } from './useUserConfig'
 import useApp from 'antd/es/app/useApp'
+import { useState } from 'react'
 
 interface Props {
   actionFor: EncryptFileProps['actionFor']
@@ -12,6 +13,7 @@ interface Props {
 
 export function useNewOperation() {
   const { addPendingItem } = usePendingOperation()
+  const [backuping, setBacking] = useState(false)
   const { setItems } = useEncryptedItems()
   const { userConfig } = useUserConfig()
   const { message, modal } = useApp()
@@ -24,7 +26,16 @@ export function useNewOperation() {
     const { actionFor, srcPath, id } = props
     let backupPath: string | undefined = undefined
 
+    if (backuping) {
+      // This message is only for the developer, this case should be handled in a view component with `hasBackupInProgress`.
+      console.warn(
+        'No se puede iniciar una nueva operación de encriptación mientras hay una copia de seguridad en progreso.'
+      )
+      return
+    }
+
     if (userConfig.autoBackup) {
+      setBacking(true)
       message.open({
         key: id,
         duration: 0,
@@ -67,6 +78,7 @@ export function useNewOperation() {
       }
 
       if (skipBackupOnError) return
+      setBacking(false)
     }
 
     // Set pending item
@@ -119,5 +131,5 @@ export function useNewOperation() {
     })
   }
 
-  return { newEncrypt, newDecrypt }
+  return { newEncrypt, newDecrypt, hasBackupInProgress: backuping }
 }

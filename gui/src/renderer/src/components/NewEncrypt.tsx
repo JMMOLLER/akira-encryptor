@@ -8,13 +8,21 @@ import uid from 'tiny-uid'
 
 function NewEncrypt() {
   const [status, setStatus] = useState<InputProps['status']>('')
+  const { newEncrypt, hasBackupInProgress } = useNewOperation()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pathVal, setPathVal] = useState('')
-  const { newEncrypt } = useNewOperation()
   const { menuItem } = useMenuItem()
   const message = useApp().message
 
   const showModal = () => {
+    if (hasBackupInProgress) {
+      message.error({
+        key: 'backup-in-progress',
+        content: 'Ya hay una copia de seguridad en progreso. Por favor, espere a que finalice.',
+        duration: 3
+      })
+      return
+    }
     setIsModalOpen(true)
     handleReset()
   }
@@ -64,9 +72,10 @@ function NewEncrypt() {
   return (
     <>
       <FloatButton
-        tooltip="Añadir archivo"
+        {...(hasBackupInProgress ? {} : { tooltip: 'Añadir archivo' })}
         icon={<PlusOutlined />}
         onClick={showModal}
+        className={`${hasBackupInProgress ? 'opacity-50' : ''}`}
         type="primary"
       />
       <Modal
