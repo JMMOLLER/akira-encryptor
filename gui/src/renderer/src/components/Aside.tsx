@@ -9,7 +9,7 @@ const defaultSelectedKey: MenuItemOptions[] = ['files']
 
 // TODO: La idea es que al hacer click en conf se seleccione y cuando lo cierres regrese la seleccion al previo seleccionado, ahora mismo al seleccionar conf se queda seleccionado y no vuelve a la seleccion previa.
 
-function Navbar() {
+function Aside() {
   const [collapsed, setCollapsed] = useState(false)
   const { menuItem, setMenuItem } = useMenuItem()
 
@@ -36,4 +36,4 @@ function Navbar() {
   )
 }
 
-export default Navbar
+export default Aside
