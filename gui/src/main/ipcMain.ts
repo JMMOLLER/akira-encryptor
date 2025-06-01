@@ -7,7 +7,7 @@ import moment from 'moment'
 import path from 'path'
 import fs from 'fs'
 
-const USER_CONFIG = CONF.get('userConfig')
+const getUserConfig = () => CONF.get('userConfig')
 
 let isDialogOpen = false
 let ENCRYPTOR: Encryptor
@@ -36,7 +36,7 @@ export default function registerIpcMain() {
 
     if (action === 'create') {
       const dest = path.join(
-        USER_CONFIG.backupPath,
+        getUserConfig().backupPath,
         `backup_${itemId}_${moment().format('DD-MM-YYYY_HH-mm-ss')}.7z`
       )
       console.log('Generate backup:', { src, dest })

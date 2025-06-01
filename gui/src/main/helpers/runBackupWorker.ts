@@ -1,5 +1,5 @@
+import getCompressionOptions from '@gui/utils/getCompressionOptions'
 import backupWorker from '@workers/backup.worker?nodeWorker'
-import CONF from '@gui/configs/electronConf'
 
 interface Props {
   password: Buffer
@@ -8,18 +8,14 @@ interface Props {
 }
 type Result = Omit<Props, 'password' | 'src'>
 
-const USER_CONFIG = CONF.get('userConfig')
-
-const COMPRESSION_ALGORITHM = USER_CONFIG.compressionAlgorithm
-const COMPRESSION_LVL = USER_CONFIG.compressionLvl
-const MAX_THREADS = USER_CONFIG.maxThreads
-
 export default function runBackupWorker({ src, dest, password }: Props): Promise<Result> {
+  const { algorithm, level, maxThreads } = getCompressionOptions()
+
   return new Promise((resolve, reject) => {
     const worker = backupWorker({
       workerData: {
         node7zOptions: {
-          $raw: [COMPRESSION_LVL, COMPRESSION_ALGORITHM, `-mmt=${MAX_THREADS}`, '-mhe=on']
+          $raw: [level, algorithm, `-mmt=${maxThreads}`, '-mhe=on']
         },
         password,
         dest,

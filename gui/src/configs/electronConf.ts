@@ -59,6 +59,10 @@ const CONF = new Conf<Partial<ConfStoreType>>({
 
 // set initial values
 CONF.set('userConfig.coreReady', false)
+// debug configuration changes
+CONF.onDidAnyChange((changes) => {
+  console.log('Configuration changes detected:', changes)
+})
 // register the renderer listener
 CONF.registerRendererListener()
 
