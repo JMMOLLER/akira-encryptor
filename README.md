@@ -69,7 +69,7 @@ bun start
 
 **Este proyecto se encuentra en etapa experimental.**
 > No me responsabilizo por la pérdida, corrupción o inaccesibilidad de archivos causados por el uso de esta herramienta.
-> Se recomienda realizar copias de seguridad antes de cifrar cualquier dato sensible.
+> Por defecto la herramienta realiza una copia de seguridad antes de realizar cualquier operación.
 
 ## 🛠️ Estado actual
 
@@ -80,5 +80,7 @@ bun start
 - [x] Soporte para archivos grandes
 
 - [x] GUI en desarrollo (Electron)
+
+- [ ] Soporte multihilo 
 
 - [ ] Empaquetado multiplataforma
