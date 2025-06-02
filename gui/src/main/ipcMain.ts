@@ -154,10 +154,15 @@ export default function registerIpcMain() {
   )
 
   ipcMain.on('open-path', (_event: IpcMainInvokeEvent, targetPath: string) => {
-    if (fs.existsSync(targetPath)) {
-      shell.showItemInFolder(path.resolve(targetPath))
-    } else {
+    if (!fs.existsSync(targetPath)) {
       console.error('Ruta no encontrada:', targetPath)
+      return
+    }
+
+    if (fs.statSync(targetPath).isDirectory()) {
+      shell.openPath(path.resolve(targetPath))
+    } else {
+      shell.showItemInFolder(path.resolve(targetPath))
     }
   })
 }
