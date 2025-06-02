@@ -61,17 +61,17 @@ export default function registerIpcMain() {
   })
 
   ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
-    const focusedWindow = BrowserWindow.getFocusedWindow()
+    const mainWindow = BrowserWindow.getAllWindows()[0]
 
     const onProgress = (progressData: string) => {
-      focusedWindow?.webContents.send('onProgress', progressData)
+      mainWindow?.webContents.send('onProgress', progressData)
     }
     const onEnd = async (endData: string) => {
       await ENCRYPTOR.refreshStorage()
-      focusedWindow?.webContents.send('onOperationEnd', endData)
+      mainWindow?.webContents.send('onOperationEnd', endData)
     }
     const onError = (errorData: unknown) => {
-      focusedWindow?.webContents.send('onProgressError', errorData)
+      mainWindow?.webContents.send('onProgressError', errorData)
       console.error(errorData)
     }
 
@@ -121,9 +121,9 @@ export default function registerIpcMain() {
   })
 
   ipcMain.on('open-devtools', (_event) => {
-    const window = BrowserWindow.getFocusedWindow()
-    if (window) {
-      window.webContents.openDevTools()
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.openDevTools()
     }
   })
 
