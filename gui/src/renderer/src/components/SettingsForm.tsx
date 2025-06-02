@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { Form, Modal, Select, Slider, Switch } from 'antd'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
+import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
 
@@ -45,6 +46,14 @@ function SettingsForm() {
 
     return `rgb(${color.join(',')})`
   }, [cpuUsage])
+
+  const handleAnchorClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault()
+      window.api.openPath(userConfig.backupPath)
+    },
+    [userConfig.backupPath]
+  )
 
   const handleClose = useCallback(() => {
     setMenuItem()
@@ -121,7 +130,18 @@ function SettingsForm() {
         requiredMark={false}
       >
         <div className="border-b border-black/10 p-1.5 [&>p]:text-gray-500 [&>p]:text-xs">
-          <Form.Item label="Copia de seguridad automática" className="mb-0!" name="autoBackup">
+          <Form.Item
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <p>Copia de seguridad automática</p>
+                <a onClick={handleAnchorClick} href="#">
+                  <ExportOutlined />
+                </a>
+              </span>
+            }
+            className="mb-0!"
+            name="autoBackup"
+          >
             <Switch checkedChildren="Activado" unCheckedChildren="Desactivado" />
           </Form.Item>
           <p>Habilita o deshabilita la copia de seguridad automática de los archivos.</p>
