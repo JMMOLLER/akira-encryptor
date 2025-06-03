@@ -40,7 +40,9 @@ class Encryptor {
   private saveStep?: CliSpinner;
   private copyStep?: CliSpinner;
   private processedBytes = 0;
+  private processedFiles = 0;
   private totalFileSize = 0;
+  private totalFiles = 0;
 
   private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
@@ -74,6 +76,11 @@ class Encryptor {
    */
   generateNonce(): Uint8Array {
     return sodium.randombytes_buf(this.nonceLength);
+  }
+
+  private resetFileIndicators() {
+    this.processedFiles = 0;
+    this.totalFiles = 0;
   }
 
   private visibilityHelper(itemId: string) {
@@ -379,6 +386,22 @@ class Encryptor {
     });
   }
 
+  countFilesInFolder(folderPath: string): number {
+    const entries = Encryptor.FS.readDir(folderPath);
+    let count = 0;
+
+    for (const entry of entries) {
+      const fullPath = path.join(folderPath, entry.name);
+      if (entry.isDirectory()) {
+        count += this.countFilesInFolder(fullPath); // Recursively count files in subfolders
+      } else if (entry.isFile()) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
   /**
    * @description `[ENG]` Recursively encrypts all files within a folder.
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
@@ -407,6 +430,12 @@ class Encryptor {
     const content: StorageItemType[] = [];
 
     let skippedFiles = 0;
+    // Count files in the folder
+    // This is used to show the progress of file encryption
+    if (saveOnEnd) {
+      this.processedFiles = 0;
+      this.totalFiles = this.countFilesInFolder(folderPath);
+    }
 
     for (const entry of entries) {
       const fullPath = path.join(folderPath, entry.name);
@@ -426,6 +455,7 @@ class Encryptor {
             saveOnEnd: false,
             onProgress
           });
+          this.processedFiles++;
           content.push(subFile);
         } catch (err) {
           if (err instanceof Error && err.name === "FileAlreadyEncrypted") {
@@ -482,6 +512,7 @@ class Encryptor {
           `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
         ).warn();
       }
+      this.resetFileIndicators();
     }
 
     return Promise.resolve(saved);
@@ -509,6 +540,10 @@ class Encryptor {
     // calculate the number of processed files in each iteration
     if (!folder) {
       this.iterations = Encryptor.FS.readDir(folderPath).length;
+      // Count files in the folder
+      // This is used to show the progress of file encryption
+      this.processedFiles = 0;
+      this.totalFiles = this.countFilesInFolder(folderPath);
     }
 
     // If the folder is not passed, get it from storage
@@ -539,6 +574,7 @@ class Encryptor {
           onProgress,
           file: item
         });
+        this.processedFiles++;
       }
     }
 
@@ -576,6 +612,7 @@ class Encryptor {
             `Se omitieron ${this.iterations} archivo(s) porque no se encontraban registrados en el almacenamiento.`
           ).warn();
         }
+        this.resetFileIndicators();
       }
     }
   }
@@ -610,7 +647,12 @@ class Encryptor {
       }
 
       this.processedBytes += chunk.length;
-      onProgress?.(this.processedBytes, this.totalFileSize);
+      onProgress?.(
+        this.processedBytes,
+        this.totalFileSize,
+        this.processedFiles,
+        this.totalFiles
+      );
     } catch (err) {
       readStream.destroy();
       writeStream.destroy();
@@ -808,7 +850,12 @@ class Encryptor {
         }
 
         this.processedBytes += this.nonceLength + 4 + encryptedLength;
-        params.onProgress?.(this.processedBytes, this.totalFileSize);
+        params.onProgress?.(
+          this.processedBytes,
+          this.totalFileSize,
+          this.processedFiles,
+          this.totalFiles
+        );
       } catch (err) {
         if (logStream) {
           logStream.write(

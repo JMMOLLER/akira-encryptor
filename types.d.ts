@@ -5,7 +5,9 @@ import type { Stats } from "fs";
 
 export type ProgressCallback = (
   processedBytes: number,
-  totalBytes: number
+  totalBytes: number,
+  processedFiles: number,
+  totalFiles: number,
 ) => void;
 
 export type StorageItem = FileItem | FolderItem;
