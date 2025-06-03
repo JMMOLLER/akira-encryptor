@@ -15,13 +15,20 @@ function SkeletonCard(props: SkeletonCardProps) {
   return (
     <div className="skeleton-card relative w-fit">
       {pendingItem && (
-        <Progress
-          className="absolute left-6 top-6 bg-white"
-          percent={pendingItem.percent}
-          type="circle"
-          status={pendingItem.status === 'error' ? 'exception' : undefined}
-          size={40}
-        />
+        <span className="absolute left-6 top-6 flex flex-col gap-y-0.5">
+          <Progress
+            className="bg-white"
+            status={pendingItem.status === 'error' ? 'exception' : undefined}
+            percent={pendingItem.percent}
+            type="circle"
+            size={40}
+          />
+          {pendingItem.type === 'folder' && (
+            <p className="text-gray-500 text-center text-xs">
+              {pendingItem.processedFiles}/{pendingItem.totalFiles}
+            </p>
+          )}
+        </span>
       )}
       <Skeleton
         className="w-[350px]! h-min! bg-white p-6 rounded-t-lg -mb-0.5!"

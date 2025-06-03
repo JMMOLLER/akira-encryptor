@@ -1,4 +1,5 @@
 import { parentPort, workerData as wd } from 'worker_threads'
+import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
 type Props = EncryptFileProps & {
@@ -23,11 +24,18 @@ async function main() {
     silent: true
   })
 
-  const sendProgress = (processedBytes: number, totalBytes: number) => {
+  const sendProgress: ProgressCallback = (
+    processedBytes,
+    totalBytes,
+    processedFiles,
+    totalFiles
+  ) => {
     parentPort!.postMessage({
       type: 'progress',
       processedBytes,
       totalBytes,
+      processedFiles,
+      totalFiles,
       itemId
     })
   }

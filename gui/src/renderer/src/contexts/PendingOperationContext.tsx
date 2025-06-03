@@ -31,6 +31,8 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
       if (!item) return prev
 
       item.percent = Math.floor((data.processedBytes / data.totalBytes) * 100)
+      item.processedFiles = data.processedFiles
+      item.totalFiles = data.totalFiles
 
       return newMap
     })

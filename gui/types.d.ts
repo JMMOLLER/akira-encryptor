@@ -66,6 +66,8 @@ declare global {
     percent: number
     message?: string
     filePath?: string
+    totalFiles: number
+    processedFiles: number
   }
   type PendingStorage = Map<string, PendingItem>
   interface PendingEncryptContextType {
@@ -76,6 +78,8 @@ declare global {
   }
 
   interface ProgressCallbackProps {
+    processedFiles: number
+    totalFiles: number
     processedBytes: number
     totalBytes: number
     itemId: string
