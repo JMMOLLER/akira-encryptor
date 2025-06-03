@@ -6,20 +6,20 @@ interface SkeletonCardProps {
    * @description `[ENG]` Encrypted item in progress that will be shown in the skeleton card.
    * @description `[ESP]` Elemento en proceso de encriptación que se mostrará en la tarjeta de esqueleto.
    */
-  encryptedItem?: PendingItem
+  pendingItem?: PendingItem
 }
 
 function SkeletonCard(props: SkeletonCardProps) {
-  const { encryptedItem } = props
+  const { pendingItem } = props
 
   return (
     <div className="skeleton-card relative w-fit">
-      {encryptedItem && (
+      {pendingItem && (
         <Progress
           className="absolute left-6 top-6 bg-white"
-          percent={encryptedItem.percent}
+          percent={pendingItem.percent}
           type="circle"
-          status={encryptedItem.status === 'error' ? 'exception' : undefined}
+          status={pendingItem.status === 'error' ? 'exception' : undefined}
           size={40}
         />
       )}

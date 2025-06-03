@@ -28,7 +28,7 @@ function PendingContent() {
       </Typography.Title>
       <div className="flex content-start flex-wrap gap-5">
         {values.map((pendingItem, index) => (
-          <SkeletonCard key={index} encryptedItem={pendingItem} />
+          <SkeletonCard key={index} pendingItem={pendingItem} />
         ))}
       </div>
     </>
