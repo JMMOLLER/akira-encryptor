@@ -71,6 +71,27 @@ class Encryptor {
   }
 
   /**
+   * @description `[ENG]` Counts the number of files in a folder recursively.
+   * @description `[ES]` Cuenta el número de archivos en una carpeta de forma recursiva.
+   * @param folderPath `string` - The path of the folder to count files in.
+   */
+  private countFilesInFolder(folderPath: string): number {
+    const entries = Encryptor.FS.readDir(folderPath);
+    let count = 0;
+
+    for (const entry of entries) {
+      const fullPath = path.join(folderPath, entry.name);
+      if (entry.isDirectory()) {
+        count += this.countFilesInFolder(fullPath); // Recursively count files in subfolders
+      } else if (entry.isFile()) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
+  /**
    * @description `[ENG]` Generates a nonce for encryption.
    * @description `[ES]` Genera un nonce para la cifrado.
    */
@@ -384,22 +405,6 @@ class Encryptor {
         props.onEnd?.(error);
       });
     });
-  }
-
-  countFilesInFolder(folderPath: string): number {
-    const entries = Encryptor.FS.readDir(folderPath);
-    let count = 0;
-
-    for (const entry of entries) {
-      const fullPath = path.join(folderPath, entry.name);
-      if (entry.isDirectory()) {
-        count += this.countFilesInFolder(fullPath); // Recursively count files in subfolders
-      } else if (entry.isFile()) {
-        count++;
-      }
-    }
-
-    return count;
   }
 
   /**
