@@ -752,6 +752,7 @@ class Encryptor {
       }
       await Promise.all([
         Encryptor.FS.removeFile(filePath),
+        Encryptor.FS.removeFile(renamedTempFile),
         delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo original eliminado correctamente.");
