@@ -12,6 +12,24 @@ export type ProgressCallback = (
 
 export type StorageItem = FileItem | FolderItem;
 
+interface EncryptorProps {
+  /**
+   * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
+   * @description `[ENG]` - Path of the file to encrypt/decrypt.
+   */
+  filePath: Readonly<string>;
+  /**
+   * @description `[ESP]` - Función que se ejecuta cuando se procesa un bloque de datos.
+   * @description `[ENG]` - Function that is executed when a block of data is processed.
+   */
+  onProgress: ProgressCallback;
+  /**
+   * @description `[ESP]` - Función que se ejecuta al finalizar el cifrado/descifrado.
+   * @description `[ENG]` - Function that is executed when the encryption/decryption ends.
+   */
+  onEnd?: (error?: Error) => void;
+}
+
 declare global {
   type CliAction = "encrypt" | "decrypt";
   type CliType = "file" | "folder";
@@ -20,10 +38,7 @@ declare global {
   type PrimitiveOrArray = JsonPrimitive | JsonPrimitive[];
   type JsonValue = PrimitiveOrArray | Record<string, PrimitiveOrArray>;
 
-  interface EncryptorFuncion {
-    filePath: Readonly<string>;
-    onProgress: ProgressCallback;
-    onEnd?: (error?: Error) => void;
+  interface EncryptorFuncion extends EncryptorProps {
     /**
      * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
      * @description `[ENG]` - Allows saving extra properties in the `Storage`.
@@ -32,6 +47,12 @@ declare global {
      */
     extraProps?: Record<string, JsonValue>;
   }
+
+  interface DecryptorFunction extends EncryptorProps {}
+
+  type InternalFlow = Pick<StreamHandlerProps, "isInternalFlow">;
+  type InternalEncryptorProps = EncryptorFuncion & InternalFlow;
+  type InternalDecryptorProps = DecryptorFunction & InternalFlow;
 
   interface EncryptedDataStore {
     encryptedItems: {
@@ -89,12 +110,12 @@ declare global {
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "extraProps" | "isInternalFlow" | "filePath" | "onEnd"
+    "extraProps" | "isInternalFlow" | "filePath"
   >;
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "filePath" | "onEnd" | "isInternalFlow"
+    "filePath" | "isInternalFlow"
   >;
 
   type DecryptStreamError = Pick<

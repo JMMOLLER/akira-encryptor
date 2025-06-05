@@ -15,9 +15,6 @@ import Piscina from "piscina";
 import { tmpdir } from "os";
 import path from "path";
 
-type InternalEncryptorProps = EncryptorFuncion &
-  Pick<StreamHandlerProps, "isInternalFlow">;
-
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
   private static readonly FS = FileSystem.getInstance();
@@ -198,14 +195,12 @@ class Encryptor {
   /**
    * @description `[ENG]` Encrypts a file using the secret key and saves it with a new name.
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
-   * @param filePath `string` - The path of the file to be encrypted (read-only).
-   * @param onProgress `ProgressCallback` - Optional callback function to track progress.
    */
   async encryptFile(props: EncryptorFuncion): Promise<FileItem>;
   async encryptFile(props: InternalEncryptorProps): Promise<FileItem>;
   async encryptFile(props: InternalEncryptorProps) {
     const { filePath, onProgress, isInternalFlow } = props;
-
+    let error: Error | undefined = undefined;
     // prevent encrypting the file again
     if (path.extname(filePath) === ".enc") {
       const error = new Error(
@@ -270,16 +265,17 @@ class Encryptor {
       );
 
       const fileItem = await this.onEncryptWriteStreamFinish({
-        filePath,
-        onEnd: props.onEnd,
         isInternalFlow: !!isInternalFlow,
-        extraProps: props.extraProps
+        extraProps: props.extraProps,
+        filePath
       });
 
       return Promise.resolve(fileItem);
-    } catch (error) {
-      return Promise.reject(error);
+    } catch (err) {
+      error = err as Error;
+      return Promise.reject(err);
     } finally {
+      if (props.onEnd) props.onEnd(error);
       if (!isInternalFlow) {
         await this.destroy();
       }
@@ -289,15 +285,12 @@ class Encryptor {
   /**
    * @description `[ENG]` Decrypts a file using the secret key and saves it with the original name.
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
-   * @param filePath `string` - The path of the file to be decrypted (read-only).
-   * @param onProgress `ProgressCallback` - Optional callback function to track progress.
-   * @param file `FileItem` - Optional file item to be decrypted.
    */
-  async decryptFile(props: EncryptorFuncion): Promise<void>;
-  async decryptFile(props: InternalEncryptorProps): Promise<void>;
-  async decryptFile(props: InternalEncryptorProps): Promise<void> {
+  async decryptFile(props: DecryptorFunction): Promise<void>;
+  async decryptFile(props: InternalDecryptorProps): Promise<void>;
+  async decryptFile(props: InternalDecryptorProps): Promise<void> {
     const { filePath, onProgress } = props;
-
+    let error: Error | undefined = undefined;
     // skip logs file
     if (filePath.includes(".encrypt.log")) return Promise.resolve();
     if (filePath.includes(".dec.tmp")) return Promise.resolve();
@@ -356,15 +349,16 @@ class Encryptor {
       );
 
       await this.onDecryptWriteStreamFinish({
-        onEnd: props.onEnd,
         isInternalFlow: !!props.isInternalFlow,
         filePath
       });
 
       return Promise.resolve();
-    } catch (error) {
-      return Promise.reject(error);
+    } catch (err) {
+      error = err as Error;
+      return Promise.reject(err);
     } finally {
+      if (props.onEnd) props.onEnd(error);
       if (!props.isInternalFlow) {
         await this.destroy();
       }
@@ -719,9 +713,6 @@ class Encryptor {
       // if (logStream)
       //   logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
       throw err;
-    } finally {
-      // bcs folder operation already handled the end
-      if (!isInternalFlow) params.onEnd?.();
     }
   }
 
@@ -808,9 +799,6 @@ class Encryptor {
 
       if (this.tempPath) await Encryptor.FS.removeFile(this.tempPath);
       return Promise.reject(err);
-    } finally {
-      // bcs folder operation already handled the end
-      if (!isInternalFlow) params.onEnd?.(error);
     }
   }
 }
