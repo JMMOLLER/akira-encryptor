@@ -1,3 +1,5 @@
+import decryptText from "core/crypto/decryptText";
+import encryptText from "core/crypto/encryptText";
 import type { JSONFile } from "lowdb/node";
 import type { Adapter } from "lowdb";
 
@@ -7,15 +9,20 @@ import type { Adapter } from "lowdb";
  * @requires `lowdb` and `lowdb/node`
  */
 class MapAdapter<T extends EncryptedDataStore> implements Adapter<T> {
-  private encryptFunc: any;
-  private decryptFunc: any;
+  private encoding: BufferEncoding;
+  private secretKey: Uint8Array;
   private adapter: JSONFile<any>;
   public data: T | null = null;
 
-  constructor(adapter: JSONFile<any>, encryptFunc: EncryptorFunc, decryptFunc: EncryptorFunc) {
+  constructor(
+    adapter: JSONFile<any>,
+    secretKey: Uint8Array,
+    encoding: BufferEncoding
+  ) {
     this.adapter = adapter;
-    this.encryptFunc = encryptFunc;
-    this.decryptFunc = decryptFunc;
+
+    this.encoding = encoding;
+    this.secretKey = secretKey;
   }
 
   async read() {
@@ -25,7 +32,11 @@ class MapAdapter<T extends EncryptedDataStore> implements Adapter<T> {
       return this.data;
     }
 
-    const decrypted = await this.decryptFunc(encrypted);
+    const decrypted = decryptText(
+      encrypted,
+      this.secretKey,
+      this.encoding
+    );
     const raw = JSON.parse(decrypted) as T;
 
     if (raw && raw.encryptedItems) {
@@ -45,7 +56,7 @@ class MapAdapter<T extends EncryptedDataStore> implements Adapter<T> {
     };
 
     const json = JSON.stringify(toWrite, null, 2);
-    const encrypted = this.encryptFunc(json);
+    const encrypted = encryptText(json, this.secretKey, this.encoding);
 
     await this.adapter.write(encrypted);
   }

@@ -1,4 +1,7 @@
 import generateSecretKey from "@utils/generateSecretKey";
+import generateNonce from "core/crypto/generateNonce";
+import encryptText from "core/crypto/encryptText";
+import decryptText from "core/crypto/decryptText";
 import createSpinner from "@utils/createSpinner";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
@@ -63,8 +66,8 @@ class Encryptor {
     instance.SILENT = options?.silent || false;
 
     Encryptor.STORAGE = await Storage.init(
-      instance.encryptText.bind(instance),
-      instance.decryptText.bind(instance),
+      instance.SECRET_KEY,
+      Encryptor.ENCODING,
       options?.libraryPath
     );
     return instance;
@@ -89,14 +92,6 @@ class Encryptor {
     }
 
     return count;
-  }
-
-  /**
-   * @description `[ENG]` Generates a nonce for encryption.
-   * @description `[ES]` Genera un nonce para la cifrado.
-   */
-  generateNonce(): Uint8Array {
-    return sodium.randombytes_buf(this.nonceLength);
   }
 
   private resetFileIndicators() {
@@ -157,59 +152,6 @@ class Encryptor {
     } catch (err) {
       console.error("Error al revelar el archivo:", err);
       return false;
-    }
-  }
-
-  /**
-   * @description `[ENG]` Encrypts the given text using the secret key and a nonce.
-   * @description `[ES]` Cifra el texto dado utilizando la clave secreta y un nonce.
-   * @param txt - The text to be encrypted
-   */
-  encryptText(txt: string): string {
-    // Convert the text to bytes
-    const textBytes = sodium.from_string(txt);
-    const nonce = this.generateNonce();
-
-    // Encrypt the text using the nonce and secret key
-    const cipher = sodium.crypto_secretbox_easy(
-      textBytes,
-      nonce,
-      this.SECRET_KEY
-    );
-
-    // Combine the nonce and cipher into a single Uint8Array
-    const combined = new Uint8Array(nonce.length + cipher.length);
-    combined.set(nonce);
-    combined.set(cipher, nonce.length);
-
-    return Buffer.from(combined).toString(Encryptor.ENCODING);
-  }
-
-  /**
-   * @description `[ENG]` Decrypts the given encrypted text using the secret key.
-   * @description `[ES]` Descifra el mensaje cifrado dado utilizando la clave secreta.
-   * @param encryptedText - The encrypted text to be decrypted
-   */
-  decryptText(encryptedText: string) {
-    // Convert the encrypted text to bytes
-    const combined = new Uint8Array(
-      Buffer.from(encryptedText, Encryptor.ENCODING)
-    );
-
-    // Get the nonce and cipher from the combined array
-    const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-    const cipher = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
-
-    // Decrypt the cipher using the nonce and secret key
-    try {
-      const decrypted = sodium.crypto_secretbox_open_easy(
-        cipher,
-        nonce,
-        this.SECRET_KEY
-      );
-      return sodium.to_string(decrypted);
-    } catch (err) {
-      throw err;
     }
   }
 
@@ -473,7 +415,11 @@ class Encryptor {
     }
 
     // Encrypt the name of the current folder
-    const encryptedName = this.encryptText(path.basename(folderPath));
+    const encryptedName = encryptText(
+      path.basename(folderPath),
+      this.SECRET_KEY,
+      Encryptor.ENCODING
+    );
     let saved: StorageItemType = {
       originalName: path.basename(folderPath),
       encryptedAt: new Date(),
@@ -584,7 +530,11 @@ class Encryptor {
     }
 
     // Decrypt name of the current folder
-    const originalName = this.decryptText(currentFolder.encryptedName);
+    const originalName = decryptText(
+      currentFolder.encryptedName,
+      this.SECRET_KEY,
+      Encryptor.ENCODING
+    );
     if (!originalName) {
       if (!this.SILENT) {
         createSpinner(
@@ -627,7 +577,7 @@ class Encryptor {
     const { readStream, writeStream, logStream } = params;
     const { chunk, onProgress, reject } = params;
     try {
-      const nonce = this.generateNonce();
+      const nonce = generateNonce();
       const chunkArray =
         typeof chunk === "string"
           ? sodium.from_string(chunk)
@@ -684,7 +634,11 @@ class Encryptor {
       }
 
       this.savedItem = {
-        encryptedName: this.encryptText(this.fileBaseName),
+        encryptedName: encryptText(
+          this.fileBaseName,
+          this.SECRET_KEY,
+          Encryptor.ENCODING
+        ),
         originalName: path.basename(filePath),
         path: path.resolve(filePath),
         size: this.fileStats.size,

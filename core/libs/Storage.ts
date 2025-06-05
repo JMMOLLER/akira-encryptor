@@ -5,7 +5,7 @@ import { env } from "@configs/env";
 import { Low } from "lowdb";
 
 class Storage {
-  private static LIBRARY_PATH = env.LIBRARY_PATH;
+  private static LIBRARY_PATH: string;
   private static db: LowStoreType;
 
   private constructor() {}
@@ -16,12 +16,16 @@ class Storage {
    * @param encryptFunc - The function used to encrypt the data.
    * @param decryptFunc - The function used to decrypt the data.
    */
-  static async init(encryptFunc: EncryptorFunc, decryptFunc: EncryptorFunc, dbPath?: string) {
-    Storage.LIBRARY_PATH = dbPath || Storage.LIBRARY_PATH;
+  static async init(
+    secretKey: Uint8Array,
+    encoding: BufferEncoding,
+    dbPath = env.LIBRARY_PATH
+  ) {
+    Storage.LIBRARY_PATH = dbPath;
     const adapter = new MapAdapter(
       new JSONFile<EncryptedDataStore>(Storage.LIBRARY_PATH),
-      encryptFunc,
-      decryptFunc
+      secretKey,
+      encoding
     );
     Storage.db = new Low(adapter as any, { encryptedItems: new Map() });
 
