@@ -73,7 +73,7 @@ declare global {
     reject: (error?: any) => void;
     resolve: (value?: any) => void;
     chunk: Buffer | string;
-    saveOnEnd: boolean;
+    isInternalFlow: boolean;
     processed: number;
     totalSize: number;
     tempPath: string;
@@ -102,7 +102,7 @@ declare global {
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
     | "extraProps"
-    | "saveOnEnd"
+    | "isInternalFlow"
     | "filePath"
     | "onEnd"
   >;

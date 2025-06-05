@@ -279,7 +279,7 @@ class Encryptor {
       const fileItem = await this.onEncryptWriteStreamFinish({
         filePath,
         onEnd: props.onEnd,
-        saveOnEnd: !!isInternalFlow,
+        isInternalFlow: !!isInternalFlow,
         extraProps: props.extraProps
       });
 
@@ -656,7 +656,7 @@ class Encryptor {
   private async onEncryptWriteStreamFinish(
     params: EncryptWriteStreamFinish
   ): Promise<StorageItemType> {
-    const { saveOnEnd, /*logStream,*/ filePath /*, resolve, reject*/ } = params;
+    const { isInternalFlow, /*logStream,*/ filePath /*, resolve, reject*/ } = params;
     const isFileOperation = this.operationFor === "file";
 
     try {
@@ -683,7 +683,7 @@ class Encryptor {
         id: generateUID(),
         type: "file"
       };
-      if (saveOnEnd) {
+      if (!isInternalFlow) {
         if (!this.SILENT) {
           this.saveStep = createSpinner("Registrando archivo encriptado...");
         }
@@ -762,7 +762,7 @@ class Encryptor {
 
       return this.savedItem;
     } catch (err) {
-      if (saveOnEnd && this.savedItem)
+      if (isInternalFlow && this.savedItem)
         await Encryptor.STORAGE.delete(this.savedItem.id);
 
       if (isFileOperation && this.saveStep)
