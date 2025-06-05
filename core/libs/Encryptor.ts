@@ -3,6 +3,7 @@ import generateNonce from "core/crypto/generateNonce";
 import encryptText from "core/crypto/encryptText";
 import decryptText from "core/crypto/decryptText";
 import createSpinner from "@utils/createSpinner";
+import { MessageChannel } from "worker_threads";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
@@ -10,8 +11,16 @@ import { env } from "@configs/env";
 import delay from "@utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
+import Piscina from "piscina";
 import { tmpdir } from "os";
 import path from "path";
+
+type InternalEncryptorProps = EncryptorFuncion & {
+  /**
+   * @description Indicates if the function is called from an internal flow.
+   */
+  isInternalFlow?: boolean;
+};
 
 class Encryptor {
   private static readonly ENCODING = env.ENCODING as BufferEncoding;
@@ -19,8 +28,10 @@ class Encryptor {
   private static readonly tempDir = tmpdir();
   private DEFAULT_STEP_DELAY!: number;
   private ALLOW_EXTRA_PROPS!: boolean;
+  private static workerPool: Piscina<WorkerTask, void>;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
+  private MAX_THREADS!: number;
   private static LOG = env.LOG;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
@@ -64,6 +75,19 @@ class Encryptor {
     instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
+    instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
+
+    // Initialize worker pool
+    if (!Encryptor.workerPool) {
+      Encryptor.workerPool = new Piscina({
+        filename: new URL("../workers/encryptor.worker.ts", import.meta.url)
+          .href,
+        maxThreads: instance.MAX_THREADS,
+        minThreads: 1,
+        idleTimeout: 30000, // 30 seconds
+        concurrentTasksPerWorker: 1
+      });
+    }
 
     Encryptor.STORAGE = await Storage.init(
       instance.SECRET_KEY,
@@ -71,6 +95,13 @@ class Encryptor {
       options?.libraryPath
     );
     return instance;
+  }
+
+  async destroy() {
+    if (Encryptor.workerPool) {
+      await Encryptor.workerPool.destroy();
+      Encryptor.workerPool = undefined as any;
+    }
   }
 
   /**
@@ -176,12 +207,11 @@ class Encryptor {
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    * @param filePath `string` - The path of the file to be encrypted (read-only).
    * @param onProgress `ProgressCallback` - Optional callback function to track progress.
-   * @param saveOnEnd `boolean` - Optional flag to save the encrypted file in storage.
    */
-  encryptFile(
-    props: EncryptorFuncion & { saveOnEnd?: boolean }
-  ): Promise<FileItem> {
-    const { filePath, onProgress, saveOnEnd = true } = props;
+  async encryptFile(props: EncryptorFuncion): Promise<FileItem>;
+  async encryptFile(props: InternalEncryptorProps): Promise<FileItem>;
+  async encryptFile(props: InternalEncryptorProps) {
+    const { filePath, onProgress, isInternalFlow } = props;
 
     // prevent encrypting the file again
     if (path.extname(filePath) === ".enc") {
@@ -196,8 +226,6 @@ class Encryptor {
     this.totalFileSize = this.fileStats.size;
     this.processedBytes = 0;
 
-    const readStream = Encryptor.FS.createReadStream(filePath);
-
     // Temp route and final route
     this.fileDir = path.dirname(filePath);
     this.fileBaseName = path.basename(filePath, path.extname(filePath));
@@ -206,56 +234,63 @@ class Encryptor {
       `${this.fileBaseName}.enc.tmp`
     );
 
-    const writeStream = Encryptor.FS.createWriteStream(this.tempPath);
     this.savedItem = undefined;
 
-    const logPath = filePath + ".encrypt.log";
-    const logStream = Encryptor.LOG
-      ? Encryptor.FS.createWriteStream(logPath)
-      : undefined;
-
-    return new Promise((resolve, reject) => {
-      if (logStream) {
-        logStream.write(`🟢 Inicio de cifrado: ${filePath}\n`);
-        logStream.write(`Tamaño total: ${this.totalFileSize} bytes\n`);
-      }
-
-      readStream.on("data", (chunk) =>
-        this.onEncryptReadStream({
-          readStream,
-          writeStream,
-          onProgress,
-          logStream,
-          reject,
-          chunk
-        })
+    try {
+      const channel = new MessageChannel();
+      channel.port2.on(
+        "message",
+        (message: { type: string; [x: string]: any }) => {
+          switch (message.type) {
+            case "progress": {
+              const { processedBytes } = message;
+              this.processedBytes += processedBytes;
+              onProgress?.(
+                this.processedBytes,
+                this.totalFileSize,
+                this.processedFiles,
+                this.totalFiles
+              );
+              break;
+            }
+            case "error": {
+              const error = new Error(message.error);
+              channel.port2.close();
+              throw error;
+            }
+            default:
+              console.warn("Unknown message type:", message);
+          }
+        }
+      );
+      await Encryptor.workerPool.run(
+        {
+          SECRET_KEY: this.SECRET_KEY,
+          tempPath: this.tempPath,
+          taskType: "encrypt",
+          port: channel.port1,
+          filePath
+        },
+        {
+          transferList: [channel.port1]
+        }
       );
 
-      readStream.on("end", () => {
-        writeStream.end();
-        writeStream.once("finish", () =>
-          this.onEncryptWriteStreamFinish({
-            extraProps: props.extraProps,
-            onEnd: props.onEnd,
-            saveOnEnd,
-            logStream,
-            filePath,
-            resolve,
-            reject
-          })
-        );
+      const fileItem = await this.onEncryptWriteStreamFinish({
+        filePath,
+        onEnd: props.onEnd,
+        saveOnEnd: !!isInternalFlow,
+        extraProps: props.extraProps
       });
 
-      readStream.on("error", async (error) => {
-        await this.onEncryptReadStreamError({
-          writeStream,
-          logStream,
-          reject,
-          error
-        });
-        props.onEnd?.(error);
-      });
-    });
+      return Promise.resolve(fileItem);
+    } catch (error) {
+      return Promise.reject(error);
+    } finally {
+      if (!isInternalFlow) {
+        await this.destroy();
+      }
+    }
   }
 
   /**
@@ -399,7 +434,7 @@ class Encryptor {
           const subFile = await this.encryptFile({
             onEnd: props.onEnd,
             filePath: fullPath,
-            saveOnEnd: false,
+            isInternalFlow: true,
             onProgress
           });
           this.processedFiles++;
@@ -618,8 +653,10 @@ class Encryptor {
     }
   }
 
-  private async onEncryptWriteStreamFinish(params: EncryptWriteStreamFinish) {
-    const { saveOnEnd, logStream, filePath, resolve, reject } = params;
+  private async onEncryptWriteStreamFinish(
+    params: EncryptWriteStreamFinish
+  ): Promise<StorageItemType> {
+    const { saveOnEnd, /*logStream,*/ filePath /*, resolve, reject*/ } = params;
     const isFileOperation = this.operationFor === "file";
 
     try {
@@ -665,12 +702,12 @@ class Encryptor {
             "Archivo encriptado registrado correctamente."
           );
           this.savedItem = storageItem;
-          if (logStream) {
-            logStream.write(
-              `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
-            );
-            logStream.end();
-          }
+          // if (logStream) {
+          //   logStream.write(
+          //     `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
+          //   );
+          //   logStream.end();
+          // }
         });
       }
       const encryptedFileName = this.savedItem.id + ".enc";
@@ -688,11 +725,11 @@ class Encryptor {
         this.renameStep?.succeed(
           "Archivo encriptado renombrado correctamente."
         );
-        if (logStream) {
-          logStream.write(
-            `✅ Archivo encriptado renombrado: ${renamedTempFile}\n`
-          );
-        }
+        // if (logStream) {
+        //   logStream.write(
+        //     `✅ Archivo encriptado renombrado: ${renamedTempFile}\n`
+        //   );
+        // }
       });
 
       // Move the temp file to the final destination
@@ -704,9 +741,9 @@ class Encryptor {
         delay(this.stepDelay)
       ]).then(() => {
         this.copyStep?.succeed("Archivo encriptado movido correctamente.");
-        if (logStream) {
-          logStream.write(`✅ Archivo encriptado movido: ${destPath}\n`);
-        }
+        // if (logStream) {
+        //   logStream.write(`✅ Archivo encriptado movido: ${destPath}\n`);
+        // }
       });
 
       // Remove the original file
@@ -718,12 +755,12 @@ class Encryptor {
         delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo original eliminado correctamente.");
-        if (logStream) {
-          logStream.write(`✅ Archivo original eliminado: ${filePath}\n`);
-        }
+        // if (logStream) {
+        //   logStream.write(`✅ Archivo original eliminado: ${filePath}\n`);
+        // }
       });
 
-      resolve(this.savedItem);
+      return this.savedItem;
     } catch (err) {
       if (saveOnEnd && this.savedItem)
         await Encryptor.STORAGE.delete(this.savedItem.id);
@@ -737,9 +774,9 @@ class Encryptor {
       if (isFileOperation && this.removeStep)
         this.removeStep.fail("Error al eliminar el archivo original.");
 
-      if (logStream)
-        logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
-      return reject(err);
+      // if (logStream)
+      //   logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
+      throw err;
     } finally {
       // bcs folder operation already handled the end
       if (isFileOperation) params.onEnd?.();

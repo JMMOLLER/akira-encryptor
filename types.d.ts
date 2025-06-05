@@ -1,5 +1,6 @@
 import type { ReadableStream, WritableStream } from "stream";
 import type createSpinner from "@utils/createSpinner";
+import type { MessagePort } from "worker_threads";
 import type { Low } from "lowdb";
 import type { Stats } from "fs";
 
@@ -102,10 +103,7 @@ declare global {
     StreamHandlerProps,
     | "extraProps"
     | "saveOnEnd"
-    | "logStream"
     | "filePath"
-    | "resolve"
-    | "reject"
     | "onEnd"
   >;
 
@@ -167,5 +165,20 @@ declare global {
      * @default false
      */
     allowExtraProps?: boolean;
+
+    /**
+     * @description `[ESP]` - Permite indicar el numero maximo de hilos que se pueden usar para cifrar/descifrar archivos.
+     * @description `[ENG]` - Allows you to specify the maximum number of threads that can be used to encrypt/decrypt files.
+     * @default 1
+     */
+    maxThreads?: number;
+  }
+
+  interface WorkerTask {
+    taskType: CliAction;
+    filePath: string;
+    SECRET_KEY: Uint8Array;
+    tempPath: string;
+    port?: MessagePort;
   }
 }
