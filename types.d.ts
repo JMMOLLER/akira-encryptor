@@ -2,13 +2,12 @@ import type { ReadableStream, WritableStream } from "stream";
 import type createSpinner from "@utils/createSpinner";
 import type { MessagePort } from "worker_threads";
 import type { Low } from "lowdb";
-import type { Stats } from "fs";
 
 export type ProgressCallback = (
   processedBytes: number,
   totalBytes: number,
   processedFiles: number,
-  totalFiles: number,
+  totalFiles: number
 ) => void;
 
 export type StorageItem = FileItem | FolderItem;
@@ -69,72 +68,38 @@ declare global {
     logStream: WritableStream;
     readStream: ReadableStream;
     writeStream: WritableStream;
-    onProgress: ProgressCallback;
     reject: (error?: any) => void;
     resolve: (value?: any) => void;
-    chunk: Buffer | string;
+    /**
+     * @description Indicates if the function is called from an internal flow.
+     */
     isInternalFlow: boolean;
-    processed: number;
-    totalSize: number;
     tempPath: string;
-    tempPath: string;
-    baseName: string;
     filePath: string;
     error: Error;
-    stat: Stats;
-    dir: string;
-
     streamName: "writeStream" | "readStream";
-    leftover: Buffer;
-    nonceLength: number;
-    macLength: number;
-    chunkIndex: number;
-    file?: FileItem;
     onEnd: EncryptorFuncion["onEnd"];
     extraProps?: Record<string, JsonValue>;
   }
 
   type EncryptReadStreamError = Pick<
     StreamHandlerProps,
-    "writeStream" | "error" | "reject" | "logStream"
+    "writeStream" | "error" | "reject" | "tempPath"
   >;
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    | "extraProps"
-    | "isInternalFlow"
-    | "filePath"
-    | "onEnd"
-  >;
-
-  type EncryptReadStream = Pick<
-    StreamHandlerProps,
-    | "chunk"
-    | "reject"
-    | "logStream"
-    | "onProgress"
-    | "writeStream"
-    | "readStream"
-  >;
-
-  type DecryptReadStream = Pick<
-    StreamHandlerProps,
-    | "chunk"
-    | "chunkIndex"
-    | "writeStream"
-    | "onProgress"
-    | "logStream"
-    | "reject"
+    "extraProps" | "isInternalFlow" | "filePath" | "onEnd"
   >;
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "file" | "logStream" | "filePath" | "resolve" | "reject" | "onEnd"
+    "filePath" | "onEnd" | "isInternalFlow"
   >;
 
   type DecryptStreamError = Pick<
     StreamHandlerProps,
-    "streamName" | "error" | "reject" | "logStream"
+    "streamName" | "error" | "reject" | "tempPath"
   >;
 
   type CliSpinner = ReturnType<typeof createSpinner>;
@@ -180,5 +145,6 @@ declare global {
     SECRET_KEY: Uint8Array;
     tempPath: string;
     port?: MessagePort;
+    blockSize?: number;
   }
 }

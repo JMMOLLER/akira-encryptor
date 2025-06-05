@@ -19,7 +19,7 @@ const FS = FileSystem.getInstance();
  * @param onProgress `ProgressCallback` - Optional callback function to track progress.
  * @param saveOnEnd `boolean` - Optional flag to save the encrypted file in storage.
  */
-export async function encryptFile(props: FileEncryptionProps): Promise<void> {
+async function encryptFile(props: FileEncryptionProps): Promise<void> {
   const { filePath, onProgress, tempPath } = props;
 
   const readStream = FS.createReadStream(filePath);
@@ -45,7 +45,7 @@ export async function encryptFile(props: FileEncryptionProps): Promise<void> {
     readStream.on("error", async (error) => {
       await onEncryptReadStreamError({
         writeStream,
-        logStream: undefined,
+        tempPath,
         reject,
         error
       });
@@ -98,13 +98,11 @@ async function onEncryptReadStream(params: ReadStreamProps) {
   }
 }
 
-type ReadStreamErrorProps = EncryptReadStreamError & {
-  tempPath?: string;
-};
-
-async function onEncryptReadStreamError(params: ReadStreamErrorProps) {
+async function onEncryptReadStreamError(params: EncryptReadStreamError) {
   const { writeStream, reject, error, tempPath } = params;
   writeStream.destroy();
   if (tempPath) await FS.removeFile(tempPath);
   reject(error);
 }
+
+export default encryptFile;
