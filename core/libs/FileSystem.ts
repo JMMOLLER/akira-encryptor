@@ -89,7 +89,7 @@ export class FileSystem {
    */
   async removeFile(path: string, retries = 15) {
     if (!fs.existsSync(path)) {
-      return;
+      return Promise.reject(new Error(`File not found: ${path}`));
     }
 
     for (let i = 0; i < retries; i++) {
