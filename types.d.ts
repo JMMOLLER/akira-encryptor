@@ -5,9 +5,7 @@ import type { Low } from "lowdb";
 
 export type ProgressCallback = (
   processedBytes: number,
-  totalBytes: number,
-  processedFiles: number,
-  totalFiles: number
+  totalBytes: number
 ) => void;
 
 export type StorageItem = FileItem | FolderItem;
@@ -22,7 +20,7 @@ interface EncryptorProps {
    * @description `[ESP]` - Función que se ejecuta cuando se procesa un bloque de datos.
    * @description `[ENG]` - Function that is executed when a block of data is processed.
    */
-  onProgress: ProgressCallback;
+  onProgress?: ProgressCallback;
   /**
    * @description `[ESP]` - Función que se ejecuta al finalizar el cifrado/descifrado.
    * @description `[ENG]` - Function that is executed when the encryption/decryption ends.
@@ -97,6 +95,7 @@ declare global {
     isInternalFlow: boolean;
     tempPath: string;
     filePath: string;
+    fileDir: string;
     error: Error;
     streamName: "writeStream" | "readStream";
     onEnd: EncryptorFuncion["onEnd"];
@@ -110,12 +109,12 @@ declare global {
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "extraProps" | "isInternalFlow" | "filePath"
+    "extraProps" | "isInternalFlow" | "filePath" | "tempPath" | "fileDir"
   >;
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "filePath" | "isInternalFlow"
+    "filePath" | "isInternalFlow" | "tempPath"
   >;
 
   type DecryptStreamError = Pick<

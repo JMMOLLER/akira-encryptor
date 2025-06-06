@@ -33,6 +33,7 @@ async function encryptFile(props: FileEncryptionProps): Promise<void> {
         writeStream,
         onProgress,
         SECRET_KEY: props.SECRET_KEY,
+        tempPath,
         reject,
         chunk
       })
@@ -59,7 +60,7 @@ async function encryptFile(props: FileEncryptionProps): Promise<void> {
 
 interface ReadStreamProps {
   chunk: Buffer | string;
-  tempPath?: string;
+  tempPath: string;
   SECRET_KEY: Uint8Array;
   reject: (error?: any) => void;
   writeStream: Writable;
