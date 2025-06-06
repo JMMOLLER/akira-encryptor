@@ -129,11 +129,13 @@ declare global {
      */
     isInternalFlow: boolean;
     fileItem?: StorageItem;
+    fileBaseName: string;
     folderPath: string;
     tempPath: string;
     filePath: string;
     fileDir: string;
     error: Error;
+    fileStats: fs.Stats;
     streamName: "writeStream" | "readStream";
     onEnd: FileEncryptor["onEnd"];
     extraProps?: Record<string, JsonValue>;
@@ -146,7 +148,7 @@ declare global {
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "extraProps" | "isInternalFlow" | "filePath" | "tempPath" | "fileDir"
+    "extraProps" | "isInternalFlow" | "filePath" | "tempPath" | "fileDir" | "fileStats" | "fileBaseName"
   >;
 
   type DecryptWriteStreamFinish = Pick<

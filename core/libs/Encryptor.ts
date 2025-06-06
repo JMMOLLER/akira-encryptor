@@ -10,7 +10,6 @@ import { env } from "@configs/env";
 import delay from "@utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
-import type { Stats } from "fs";
 import Piscina from "piscina";
 import pLimit from "p-limit";
 import { tmpdir } from "os";
@@ -29,15 +28,12 @@ class Encryptor {
   private static LOG = env.LOG;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
-  private savedItem?: StorageItemType = undefined;
-  private fileBaseName?: string = undefined;
+
   /* ========================== DECRYPT PROPERTIES ========================== */
   private readonly chunkSize = 64 * 1024;
   private processedFiles = 0;
-  private totalFiles = 0;
   private iterations = 0;
   /* ========================== COMMON PROPERTIES ========================== */
-  private fileStats?: Stats = undefined;
   private stepDelay = this.DEFAULT_STEP_DELAY;
   private operationFor: CliType = "file";
   private renameStep?: CliSpinner;
@@ -46,7 +42,6 @@ class Encryptor {
   private copyStep?: CliSpinner;
   private totalFolderBytes = 0;
   private processedBytes = 0;
-  private totalFileSize = 0;
 
   private constructor(password: string) {
     this.SECRET_KEY = generateSecretKey(password);
@@ -117,7 +112,7 @@ class Encryptor {
 
   private resetFileIndicators() {
     this.processedFiles = 0;
-    this.totalFiles = 0;
+    // this.totalFiles = 0;
   }
 
   private visibilityHelper(itemId: string) {
@@ -210,19 +205,16 @@ class Encryptor {
       return Promise.reject(error);
     }
 
-    this.fileStats = Encryptor.FS.getStatFile(filePath);
-    this.totalFileSize = this.fileStats.size;
+    const fileStats = Encryptor.FS.getStatFile(filePath);
+    const totalFileSize = fileStats.size;
     if (!isInternalFlow) this.processedBytes = 0;
 
     // Temp route and final route
     const fileDir = path.dirname(filePath);
-    this.fileBaseName = path.basename(filePath, path.extname(filePath));
-    const tempPath = path.join(
-      Encryptor.tempDir,
-      `${this.fileBaseName}.enc.tmp`
-    );
+    const fileBaseName = path.basename(filePath, path.extname(filePath));
+    const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}.enc.tmp`);
 
-    this.savedItem = undefined;
+    const savedItem = undefined;
 
     try {
       const channel = new MessageChannel();
@@ -233,7 +225,7 @@ class Encryptor {
             case "progress": {
               const { processedBytes } = message;
               this.processedBytes += processedBytes;
-              onProgress?.(this.processedBytes, this.totalFileSize);
+              onProgress?.(this.processedBytes, totalFileSize);
               break;
             }
             case "error": {
@@ -263,6 +255,8 @@ class Encryptor {
         isInternalFlow: !!isInternalFlow,
         extraProps: props.extraProps,
         tempPath: tempPath,
+        fileBaseName,
+        fileStats,
         fileDir,
         filePath
       });
@@ -293,8 +287,8 @@ class Encryptor {
     if (filePath.includes(".dec.tmp")) return Promise.resolve();
     if (path.extname(filePath) !== ".enc") return Promise.resolve();
 
-    this.fileStats = Encryptor.FS.getStatFile(filePath);
-    this.totalFileSize = this.fileStats.size;
+    const fileStats = Encryptor.FS.getStatFile(filePath);
+    const totalFileSize = fileStats.size;
     this.processedBytes = 0;
 
     const blockSize = this.chunkSize + sodium.crypto_secretbox_MACBYTES;
@@ -313,7 +307,7 @@ class Encryptor {
             case "progress": {
               const { processedBytes } = message;
               this.processedBytes += processedBytes;
-              onProgress?.(this.processedBytes, this.totalFileSize);
+              onProgress?.(this.processedBytes, totalFileSize);
               break;
             }
             case "error": {
@@ -552,7 +546,7 @@ class Encryptor {
       // Count files in the folder
       // This is used to show the progress of file encryption
       this.processedFiles = 0;
-      this.totalFiles = this.countFilesInFolder(folderPath);
+      // this.totalFiles = this.countFilesInFolder(folderPath);
     }
 
     // If the folder is not passed, get it from storage
@@ -582,6 +576,7 @@ class Encryptor {
           filePath: fullPath + ".enc",
           isInternalFlow: true,
           onEnd: props.onEnd,
+          fileItem: item,
           onProgress
         });
         this.processedFiles++;
@@ -634,14 +629,15 @@ class Encryptor {
 
   /* ========================== STREAM HANDLERS ========================== */
   private async onEncryptWriteStreamFinish(
-    params: EncryptWriteStreamFinish
+    props: EncryptWriteStreamFinish
   ): Promise<StorageItemType> {
-    const { isInternalFlow, filePath, tempPath, fileDir } = params;
+    const { filePath, tempPath, fileDir, fileStats, fileBaseName } = props;
+    let savedItem: FileItem | undefined = undefined;
 
     try {
-      if (!this.fileBaseName) {
+      if (!fileBaseName) {
         throw new Error("No se pudo obtener el nombre base del archivo.");
-      } else if (!this.fileStats) {
+      } else if (!fileStats) {
         throw new Error("No se pudo obtener la información del archivo.");
       } else if (!fileDir) {
         throw new Error("No se pudo obtener la ruta del archivo.");
@@ -649,38 +645,38 @@ class Encryptor {
         throw new Error("No se pudo obtener la ruta temporal del archivo.");
       }
 
-      this.savedItem = {
+      savedItem = {
         encryptedName: encryptText(
-          this.fileBaseName,
+          fileBaseName,
           this.SECRET_KEY,
           Encryptor.ENCODING
         ),
         originalName: path.basename(filePath),
         path: path.resolve(filePath),
-        size: this.fileStats.size,
+        size: fileStats.size,
         encryptedAt: new Date(),
         id: generateUID(),
         type: "file"
       };
-      if (!isInternalFlow) {
+      if (!props.isInternalFlow) {
         if (!this.SILENT) {
           this.saveStep = createSpinner("Registrando archivo encriptado...");
         }
-        if (this.ALLOW_EXTRA_PROPS && params.extraProps) {
-          this.savedItem.extraProps = params.extraProps;
-        } else if (params.extraProps && !this.ALLOW_EXTRA_PROPS) {
+        if (this.ALLOW_EXTRA_PROPS && props.extraProps) {
+          savedItem.extraProps = props.extraProps;
+        } else if (props.extraProps && !this.ALLOW_EXTRA_PROPS) {
           createSpinner(
             "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
           ).warn();
         }
         await Promise.all([
-          Encryptor.STORAGE.set(this.savedItem),
+          Encryptor.STORAGE.set(savedItem),
           delay(this.stepDelay)
         ]).then(([storageItem]) => {
           this.saveStep?.succeed(
             "Archivo encriptado registrado correctamente."
           );
-          this.savedItem = storageItem;
+          savedItem = storageItem;
           // if (logStream) {
           //   logStream.write(
           //     `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
@@ -689,12 +685,12 @@ class Encryptor {
           // }
         });
       }
-      const encryptedFileName = this.savedItem.id + ".enc";
+      const encryptedFileName = savedItem.id + ".enc";
       const renamedTempFile = path.join(Encryptor.tempDir, encryptedFileName);
       const destPath = path.join(fileDir, encryptedFileName);
 
       // Rename the temp file to the final file name
-      if (!isInternalFlow && !this.SILENT) {
+      if (!props.isInternalFlow && !this.SILENT) {
         this.renameStep = createSpinner("Renombrando archivo encriptado...");
       }
       await Promise.all([
@@ -712,7 +708,7 @@ class Encryptor {
       });
 
       // Move the temp file to the final destination
-      if (!isInternalFlow && !this.SILENT) {
+      if (!props.isInternalFlow && !this.SILENT) {
         this.copyStep = createSpinner("Moviendo archivo encriptado...");
       }
       await Promise.all([
@@ -726,7 +722,7 @@ class Encryptor {
       });
 
       // Remove the original file and temp file
-      if (!isInternalFlow && !this.SILENT) {
+      if (!props.isInternalFlow && !this.SILENT) {
         this.removeStep = createSpinner("Eliminando archivo original...");
       }
       await Promise.all([
@@ -740,18 +736,18 @@ class Encryptor {
         // }
       });
 
-      return this.savedItem;
+      return savedItem;
     } catch (err) {
-      if (isInternalFlow && this.savedItem)
-        await Encryptor.STORAGE.delete(this.savedItem.id);
+      if (props.isInternalFlow && savedItem)
+        await Encryptor.STORAGE.delete(savedItem.id);
 
-      if (!isInternalFlow && this.saveStep)
+      if (!props.isInternalFlow && this.saveStep)
         this.saveStep.fail("Error al registrar el archivo.");
-      if (!isInternalFlow && this.renameStep)
+      if (!props.isInternalFlow && this.renameStep)
         this.renameStep.fail("Error al renombrar el archivo.");
-      if (!isInternalFlow && this.copyStep)
+      if (!props.isInternalFlow && this.copyStep)
         this.copyStep.fail("Error al mover el archivo.");
-      if (!isInternalFlow && this.removeStep)
+      if (!props.isInternalFlow && this.removeStep)
         this.removeStep.fail("Error al eliminar el archivo original.");
 
       // if (logStream)
