@@ -32,10 +32,8 @@ class Encryptor {
   /* ========================== DECRYPT PROPERTIES ========================== */
   private readonly chunkSize = 64 * 1024;
   private processedFiles = 0;
-  private iterations = 0;
   /* ========================== COMMON PROPERTIES ========================== */
   private stepDelay = this.DEFAULT_STEP_DELAY;
-  private operationFor: CliType = "file";
   private renameStep?: CliSpinner;
   private removeStep?: CliSpinner;
   private saveStep?: CliSpinner;
@@ -376,9 +374,8 @@ class Encryptor {
     // 3. If not an internal (recursive) call
     if (!isInternalFlow) {
       // bcs we not show the spinner in internal flow
-      this.operationFor = "folder";
-      this.stepDelay = 0;
       this.totalFolderBytes = size;
+      this.stepDelay = 0;
     }
 
     // 4. Create a p-limit instance to restrict concurrency
@@ -533,98 +530,134 @@ class Encryptor {
   async decryptFolder(props: InternalFolderDecryptor): Promise<string> {
     const { folderPath, onProgress, isInternalFlow, folderItem, onEnd } = props;
     let error: Error | undefined = undefined;
+    let skippedItems = 0;
 
-    // This is bcs ora is only shown in the file encrypt/decrypt process
-    if (this.operationFor !== "folder") {
-      this.operationFor = "folder";
-      this.stepDelay = 0;
-    }
-
-    // calculate the number of processed files in each iteration
+    // If not in internal flow, initialize indicators
     if (!isInternalFlow) {
-      this.iterations = Encryptor.FS.readDir(folderPath).length;
-      // Count files in the folder
-      // This is used to show the progress of file encryption
       this.processedFiles = 0;
-      // this.totalFiles = this.countFilesInFolder(folderPath);
+      this.stepDelay = 0;
+      this.totalFolderBytes = Encryptor.FS.getFolderSize(folderPath);
     }
 
-    // If the folder is not passed, get it from storage
+    // Retrieve folder metadata from storage if not provided
     const baseName = path.basename(folderPath);
     const currentFolder = folderItem || Encryptor.STORAGE.get(baseName);
 
     if (!currentFolder || currentFolder.type !== "folder") {
-      throw new Error(`No se encontró la carpeta en el registro: ${baseName}`);
+      throw new Error(`Folder not found in storage: ${baseName}`);
     }
 
-    // Process the content of the folder
-    for (const item of currentFolder.content) {
-      const fullPath = path.join(folderPath, item.id);
-      this.iterations--;
+    // The content is already ordered ([subfolders..., files...]) per encryptFolder
+    const contentItems = currentFolder.content;
 
+    // Create p-limit instance with max threads = min(MAX_THREADS, number of items)
+    const limit = pLimit(Math.min(this.MAX_THREADS, contentItems.length));
+
+    // --------------------
+    // PHASE A: Process subfolders in parallel (DFS)
+    // --------------------
+    const subfolderPromises: Promise<string | null>[] = [];
+
+    for (const item of contentItems) {
       if (item.type === "folder") {
-        // Decrypt subfolder recursively
-        await this.decryptFolder({
-          folderPath: fullPath,
-          isInternalFlow: true,
-          folderItem: item,
-          onProgress
+        const fullPath = path.join(folderPath, item.id); // encrypted folder is named by item.id
+        const task = limit(async () => {
+          return this.decryptFolder({
+            folderPath: fullPath,
+            isInternalFlow: true,
+            folderItem: item
+          });
         });
-      } else if (item.type === "file") {
-        // Decrypt file
-        await this.decryptFile({
-          filePath: fullPath + ".enc",
-          isInternalFlow: true,
-          onEnd: props.onEnd,
-          fileItem: item,
-          onProgress
-        });
-        this.processedFiles++;
+        subfolderPromises.push(task);
       }
     }
 
-    // Decrypt name of the current folder
+    // Wait for all subfolders to finish decrypting
+    await Promise.all(subfolderPromises);
+
+    // --------------------
+    // PHASE B: Process files in parallel
+    // --------------------
+    const filePromises: Promise<void>[] = [];
+
+    for (const item of contentItems) {
+      if (item.type === "file") {
+        const encryptedFilePath = path.join(folderPath, item.id + ".enc");
+        const task = limit(async () => {
+          try {
+            // decryptFile uses workerPool internally
+            await this.decryptFile({
+              filePath: encryptedFilePath,
+              isInternalFlow: true,
+              fileItem: item
+            });
+            onProgress?.(this.processedBytes, this.totalFolderBytes);
+
+            // Increment processed files counter (per folder)
+            this.processedFiles++;
+          } catch (err) {
+            // Only skip if error indicates file was not registered
+            if (err instanceof Error && err.name === "FileNotRegistered") {
+              skippedItems++;
+              return;
+            }
+            // Any other error should abort the entire operation
+            throw err;
+          }
+        });
+        filePromises.push(task);
+      }
+    }
+
+    await Promise.all(filePromises);
+
+    // --------------------
+    // PHASE C: Decrypt current folder name, rename, and remove from storage
+    // --------------------
     const originalName = decryptText(
       currentFolder.encryptedName,
       this.SECRET_KEY,
       Encryptor.ENCODING
     );
+
     if (!originalName) {
       if (!this.SILENT) {
         createSpinner(
-          `No se pudo descifrar el nombre de la carpeta: ${currentFolder.id}`
+          `Could not decrypt folder name: ${currentFolder.id}`
         ).warn();
       }
+      // If unable to decrypt folder name, return original path
       return folderPath;
     }
 
-    // Get the original path of the folder
     const decryptedPath = path.join(path.dirname(folderPath), originalName);
 
     try {
-      // Rename the folder to its original name
+      // Rename folder in file system
       await Encryptor.FS.safeRenameFolder(folderPath, decryptedPath);
-
-      // Delete the folder from storage
+      // Remove folder entry from storage
       await Encryptor.STORAGE.delete(currentFolder.id);
-
-      return decryptedPath;
     } catch (err) {
       error = err as Error;
       console.error(err);
+      // If rename or delete fails, return original path
       return folderPath;
     } finally {
       if (!isInternalFlow) {
-        props.onEnd?.(error);
-        if (this.iterations > 0 && !this.SILENT) {
+        onEnd?.(error);
+
+        if (skippedItems > 0 && !this.SILENT) {
           createSpinner(
-            `Se omitieron ${this.iterations} archivo(s) porque no se encontraban registrados en el almacenamiento.`
+            `${skippedItems} file(s) were skipped because they were not registered in storage.`
           ).warn();
         }
+
         this.resetFileIndicators();
         await this.destroy();
       }
     }
+
+    return decryptedPath;
   }
 
   /* ========================== STREAM HANDLERS ========================== */
