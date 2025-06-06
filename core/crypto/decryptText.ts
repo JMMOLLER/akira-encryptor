@@ -8,7 +8,7 @@ import sodium from "libsodium-wrappers";
 export default function decryptText(
   encryptedText: string,
   SECRET_KEY: Uint8Array,
-  encoding: BufferEncoding = "base64"
+  encoding: BufferEncoding
 ) {
   // Convert the encrypted text to bytes
   const combined = new Uint8Array(Buffer.from(encryptedText, encoding));
