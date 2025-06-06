@@ -71,7 +71,7 @@ async function handleFolderAction(props: HanlderProps) {
     }
   };
 
-  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+  const handleEnd: FileEncryptor["onEnd"] = (error) => {
     if (!error) {
       createSpinner(
         `Carpeta '${folderPath}' ${

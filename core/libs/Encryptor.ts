@@ -196,9 +196,9 @@ class Encryptor {
    * @description `[ENG]` Encrypts a file using the secret key and saves it with a new name.
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    */
-  async encryptFile(props: EncryptorFuncion): Promise<FileItem>;
-  async encryptFile(props: InternalEncryptorProps): Promise<FileItem>;
-  async encryptFile(props: InternalEncryptorProps) {
+  async encryptFile(props: FileEncryptor): Promise<FileItem>;
+  async encryptFile(props: InternalFileEncryptor): Promise<FileItem>;
+  async encryptFile(props: InternalFileEncryptor) {
     const { filePath, onProgress, isInternalFlow } = props;
     let error: Error | undefined = undefined;
     // prevent encrypting the file again
@@ -283,9 +283,9 @@ class Encryptor {
    * @description `[ENG]` Decrypts a file using the secret key and saves it with the original name.
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    */
-  async decryptFile(props: DecryptorFunction): Promise<void>;
-  async decryptFile(props: InternalDecryptorProps): Promise<void>;
-  async decryptFile(props: InternalDecryptorProps): Promise<void> {
+  async decryptFile(props: FileDecryptor): Promise<void>;
+  async decryptFile(props: InternalFileDecryptor): Promise<void>;
+  async decryptFile(props: InternalFileDecryptor): Promise<void> {
     const { filePath, onProgress } = props;
     let error: Error | undefined = undefined;
     // skip logs file
@@ -328,7 +328,7 @@ class Encryptor {
       );
       await Encryptor.workerPool.run(
         {
-          filePath,
+          filePath: filePath,
           SECRET_KEY: this.SECRET_KEY,
           port: channel.port1,
           taskType: "decrypt",
@@ -342,8 +342,9 @@ class Encryptor {
 
       await this.onDecryptWriteStreamFinish({
         isInternalFlow: !!props.isInternalFlow,
-        tempPath,
-        filePath
+        fileItem: props.fileItem,
+        folderPath: filePath,
+        tempPath
       });
 
       return Promise.resolve();
@@ -362,10 +363,10 @@ class Encryptor {
    * @description `[ENG]` Recursively encrypts all files within a folder.
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
    */
-  async encryptFolder(props: EncryptorFuncion): Promise<FolderItem>;
-  async encryptFolder(props: InternalEncryptorProps): Promise<FolderItem>;
-  async encryptFolder(props: InternalEncryptorProps): Promise<FolderItem> {
-    const { filePath: folderPath, onProgress, isInternalFlow } = props;
+  async encryptFolder(props: FolderEncryptor): Promise<FolderItem>;
+  async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem>;
+  async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem> {
+    const { folderPath, onProgress, isInternalFlow } = props;
     // 1. Read and sort directory entries: directories first, then files alphabetically
     const entries = Encryptor.FS.readDir(folderPath);
     entries.sort((a, b) => {
@@ -401,7 +402,7 @@ class Encryptor {
           // Recursively encrypt subfolder
           return await this.encryptFolder({
             isInternalFlow: true,
-            filePath: fullPath,
+            folderPath: fullPath,
             onProgress
           });
         });
@@ -532,14 +533,11 @@ class Encryptor {
   /**
    * @description `[ENG]` Recursively decrypts all files within a folder.
    * @description `[ES]` Descifra recursivamente todos los archivos dentro de una carpeta.
-   * @param filePath `string` - Ruta de la carpeta encriptada.
-   * @param onProgress `ProgressCallback` - Función opcional para seguimiento de progreso.
-   * @param folder `FolderItem` - Elemento de carpeta opcional para descifrar.
    */
-  async decryptFolder(
-    props: EncryptorFuncion & { folder?: FolderItem }
-  ): Promise<string> {
-    const { filePath: folderPath, onProgress, folder } = props;
+  async decryptFolder(props: FolderDecryptor): Promise<string>;
+  async decryptFolder(props: InternalFolderDecryptor): Promise<string>;
+  async decryptFolder(props: InternalFolderDecryptor): Promise<string> {
+    const { folderPath, onProgress, isInternalFlow, folderItem, onEnd } = props;
     let error: Error | undefined = undefined;
 
     // This is bcs ora is only shown in the file encrypt/decrypt process
@@ -549,7 +547,7 @@ class Encryptor {
     }
 
     // calculate the number of processed files in each iteration
-    if (!folder) {
+    if (!isInternalFlow) {
       this.iterations = Encryptor.FS.readDir(folderPath).length;
       // Count files in the folder
       // This is used to show the progress of file encryption
@@ -559,7 +557,7 @@ class Encryptor {
 
     // If the folder is not passed, get it from storage
     const baseName = path.basename(folderPath);
-    const currentFolder = folder || Encryptor.STORAGE.get(baseName);
+    const currentFolder = folderItem || Encryptor.STORAGE.get(baseName);
 
     if (!currentFolder || currentFolder.type !== "folder") {
       throw new Error(`No se encontró la carpeta en el registro: ${baseName}`);
@@ -573,17 +571,18 @@ class Encryptor {
       if (item.type === "folder") {
         // Decrypt subfolder recursively
         await this.decryptFolder({
-          filePath: fullPath,
-          folder: item,
+          folderPath: fullPath,
+          isInternalFlow: true,
+          folderItem: item,
           onProgress
         });
       } else if (item.type === "file") {
         // Decrypt file
         await this.decryptFile({
           filePath: fullPath + ".enc",
+          isInternalFlow: true,
           onEnd: props.onEnd,
-          onProgress,
-          isInternalFlow: true
+          onProgress
         });
         this.processedFiles++;
       }
@@ -620,7 +619,7 @@ class Encryptor {
       console.error(err);
       return folderPath;
     } finally {
-      if (!folder) {
+      if (!isInternalFlow) {
         props.onEnd?.(error);
         if (this.iterations > 0 && !this.SILENT) {
           createSpinner(
@@ -628,6 +627,7 @@ class Encryptor {
           ).warn();
         }
         this.resetFileIndicators();
+        await this.destroy();
       }
     }
   }
@@ -761,7 +761,7 @@ class Encryptor {
   }
 
   private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
-    const { filePath, isInternalFlow, tempPath } = params;
+    const { folderPath, isInternalFlow, tempPath, fileItem } = params;
     let error: Error | undefined = undefined;
 
     try {
@@ -769,9 +769,10 @@ class Encryptor {
         throw new Error("No se pudo obtener la ruta temporal del archivo.");
       }
 
-      const fileName = path.basename(filePath).replace(/\.enc$/, "");
+      const fileName = path.basename(folderPath).replace(/\.enc$/, "");
 
-      const { originalName } = Encryptor.STORAGE.get(fileName) || {};
+      const { originalName } =
+        fileItem || Encryptor.STORAGE.get(fileName) || {};
       const originalFileName = originalName;
 
       if (!originalFileName) {
@@ -782,8 +783,8 @@ class Encryptor {
         throw new Error("No se pudo descifrar el nombre del archivo.");
       }
 
-      const restoredPath = filePath.replace(
-        path.basename(filePath),
+      const restoredPath = folderPath.replace(
+        path.basename(folderPath),
         originalFileName
       );
       const data = Encryptor.FS.readFile(tempPath);
@@ -802,7 +803,7 @@ class Encryptor {
         this.removeStep = createSpinner("Eliminando archivo temporal...");
       }
       await Promise.all([
-        Encryptor.FS.removeFile(filePath),
+        Encryptor.FS.removeFile(folderPath),
         delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
@@ -842,7 +843,7 @@ class Encryptor {
         this.saveStep.fail("Error al eliminar el archivo del registro.");
 
       if (tempPath) await Encryptor.FS.removeFile(tempPath);
-      return Promise.reject(err);
+      return Promise.reject(error);
     }
   }
 }

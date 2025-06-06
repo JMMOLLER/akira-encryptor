@@ -49,7 +49,7 @@ async function handleFileAction(props: HanlderProps) {
     }
   };
 
-  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+  const handleEnd: FileEncryptor["onEnd"] = (error) => {
     if (!error) {
       createSpinner(
         `Archivo '${filePath}' ${

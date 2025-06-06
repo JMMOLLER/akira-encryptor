@@ -12,11 +12,6 @@ export type StorageItem = FileItem | FolderItem;
 
 interface EncryptorProps {
   /**
-   * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
-   * @description `[ENG]` - Path of the file to encrypt/decrypt.
-   */
-  filePath: Readonly<string>;
-  /**
    * @description `[ESP]` - Función que se ejecuta cuando se procesa un bloque de datos.
    * @description `[ENG]` - Function that is executed when a block of data is processed.
    */
@@ -36,7 +31,12 @@ declare global {
   type PrimitiveOrArray = JsonPrimitive | JsonPrimitive[];
   type JsonValue = PrimitiveOrArray | Record<string, PrimitiveOrArray>;
 
-  interface EncryptorFuncion extends EncryptorProps {
+  interface FileEncryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
+     * @description `[ENG]` - Path of the file to encrypt/decrypt.
+     */
+    filePath: Readonly<string>;
     /**
      * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
      * @description `[ENG]` - Allows saving extra properties in the `Storage`.
@@ -46,11 +46,46 @@ declare global {
     extraProps?: Record<string, JsonValue>;
   }
 
-  interface DecryptorFunction extends EncryptorProps {}
+  interface FolderEncryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta de la carpeta a cifrar/descifrar.
+     * @description `[ENG]` - Path of the folder to encrypt/decrypt.
+     */
+    folderPath: Readonly<string>;
+    /**
+     * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
+     * @description `[ENG]` - Allows saving extra properties in the `Storage`.
+     * @note `[ESP]` - Para usarse, debe establecer `allowExtraProps` a `true` cuando se inicializa la clase.
+     * @note `[ENG]` - To use this, `allowExtraProps` must be set to true when initializing the class.
+     */
+    extraProps?: Record<string, JsonValue>;
+  }
+
+  interface FileDecryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
+     * @description `[ENG]` - Path of the file to encrypt/decrypt.
+     */
+    filePath: Readonly<string>;
+  }
+
+  interface FolderDecryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta de la carpeta a cifrar/descifrar.
+     * @description `[ENG]` - Path of the folder to encrypt/decrypt.
+     */
+    folderPath: Readonly<string>;
+  }
 
   type InternalFlow = Pick<StreamHandlerProps, "isInternalFlow">;
-  type InternalEncryptorProps = EncryptorFuncion & InternalFlow;
-  type InternalDecryptorProps = DecryptorFunction & InternalFlow;
+  type InternalFileEncryptor = FileEncryptor & InternalFlow;
+  type InternalFileDecryptor = FileDecryptor &
+    InternalFlow & { fileItem?: FileItem };
+
+  type InternalFolderEncryptor = FolderEncryptor &
+    InternalFlow & { folderItem?: FolderItem };
+  type InternalFolderDecryptor = FolderDecryptor &
+    InternalFlow & { folderItem?: FolderItem };
 
   interface EncryptedDataStore {
     encryptedItems: {
@@ -93,12 +128,14 @@ declare global {
      * @description Indicates if the function is called from an internal flow.
      */
     isInternalFlow: boolean;
+    fileItem?: StorageItem;
+    folderPath: string;
     tempPath: string;
     filePath: string;
     fileDir: string;
     error: Error;
     streamName: "writeStream" | "readStream";
-    onEnd: EncryptorFuncion["onEnd"];
+    onEnd: FileEncryptor["onEnd"];
     extraProps?: Record<string, JsonValue>;
   }
 
@@ -114,7 +151,7 @@ declare global {
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "filePath" | "isInternalFlow" | "tempPath"
+    "folderPath" | "isInternalFlow" | "tempPath" | "fileItem"
   >;
 
   type DecryptStreamError = Pick<
