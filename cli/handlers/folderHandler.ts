@@ -92,7 +92,7 @@ async function handleFolderAction(props: HanlderProps) {
 
     if (action === "encrypt") {
       const item = await Encryptor.encryptFolder({
-        filePath: path.normalize(folderPath),
+        folderPath: path.normalize(folderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
@@ -111,7 +111,7 @@ async function handleFolderAction(props: HanlderProps) {
       );
 
       await Encryptor.decryptFolder({
-        filePath: path.normalize(resolverdFolderPath),
+        folderPath: path.normalize(resolverdFolderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
