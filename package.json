@@ -27,7 +27,6 @@
     "pkg": "^5.8.1",
     "rcedit": "^4.0.1",
     "tsx": "^4.19.3",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"
   },
   "peerDependencies": {
