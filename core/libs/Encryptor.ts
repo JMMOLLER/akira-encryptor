@@ -56,21 +56,12 @@ class Encryptor {
     const instance = new Encryptor(password);
     instance.DEFAULT_STEP_DELAY = options?.minDelayPerStep || 300;
     instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
+    instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
-    instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
 
     // Initialize worker pool
-    if (!Encryptor.workerPool) {
-      Encryptor.workerPool = new Piscina({
-        filename: new URL("../workers/encryptor.worker.ts", import.meta.url)
-          .href,
-        maxThreads: instance.MAX_THREADS,
-        minThreads: 1,
-        idleTimeout: 30000, // 30 seconds
-        concurrentTasksPerWorker: 1
-      });
-    }
+    instance.startWorkerPool();
 
     Encryptor.STORAGE = await Storage.init(
       instance.SECRET_KEY,
@@ -80,6 +71,33 @@ class Encryptor {
     return instance;
   }
 
+  /**
+   * @description `[ENG]` Starts the worker pool for encrypting and decrypting files.
+   * @description `[ES]` Inicia el grupo de workers para cifrar y descifrar archivos.
+   */
+  startWorkerPool() {
+    if (!Encryptor.workerPool) {
+      let workerPath: string;
+
+      // Use __dirname if available, otherwise fallback to process.cwd()
+      const baseDir =
+        typeof __dirname !== "undefined" ? __dirname : process.cwd();
+      workerPath = path.resolve(baseDir, "core/workers/encryptor.worker.ts");
+
+      Encryptor.workerPool = new Piscina({
+        maxThreads: this.MAX_THREADS,
+        concurrentTasksPerWorker: 1,
+        filename: workerPath,
+        idleTimeout: 30000, // 30 seconds
+        minThreads: 1
+      });
+    }
+  }
+
+  /**
+   * @description `[ENG]` Destroys the worker pool and cleans up resources.
+   * @description `[ES]` Destruye el grupo de trabajadores y limpia los recursos.
+   */
   async destroy() {
     if (Encryptor.workerPool) {
       await Encryptor.workerPool.destroy();
@@ -212,8 +230,6 @@ class Encryptor {
     const fileBaseName = path.basename(filePath, path.extname(filePath));
     const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}.enc.tmp`);
 
-    const savedItem = undefined;
-
     try {
       const channel = new MessageChannel();
       channel.port2.on(
@@ -236,6 +252,11 @@ class Encryptor {
           }
         }
       );
+
+      if (!Encryptor.workerPool) {
+        this.startWorkerPool();
+      }
+
       await Encryptor.workerPool.run(
         {
           SECRET_KEY: this.SECRET_KEY,
@@ -318,6 +339,11 @@ class Encryptor {
           }
         }
       );
+
+      if (!Encryptor.workerPool) {
+        this.startWorkerPool();
+      }
+
       await Encryptor.workerPool.run(
         {
           filePath: filePath,
