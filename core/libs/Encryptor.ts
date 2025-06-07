@@ -1,8 +1,8 @@
 import generateSecretKey from "@utils/generateSecretKey";
-import encryptText from "core/crypto/encryptText";
-import decryptText from "core/crypto/decryptText";
 import createSpinner from "@utils/createSpinner";
 import { MessageChannel } from "worker_threads";
+import encryptText from "@crypto/encryptText";
+import decryptText from "@crypto/decryptText";
 import generateUID from "@utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";

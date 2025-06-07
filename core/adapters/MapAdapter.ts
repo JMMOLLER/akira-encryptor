@@ -1,5 +1,5 @@
-import decryptText from "core/crypto/decryptText";
-import encryptText from "core/crypto/encryptText";
+import decryptText from "@crypto/decryptText";
+import encryptText from "@crypto/encryptText";
 import type { JSONFile } from "lowdb/node";
 import type { Adapter } from "lowdb";
 
