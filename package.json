@@ -21,8 +21,8 @@
     "@types/cli-progress": "^3.11.6",
     "@types/hidefile": "^3.0.3",
     "@types/libsodium-wrappers": "^0.7.14",
+    "@yao-pkg/pkg": "^6.5.1",
     "esbuild": "^0.25.4",
-    "pkg": "^5.8.1",
     "rcedit": "^4.0.1",
     "tsx": "^4.19.3",
     "vitest": "^3.1.1"

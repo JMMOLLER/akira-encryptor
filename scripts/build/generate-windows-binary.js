@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import pkg from "pkg";
+import pkg from "@yao-pkg/pkg";
 
 // Read package.json to get metadata
 const { name, author, version, description } = JSON.parse(
@@ -17,12 +17,11 @@ try {
   console.log("🔨 Building executable with pkg...");
   pkg.exec([
     entryFile,
-    "--target",
-    "node18-win-x64",
     "--output",
     outputPath,
-    "--assets",
-    "dist/core/workers/encryptor.worker.cjs,node_modules/fswin/**/*.node,dist/nice.win32-x64-msvc-dzq3hrx6.node"
+    "--config",
+    "pkg.config.json",
+    // "--debug",
   ]);
 
   // console.log("🛠️ Adding metadata with rcedit...");
