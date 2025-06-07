@@ -6,7 +6,7 @@
   "author": "JMMOLLER",
   "type": "module",
   "scripts": {
-    "test": "bun vitest",
+    "tests": "bun build core/workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest",
     "start": "bun run cli/main.ts",
     "debug": "bunx tsx cli/main.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",

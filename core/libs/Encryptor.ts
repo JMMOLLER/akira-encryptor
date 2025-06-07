@@ -82,7 +82,17 @@ class Encryptor {
       // Use __dirname if available, otherwise fallback to process.cwd()
       const baseDir =
         typeof __dirname !== "undefined" ? __dirname : process.cwd();
-      workerPath = path.resolve(baseDir, "core/workers/encryptor.worker.ts");
+      const isTest = process.env.NODE_ENV === "test";
+      workerPath = path.resolve(
+        baseDir,
+        isTest
+          ? "../../tests/dist/encryptor.worker.cjs"
+          : "core/workers/encryptor.worker.ts"
+      );
+
+      if (isTest) {
+        console.log(`Using worker path for tests: ${workerPath}`);
+      }
 
       Encryptor.workerPool = new Piscina({
         maxThreads: this.MAX_THREADS,
