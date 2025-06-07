@@ -9,13 +9,21 @@ const { name, author, version, description } = JSON.parse(
 
 // Build configuration for the executable
 const exeName = `${name}-cli-v${version}.exe`;
-const outputPath = resolve("cli", "dist", exeName);
-const entryFile = resolve("cli", "dist", "main.cjs");
+const outputPath = resolve("dist", exeName);
+const entryFile = resolve("dist", "main.cjs");
 const iconPath = resolve("gui", "build", "icon.ico");
 
 try {
   console.log("🔨 Building executable with pkg...");
-  pkg.exec([entryFile, "--target", "node18-win-x64", "--output", outputPath]);
+  pkg.exec([
+    entryFile,
+    "--target",
+    "node18-win-x64",
+    "--output",
+    outputPath,
+    "--assets",
+    "dist/core/workers/encryptor.worker.cjs,node_modules/fswin/**/*.node,dist/nice.win32-x64-msvc-dzq3hrx6.node"
+  ]);
 
   // console.log("🛠️ Adding metadata with rcedit...");
   // // Modify the executable with rcedit

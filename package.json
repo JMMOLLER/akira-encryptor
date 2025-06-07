@@ -10,13 +10,11 @@
     "start": "bun run cli/main.ts",
     "debug": "bunx tsx cli/main.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
-    "build": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=cli/dist/main.cjs --format=cjs --external:fswin --external:hidefile",
-    "build:win": "bun run typecheck && bun run build && node scripts/build/generate-windows-binary.js"
-  },
-  "pkg": {
-    "assets": [
-      "node_modules/fswin/**/*.node"
-    ]
+    "build": "bun run typecheck && bun run build:worker && bun run build:main && bun run build:piscina-worker",
+    "build:win": "bun run build && node scripts/build/generate-windows-binary.js",
+    "build:worker": "esbuild core/workers/encryptor.worker.ts --bundle --platform=node --target=node18 --outfile=dist/core/workers/encryptor.worker.cjs --format=cjs --minify",
+    "build:main": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=dist/main.cjs --format=cjs --external:core/workers/encryptor.worker.cjs --external:fswin --external:hidefile --minify",
+    "build:piscina-worker": "node scripts/build/fixPiscinaWorker.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
