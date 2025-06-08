@@ -9,7 +9,7 @@ const { name, author, version, description } = JSON.parse(
 
 // Build configuration for the executable
 const exeName = `${name}-cli-v${version}.exe`;
-const outputPath = resolve("dist", exeName);
+const outputPath = resolve("cli", "dist", exeName);
 const entryFile = resolve("dist", "main.cjs");
 const iconPath = resolve("gui", "build", "icon.ico");
 
