@@ -1,16 +1,27 @@
 import type { ReadableStream, WritableStream } from "stream";
 import type createSpinner from "@utils/createSpinner";
+import type { MessagePort } from "worker_threads";
 import type { Low } from "lowdb";
-import type { Stats } from "fs";
 
 export type ProgressCallback = (
   processedBytes: number,
-  totalBytes: number,
-  processedFiles: number,
-  totalFiles: number,
+  totalBytes: number
 ) => void;
 
 export type StorageItem = FileItem | FolderItem;
+
+interface EncryptorProps {
+  /**
+   * @description `[ESP]` - Función que se ejecuta cuando se procesa un bloque de datos.
+   * @description `[ENG]` - Function that is executed when a block of data is processed.
+   */
+  onProgress?: ProgressCallback;
+  /**
+   * @description `[ESP]` - Función que se ejecuta al finalizar el cifrado/descifrado.
+   * @description `[ENG]` - Function that is executed when the encryption/decryption ends.
+   */
+  onEnd?: (error?: Error) => void;
+}
 
 declare global {
   type CliAction = "encrypt" | "decrypt";
@@ -20,10 +31,12 @@ declare global {
   type PrimitiveOrArray = JsonPrimitive | JsonPrimitive[];
   type JsonValue = PrimitiveOrArray | Record<string, PrimitiveOrArray>;
 
-  interface EncryptorFuncion {
+  interface FileEncryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
+     * @description `[ENG]` - Path of the file to encrypt/decrypt.
+     */
     filePath: Readonly<string>;
-    onProgress: ProgressCallback;
-    onEnd?: (error?: Error) => void;
     /**
      * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
      * @description `[ENG]` - Allows saving extra properties in the `Storage`.
@@ -32,6 +45,47 @@ declare global {
      */
     extraProps?: Record<string, JsonValue>;
   }
+
+  interface FolderEncryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta de la carpeta a cifrar/descifrar.
+     * @description `[ENG]` - Path of the folder to encrypt/decrypt.
+     */
+    folderPath: Readonly<string>;
+    /**
+     * @description `[ESP]` - Permite guardar propiedades extra en el `Storage`.
+     * @description `[ENG]` - Allows saving extra properties in the `Storage`.
+     * @note `[ESP]` - Para usarse, debe establecer `allowExtraProps` a `true` cuando se inicializa la clase.
+     * @note `[ENG]` - To use this, `allowExtraProps` must be set to true when initializing the class.
+     */
+    extraProps?: Record<string, JsonValue>;
+  }
+
+  interface FileDecryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta del archivo a cifrar/descifrar.
+     * @description `[ENG]` - Path of the file to encrypt/decrypt.
+     */
+    filePath: Readonly<string>;
+  }
+
+  interface FolderDecryptor extends EncryptorProps {
+    /**
+     * @description `[ESP]` - Ruta de la carpeta a cifrar/descifrar.
+     * @description `[ENG]` - Path of the folder to encrypt/decrypt.
+     */
+    folderPath: Readonly<string>;
+  }
+
+  type InternalFlow = Pick<StreamHandlerProps, "isInternalFlow">;
+  type InternalFileEncryptor = FileEncryptor & InternalFlow;
+  type InternalFileDecryptor = FileDecryptor &
+    InternalFlow & { fileItem?: FileItem };
+
+  type InternalFolderEncryptor = FolderEncryptor &
+    InternalFlow & { folderItem?: FolderItem };
+  type InternalFolderDecryptor = FolderDecryptor &
+    InternalFlow & { folderItem?: FolderItem };
 
   interface EncryptedDataStore {
     encryptedItems: {
@@ -68,75 +122,43 @@ declare global {
     logStream: WritableStream;
     readStream: ReadableStream;
     writeStream: WritableStream;
-    onProgress: ProgressCallback;
     reject: (error?: any) => void;
     resolve: (value?: any) => void;
-    chunk: Buffer | string;
-    saveOnEnd: boolean;
-    processed: number;
-    totalSize: number;
+    /**
+     * @description Indicates if the function is called from an internal flow.
+     */
+    isInternalFlow: boolean;
+    fileItem?: StorageItem;
+    fileBaseName: string;
+    folderPath: string;
     tempPath: string;
-    tempPath: string;
-    baseName: string;
     filePath: string;
+    fileDir: string;
     error: Error;
-    stat: Stats;
-    dir: string;
-
+    fileStats: fs.Stats;
     streamName: "writeStream" | "readStream";
-    leftover: Buffer;
-    nonceLength: number;
-    macLength: number;
-    chunkIndex: number;
-    file?: FileItem;
-    onEnd: EncryptorFuncion["onEnd"];
+    onEnd: FileEncryptor["onEnd"];
     extraProps?: Record<string, JsonValue>;
   }
 
   type EncryptReadStreamError = Pick<
     StreamHandlerProps,
-    "writeStream" | "error" | "reject" | "logStream"
+    "writeStream" | "error" | "reject" | "tempPath"
   >;
 
   type EncryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    | "extraProps"
-    | "saveOnEnd"
-    | "logStream"
-    | "filePath"
-    | "resolve"
-    | "reject"
-    | "onEnd"
-  >;
-
-  type EncryptReadStream = Pick<
-    StreamHandlerProps,
-    | "chunk"
-    | "reject"
-    | "logStream"
-    | "onProgress"
-    | "writeStream"
-    | "readStream"
-  >;
-
-  type DecryptReadStream = Pick<
-    StreamHandlerProps,
-    | "chunk"
-    | "chunkIndex"
-    | "writeStream"
-    | "onProgress"
-    | "logStream"
-    | "reject"
+    "extraProps" | "isInternalFlow" | "filePath" | "tempPath" | "fileDir" | "fileStats" | "fileBaseName"
   >;
 
   type DecryptWriteStreamFinish = Pick<
     StreamHandlerProps,
-    "file" | "logStream" | "filePath" | "resolve" | "reject" | "onEnd"
+    "folderPath" | "isInternalFlow" | "tempPath" | "fileItem"
   >;
 
   type DecryptStreamError = Pick<
     StreamHandlerProps,
-    "streamName" | "error" | "reject" | "logStream"
+    "streamName" | "error" | "reject" | "tempPath"
   >;
 
   type CliSpinner = ReturnType<typeof createSpinner>;
@@ -167,5 +189,21 @@ declare global {
      * @default false
      */
     allowExtraProps?: boolean;
+
+    /**
+     * @description `[ESP]` - Permite indicar el numero maximo de hilos que se pueden usar para cifrar/descifrar archivos.
+     * @description `[ENG]` - Allows you to specify the maximum number of threads that can be used to encrypt/decrypt files.
+     * @default 1
+     */
+    maxThreads?: number;
+  }
+
+  interface WorkerTask {
+    taskType: CliAction;
+    filePath: string;
+    SECRET_KEY: Uint8Array;
+    tempPath: string;
+    port?: MessagePort;
+    blockSize?: number;
   }
 }

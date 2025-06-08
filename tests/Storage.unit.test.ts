@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
+import generateSecretKey from "@utils/generateSecretKey";
 import Encryptor from "@libs/Encryptor";
 import Storage from "@libs/Storage";
+import { env } from "@configs/env";
 import path from "path";
 import fs from "fs";
 
@@ -26,8 +28,8 @@ describe("Storage", () => {
   beforeEach(async () => {
     encryptor = await Encryptor.init("mypassword");
     storage = await Storage.init(
-      encryptor.encryptText.bind(encryptor),
-      encryptor.decryptText.bind(encryptor),
+      generateSecretKey("mypassword"),
+      env.ENCODING,
       "test-storage.json"
     );
     vi.clearAllMocks();

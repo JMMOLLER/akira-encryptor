@@ -33,6 +33,7 @@
       "@cli/*": ["cli/*"],
       "@libs/*": ["core/libs/*"],
       "@utils/*": ["core/utils/*"],
+      "@crypto/*": ["core/crypto/*"],
       "@configs/*": ["core/configs/*"],
       "@adapters/*": ["core/adapters/*"]
     }

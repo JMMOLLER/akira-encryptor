@@ -1,5 +1,3 @@
-import collectFileSizes from "@utils/collectFileSizes";
-import createBar from "@utils/createProgressBar";
 import createSpinner from "@utils/createSpinner";
 import type { ProgressCallback } from "types";
 import { askForHideItem } from "@cli/prompts";
@@ -18,60 +16,40 @@ type HanlderProps = {
 async function handleFolderAction(props: HanlderProps) {
   const { action, folderPath, password } = props;
 
-  const totalBytes = collectFileSizes(folderPath);
-  let globalProcessed = 0;
-
-  const multibar = new cliProgress.MultiBar(
+  let init = false;
+  let formattedTotal = "0B";
+  const progressBar = new cliProgress.SingleBar(
     {
-      clearOnComplete: false,
-      hideCursor: true,
-      format: (options, params, payload) => {
-        const percentage = Math.round((params.value / params.total) * 100);
-        const valueFormatted = formatBytes(params.value);
-        const totalFormatted = formatBytes(params.total);
-
-        const bar = createBar({
-          progress: params.progress,
-          size: options.barsize ?? 40,
-          completeChar: options.barCompleteChar ?? "#",
-          incompleteChar: options.barIncompleteChar ?? "-"
-        });
-
-        return `${payload.name} |${bar}| ${percentage}% || ${valueFormatted}/${totalFormatted}`;
-      }
+      format:
+        "Progreso total |{bar}| {percentage}% || {processed}/{formattedTotal}"
     },
     cliProgress.Presets.shades_classic
   );
 
-  const progressBarTotal = multibar.create(totalBytes, 0, {
-    name: "Progreso total"
-  });
-  const progressBarCurrent = multibar.create(1, 0, { name: "Archivo actual" });
-
   const handleProgress: ProgressCallback = (processed, total) => {
-    if (progressBarCurrent.getTotal() !== total) {
-      progressBarCurrent.setTotal(total);
-      progressBarCurrent.update(0);
+    if (!init) {
+      formattedTotal = formatBytes(total);
+      progressBar.start(total, 0, {
+        processed: formatBytes(0),
+        formattedTotal
+      });
+      init = true;
     }
 
-    progressBarCurrent.update(processed);
+    progressBar.update(processed, {
+      processed: formatBytes(processed),
+      formattedTotal
+    });
 
     if (processed >= total) {
-      globalProcessed += total;
-      progressBarTotal.update(globalProcessed);
-
-      // Si ya se completó todo el progreso, eliminamos la barra actual
-      if (globalProcessed >= totalBytes) {
-        multibar.remove(progressBarCurrent);
-        process.stdout.write("\n");
-      } else {
-        progressBarCurrent.setTotal(1);
-        progressBarCurrent.update(0);
-      }
+      progressBar.stop();
     }
   };
 
-  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+  const handleEnd: FileEncryptor["onEnd"] = (error) => {
+    // Fallback to stop the progress bar
+    progressBar.stop();
+    // Print the success or error message
     if (!error) {
       createSpinner(
         `Carpeta '${folderPath}' ${
@@ -92,7 +70,7 @@ async function handleFolderAction(props: HanlderProps) {
 
     if (action === "encrypt") {
       const item = await Encryptor.encryptFolder({
-        filePath: path.normalize(folderPath),
+        folderPath: path.normalize(folderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
@@ -111,16 +89,13 @@ async function handleFolderAction(props: HanlderProps) {
       );
 
       await Encryptor.decryptFolder({
-        filePath: path.normalize(resolverdFolderPath),
+        folderPath: path.normalize(resolverdFolderPath),
         onProgress: handleProgress,
         onEnd: handleEnd
       });
     }
-
-    progressBarCurrent.stop();
-    multibar.stop();
   } catch (error) {
-    multibar.stop();
+    progressBar.stop();
     console.error(
       `\n❌ Error al ${
         action === "encrypt" ? "encriptar" : "desencriptar"

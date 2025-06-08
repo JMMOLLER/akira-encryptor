@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import generateSecretKey from "@utils/generateSecretKey";
+import generateNonce from "@crypto/generateNonce";
+import encryptText from "@crypto/encryptText";
+import decryptText from "@crypto/decryptText";
 import EncryptorClass from "@libs/Encryptor";
+import sodium from "libsodium-wrappers";
+import { env } from "@configs/env";
 import hidefile from "hidefile";
 import path from "path";
 import fs from "fs";
@@ -8,64 +14,75 @@ let Encryptor: EncryptorClass;
 const tempDir = path.resolve(__dirname, "tmp");
 const testFolderPath = path.join(tempDir, "test-dir");
 const testFilePath = path.join(tempDir, "test-file.txt");
+const pwd = generateSecretKey("mypassword");
 
 beforeAll(async () => {
+  process.env.NODE_ENV = "test"; // Set NODE_ENV to test
+  await sodium.ready;
+
   Encryptor = await (
     await import("@libs/Encryptor")
   ).default.init("mypassword", {
     libraryPath: tempDir + "/test-library.json",
+    allowExtraProps: true,
     minDelayPerStep: 0,
-    silent: true
+    maxThreads: 4,
+    silent: true,
   });
 
   // Crear el directorio temporal y el archivo de prueba
   fs.mkdirSync(tempDir, { recursive: true });
   fs.writeFileSync(testFilePath, "Contenido secreto para pruebas.");
-  // Crear un archivo de prueba dentro de una carpeta
+  // Crear 5 archivos de prueba dentro de una carpeta
   fs.mkdirSync(testFolderPath, { recursive: true });
-  fs.writeFileSync(
-    path.join(testFolderPath, "test-file.txt"),
-    "Contenido secreto en el directorio."
-  );
+  for (let i = 1; i <= 5; i++) {
+    fs.writeFileSync(
+      path.join(testFolderPath, `test-file-${i}.txt`),
+      "Contenido secreto en el directorio."
+    );
+  }
 });
 
 afterAll(async () => {
   // Eliminar archivo y carpeta temporal
   fs.rmSync(tempDir, { recursive: true, force: true });
+  process.env.NODE_ENV = undefined; // Reset NODE_ENV
 });
 
 describe("Encryptor", () => {
   it("should handle empty strings correctly", () => {
-    const encrypted = Encryptor.encryptText("");
-    const decrypted = Encryptor.decryptText(encrypted);
+    const encrypted = encryptText("", pwd, env.ENCODING);
+    const decrypted = decryptText(encrypted, pwd, env.ENCODING);
 
     expect(decrypted).toBe("");
   });
 
   it("should encrypt and decrypt a simple message", () => {
     const message = "Hola mundo seguro!";
-    const encrypted = Encryptor.encryptText(message);
-    const decrypted = Encryptor.decryptText(encrypted);
+    const encrypted = encryptText(message, pwd, env.ENCODING);
+    const decrypted = decryptText(encrypted, pwd, env.ENCODING);
 
     expect(decrypted).toBe(message);
   });
 
   it("should throw an error when decrypting tampered data", () => {
-    const encrypted = Encryptor.encryptText("Mensaje original");
+    const encrypted = encryptText("Mensaje original", pwd, env.ENCODING);
     const tampered = encrypted.slice(0, -4) + "1234"; // tampering the encrypted string
 
-    expect(() => Encryptor.decryptText(tampered)).toThrow("wrong secret key");
+    expect(() => decryptText(tampered, pwd, env.ENCODING)).toThrow(
+      "wrong secret key"
+    );
   });
 
   it("should return a base64 encoded encrypted string", () => {
-    const encrypted = Encryptor.encryptText("Texto para test");
+    const encrypted = encryptText("Texto para test", pwd, env.ENCODING);
     expect(typeof encrypted).toBe("string");
     expect(encrypted).toMatch(/^[A-Za-z0-9+/=]+$/);
   });
 
   it("should generate a unique nonce each time", () => {
-    const nonce1 = Encryptor.generateNonce();
-    const nonce2 = Encryptor.generateNonce();
+    const nonce1 = generateNonce();
+    const nonce2 = generateNonce();
 
     expect(nonce1).not.toBe(nonce2);
     expect(nonce1).toBeInstanceOf(Uint8Array);
@@ -75,7 +92,9 @@ describe("Encryptor", () => {
   it("should throw an error if decryptText is called with an invalid format", () => {
     const invalidEncryptedText = "invalid_base64_string";
 
-    expect(() => Encryptor.decryptText(invalidEncryptedText)).toThrow();
+    expect(() =>
+      decryptText(invalidEncryptedText, pwd, env.ENCODING)
+    ).toThrow();
   });
 
   it("should encrypt and decrypt file correctly", async () => {
@@ -110,18 +129,18 @@ describe("Encryptor", () => {
   it("should encrypt and decrypt folder correctly", async () => {
     const dirInfo = fs.readdirSync(testFolderPath);
     const originalContentFile = fs.readFileSync(
-      path.join(testFolderPath, "test-file.txt"),
+      path.join(testFolderPath, "test-file-1.txt"),
       "utf-8"
     );
 
     const res = await Encryptor.encryptFolder({
-      filePath: testFolderPath,
+      folderPath: testFolderPath,
       onProgress: () => {}
     });
 
     const encryptedFolderPath = path.join(tempDir, res.id);
     const existTempFile = fs.existsSync(
-      path.join(testFolderPath, "test-file.txt")
+      path.join(testFolderPath, "test-file-1.txt")
     );
     const existsEncTempFile = fs.existsSync(encryptedFolderPath);
 
@@ -129,7 +148,7 @@ describe("Encryptor", () => {
     expect(existsEncTempFile).toBe(true);
 
     await Encryptor.decryptFolder({
-      filePath: encryptedFolderPath,
+      folderPath: encryptedFolderPath,
       onProgress: () => {}
     });
 
@@ -140,7 +159,7 @@ describe("Encryptor", () => {
     expect(lastDirInfo).toEqual(dirInfo);
 
     const decryptedContentFile = fs.readFileSync(
-      path.join(testFolderPath, "test-file.txt"),
+      path.join(testFolderPath, "test-file-1.txt"),
       "utf-8"
     );
     expect(decryptedContentFile).toBe(originalContentFile);
@@ -179,7 +198,7 @@ describe("Encryptor", () => {
 
   it("should hide and unhide folders correctly", async () => {
     const res = await Encryptor.encryptFolder({
-      filePath: testFolderPath,
+      folderPath: testFolderPath,
       onProgress: () => {}
     });
     const encHiddenFolderPath = path.join(tempDir, `.${res.id}`);
@@ -197,8 +216,21 @@ describe("Encryptor", () => {
     expect(isVisible).toBe(false);
 
     await Encryptor.decryptFolder({
-      filePath: encFolderPath,
+      folderPath: encFolderPath,
       onProgress: () => {}
     });
   });
+
+  it("should save extra properties in storage", async () => {
+    const item = await Encryptor.encryptFile({
+      filePath: testFilePath,
+      extraProps: { customProp: "value", anotherProp: 123 },
+    })
+    const library = Encryptor.getStorage();
+
+    expect(library.get(item.id)).toBeDefined();
+    expect(library.get(item.id)?.extraProps).toBeDefined();
+    expect(library.get(item.id)?.extraProps!.customProp).toBe("value");
+    expect(library.get(item.id)?.extraProps!.anotherProp).toBe(123);
+  })
 });

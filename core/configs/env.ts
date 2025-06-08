@@ -22,7 +22,12 @@ const envSchema = z.object({
   PASSWORD: z
     .string()
     .min(4, "Password must be at least 4 characters")
-    .optional()
+    .optional(),
+  MAX_THREADS: z
+    .string()
+    .transform((val) => Number(val))
+    .pipe(z.number().int().positive().min(1))
+    .default("1")
 });
 
 const parsed = envSchema.safeParse(process.env);

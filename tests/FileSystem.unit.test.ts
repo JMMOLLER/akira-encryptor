@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { FileSystem } from "@libs/FileSystem";
 import fs from "fs";
-import { rejects } from "assert";
 
 vi.mock("fs");
 vi.mock("path");
@@ -74,7 +73,7 @@ describe("FileSystem", () => {
   it("should handle non-existent files gracefully when removing", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.removeFile("/mock/path")).not.toThrow();
+    expect(() => fileSystem.removeFile("/mock/path")).rejects.toThrow();
   });
 
   it("should read a directory", () => {

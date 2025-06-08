@@ -1,4 +1,3 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -15,8 +14,10 @@ export default defineConfig({
     alias: {
       "@libs": resolve(__dirname, "core/libs"),
       "@utils": resolve(__dirname, "core/utils"),
-      "@configs": resolve(__dirname, "core/configs")
+      "@crypto": resolve(__dirname, "core/crypto"),
+      "@configs": resolve(__dirname, "core/configs"),
+      "@adapters": resolve(__dirname, "core/adapters"),
     }
   },
-  plugins: [tsconfigPaths()]
+  plugins: []
 });

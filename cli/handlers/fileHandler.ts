@@ -1,12 +1,10 @@
 import createSpinner from "@utils/createSpinner";
+import { askForHideItem } from "@cli/prompts";
 import type { ProgressCallback } from "types";
 import formatBytes from "@utils/formatBytes";
 import EncryptorClass from "@libs/Encryptor";
 import cliProgress from "cli-progress";
-import inquirer from "inquirer";
 import path from "path";
-import fs from "fs";
-import { askForHideItem } from "@cli/prompts";
 
 type HanlderProps = {
   action: CliAction;
@@ -20,18 +18,17 @@ async function handleFileAction(props: HanlderProps) {
   const progressBar = new cliProgress.SingleBar(
     {
       format:
-        "Archivo actual |{bar}| {percentage}% || {processed}/{formattedTotal}"
+        "Progreso total |{bar}| {percentage}% || {processed}/{formattedTotal}"
     },
     cliProgress.Presets.shades_classic
   );
 
-  const stat = fs.statSync(filePath);
-  const total = stat.size;
-  const formattedTotal = formatBytes(total);
+  let formattedTotal = "0B";
   let init = false;
 
-  const handleProgress: ProgressCallback = (processed) => {
+  const handleProgress: ProgressCallback = (processed, total) => {
     if (!init) {
+      formattedTotal = formatBytes(total);
       progressBar.start(total, 0, {
         processed: formatBytes(0),
         formattedTotal
@@ -49,7 +46,10 @@ async function handleFileAction(props: HanlderProps) {
     }
   };
 
-  const handleEnd: EncryptorFuncion["onEnd"] = (error) => {
+  const handleEnd: FileEncryptor["onEnd"] = (error) => {
+    // Fallback to stop the progress bar
+    progressBar.stop();
+    // Print the success or error message
     if (!error) {
       createSpinner(
         `Archivo '${filePath}' ${
@@ -57,7 +57,6 @@ async function handleFileAction(props: HanlderProps) {
         } correctamente.`
       ).succeed();
     } else {
-      progressBar.stop();
       createSpinner(
         `Error al ${
           action === "encrypt" ? "encriptar" : "desencriptar"

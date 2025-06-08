@@ -6,28 +6,25 @@
   "author": "JMMOLLER",
   "type": "module",
   "scripts": {
-    "test": "bun vitest",
-    "start": "bun run cli/main.ts",
+    "tests": "bun build core/workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest",
+    "start": "bun run scripts/run/start.js",
     "debug": "bunx tsx cli/main.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
-    "build": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=cli/dist/main.cjs --format=cjs --external:fswin --external:hidefile",
-    "build:win": "bun run typecheck && bun run build && node scripts/build/generate-windows-binary.js"
-  },
-  "pkg": {
-    "assets": [
-      "node_modules/fswin/**/*.node"
-    ]
+    "build": "bun run typecheck && bun run build:worker && bun run build:main && bun run build:piscina-worker",
+    "build:win": "bun run build && node scripts/build/generate-windows-binary.js",
+    "build:worker": "esbuild core/workers/encryptor.worker.ts --bundle --platform=node --target=node18 --outfile=dist/core/workers/encryptor.worker.cjs --format=cjs --minify",
+    "build:main": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=dist/main.cjs --format=cjs --external:core/workers/encryptor.worker.cjs --external:fswin --external:hidefile --minify",
+    "build:piscina-worker": "node scripts/build/fixPiscinaWorker.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cli-progress": "^3.11.6",
     "@types/hidefile": "^3.0.3",
     "@types/libsodium-wrappers": "^0.7.14",
+    "@yao-pkg/pkg": "^6.5.1",
     "esbuild": "^0.25.4",
-    "pkg": "^5.8.1",
     "rcedit": "^4.0.1",
     "tsx": "^4.19.3",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.1"
   },
   "peerDependencies": {
@@ -43,6 +40,8 @@
     "libsodium-wrappers": "^0.7.15",
     "lowdb": "^7.0.1",
     "nanoid": "^5.1.5",
+    "p-limit": "^6.2.0",
+    "piscina": "^5.0.0",
     "zod": "^3.24.2"
   }
 }
