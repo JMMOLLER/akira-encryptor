@@ -15,7 +15,7 @@ const iconPath = resolve("gui", "build", "icon.ico");
 
 try {
   console.log("🔨 Building executable with pkg...");
-  pkg.exec([
+  await pkg.exec([
     entryFile,
     "--output",
     outputPath,
@@ -24,22 +24,7 @@ try {
     // "--debug",
   ]);
 
-  // console.log("🛠️ Adding metadata with rcedit...");
-  // // Modify the executable with rcedit
-  // await rcedit("C:/Users/JMMOLLER/.pkg-cache/v3.4/fetched-v18.5.0-win-x64", {
-  //   "version-string": {
-  //     CompanyName: author,
-  //     ProductName: "Akira Encryptor CLI",
-  //     FileDescription: description,
-  //     LegalCopyright: `Copyright© ${new Date().getFullYear()} ${author}`,
-  //     OriginalFilename: exeName
-  //   },
-  //   "product-version": version,
-  //   "file-version": version,
-  //   icon: iconPath
-  // });
-
-  console.log("✅ Executable generated and updated successfully.");
+  console.log("✅ Executable generated successfully.");
 } catch (error) {
   console.error("❌ Error during the process:", error.message);
   process.exit(1);
