@@ -24,6 +24,7 @@ beforeAll(async () => {
     await import("@libs/Encryptor")
   ).default.init("mypassword", {
     libraryPath: tempDir + "/test-library.json",
+    allowExtraProps: true,
     minDelayPerStep: 0,
     maxThreads: 4,
     silent: true,
@@ -219,4 +220,17 @@ describe("Encryptor", () => {
       onProgress: () => {}
     });
   });
+
+  it("should save extra properties in storage", async () => {
+    const item = await Encryptor.encryptFile({
+      filePath: testFilePath,
+      extraProps: { customProp: "value", anotherProp: 123 },
+    })
+    const library = Encryptor.getStorage();
+
+    expect(library.get(item.id)).toBeDefined();
+    expect(library.get(item.id)?.extraProps).toBeDefined();
+    expect(library.get(item.id)?.extraProps!.customProp).toBe("value");
+    expect(library.get(item.id)?.extraProps!.anotherProp).toBe(123);
+  })
 });
