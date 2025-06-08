@@ -31,7 +31,6 @@ class Encryptor {
 
   /* ========================== DECRYPT PROPERTIES ========================== */
   private readonly chunkSize = 64 * 1024;
-  private processedFiles = 0;
   /* ========================== COMMON PROPERTIES ========================== */
   private stepDelay = this.DEFAULT_STEP_DELAY;
   private renameStep?: CliSpinner;
@@ -137,8 +136,8 @@ class Encryptor {
   }
 
   private resetFileIndicators() {
-    this.processedFiles = 0;
-    // this.totalFiles = 0;
+    this.totalFolderBytes = 0;
+    this.processedBytes = 0;
   }
 
   private visibilityHelper(itemId: string) {
@@ -232,8 +231,8 @@ class Encryptor {
     }
 
     const fileStats = Encryptor.FS.getStatFile(filePath);
-    const totalFileSize = fileStats.size;
     if (!isInternalFlow) this.processedBytes = 0;
+    const totalFileSize = fileStats.size;
 
     // Temp route and final route
     const fileDir = path.dirname(filePath);
@@ -316,9 +315,9 @@ class Encryptor {
     if (filePath.includes(".dec.tmp")) return Promise.resolve();
     if (path.extname(filePath) !== ".enc") return Promise.resolve();
 
+    if (!props.isInternalFlow) this.processedBytes = 0;
     const fileStats = Encryptor.FS.getStatFile(filePath);
     const totalFileSize = fileStats.size;
-    this.processedBytes = 0;
 
     const blockSize = this.chunkSize + sodium.crypto_secretbox_MACBYTES;
 
@@ -403,14 +402,13 @@ class Encryptor {
       return a.name.localeCompare(b.name);
     });
 
-    // 2. Determine total size of this folder (all nested files)
-    const size = Encryptor.FS.getFolderSize(folderPath);
+    // 2. Initialize skipped files counter
     let skippedFiles = 0;
 
     // 3. If not an internal (recursive) call
     if (!isInternalFlow) {
       // bcs we not show the spinner in internal flow
-      this.totalFolderBytes = size;
+      this.totalFolderBytes = Encryptor.FS.getFolderSize(folderPath);
       this.stepDelay = 0;
     }
 
@@ -460,11 +458,11 @@ class Encryptor {
             // Encrypt the file (this function already updates processedBytes)
             const subFile = await this.encryptFile({
               filePath: fullPath,
-              isInternalFlow: true
+              isInternalFlow: true,
+              onProgress: () => {
+                onProgress?.(this.processedBytes, this.totalFolderBytes);
+              }
             });
-            // Update processed files count
-            this.processedFiles++;
-            onProgress?.(this.processedBytes, this.totalFolderBytes);
             return subFile;
           } catch (err) {
             // Only skip files that are already encrypted
@@ -501,13 +499,13 @@ class Encryptor {
     );
     let saved: StorageItemType = {
       originalName: path.basename(folderPath),
+      size: this.totalFolderBytes,
       encryptedAt: new Date(),
       id: generateUID(),
       path: folderPath,
       type: "folder",
       encryptedName,
-      content,
-      size
+      content
     };
 
     if (!isInternalFlow) {
@@ -570,7 +568,6 @@ class Encryptor {
 
     // If not in internal flow, initialize indicators
     if (!isInternalFlow) {
-      this.processedFiles = 0;
       this.stepDelay = 0;
       this.totalFolderBytes = Encryptor.FS.getFolderSize(folderPath);
     }
@@ -601,7 +598,8 @@ class Encryptor {
           return this.decryptFolder({
             folderPath: fullPath,
             isInternalFlow: true,
-            folderItem: item
+            folderItem: item,
+            onProgress
           });
         });
         subfolderPromises.push(task);
@@ -625,12 +623,11 @@ class Encryptor {
             await this.decryptFile({
               filePath: encryptedFilePath,
               isInternalFlow: true,
-              fileItem: item
+              fileItem: item,
+              onProgress: () => {
+                onProgress?.(this.processedBytes, this.totalFolderBytes);
+              }
             });
-            onProgress?.(this.processedBytes, this.totalFolderBytes);
-
-            // Increment processed files counter (per folder)
-            this.processedFiles++;
           } catch (err) {
             // Only skip if error indicates file was not registered
             if (err instanceof Error && err.name === "FileNotRegistered") {
