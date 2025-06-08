@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "tests": "bun build core/workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest",
-    "start": "bun run cli/main.ts",
+    "start": "bun run scripts/run/start.js",
     "debug": "bunx tsx cli/main.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
     "build": "bun run typecheck && bun run build:worker && bun run build:main && bun run build:piscina-worker",
