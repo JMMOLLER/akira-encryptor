@@ -43,8 +43,10 @@ buildProcess.on("close", async (code) => {
     // Reemplazar texto ruta stub de piscina en main.cjs
     const mainCode = await readFile(mainCjsFile, "utf8");
     const updatedMainCode = mainCode.replace(
-      /(__dirname,\s*["']worker\.js["'])/g,
-      '(__dirname,"dist/worker.cjs")'
+      // Regex para encontrar la línea que importa el worker.js
+      /\(0,EB\.resolve\)\(__dirname,\s*["']worker\.js["']\)/g,
+      // Reemplazar por require.resolve parchado por pkg
+      'require.resolve("./worker.cjs")'
     );
 
     if (mainCode !== updatedMainCode) {
