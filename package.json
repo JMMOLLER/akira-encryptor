@@ -1,7 +1,7 @@
 {
   "name": "akira-encryptor",
   "module": "cli/main.ts",
-  "version": "0.3.0-beta",
+  "version": "0.4.0-beta",
   "description": "A CLI tool for encrypting and decrypting files and folders using libsodium.",
   "author": "JMMOLLER",
   "type": "module",

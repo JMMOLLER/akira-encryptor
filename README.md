@@ -1,9 +1,8 @@
-# Akira-encryptor
+# Akira-encryptor (CLI/GUI)
 
 **Akira-encryptor** es una herramienta de línea de comandos (CLI) desarrollada en TypeScript/Node.js, diseñada para el cifrado y descifrado de archivos y carpetas, utilizando `libsodium-wrappers` para garantizar un alto nivel de seguridad criptográfica. El proyecto está enfocado en la eficiencia, soportando archivos grandes mediante flujos (`streams`) y permitiendo seguimiento de progreso tanto a nivel individual como global.
 
-> 🚧 El proyecto se encuentra actualmente en fase de desarrollo.  
-> 🧪 La interfaz gráfica de usuario (GUI) **está en fase beta**.
+> 🚧 El proyecto se encuentra actualmente **en fase beta**.  
 
 ---
 
@@ -12,8 +11,9 @@
 - 🔐 **Cifrado/Descifrado de archivos** usando `libsodium-wrappers`
 - 📂 **Soporte para carpetas** (procesamiento recursivo de subdirectorios)
 - 📦 **Manejo eficiente de archivos grandes** mediante streaming
-- 📊 **Visualización de progreso** en tiempo real (barra de progreso por archivo y global)
+- 📊 **Visualización de progreso** en tiempo real (barra de progreso global)
 - 🧪 **Estructura modular** y lista para pruebas unitarias e integración (Vitest)
+- 📊 **Soporte Multihilo** para operaciones de cifrado y descifrado
 - 🧰 Preparado para ser usado como:
   - CLI local
   - Base para GUI (entornos de nodejs)
@@ -81,6 +81,6 @@ bun start
 
 - [x] GUI en desarrollo (Electron)
 
-- [ ] Soporte multihilo 
+- [x] Soporte multihilo 
 
 - [ ] Empaquetado multiplataforma
