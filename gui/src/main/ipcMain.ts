@@ -112,7 +112,7 @@ export default function registerIpcMain() {
       })
 
       if (result.canceled) return null
-      return result.filePaths
+      return result.filePaths.toString()
     } catch (error) {
       console.error('Error opening file dialog:', error)
       return null

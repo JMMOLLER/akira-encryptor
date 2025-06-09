@@ -69,22 +69,22 @@ function NewEncrypt() {
     handleReset()
 
     // Open file explorer
-    const archivo = await window.api.openExplorer({
+    const selectedPath = await window.api.openExplorer({
       title: `Seleccionar ${menuItem === 'files' ? 'archivo' : 'carpeta'}`,
       properties: menuItem === 'files' ? ['openFile'] : ['openDirectory']
     })
-    if (!archivo) {
+    if (!selectedPath) {
       setStatus({
         type: 'error',
         message: `Por favor seleccione ${menuItem === 'files' ? 'un archivo' : 'una carpeta'}`
       })
-    } else if (findByPath(archivo.toString())) {
+    } else if (findByPath(selectedPath)) {
       setStatus({
         type: 'error',
         message: `Ya existe una operación pendiente para el ${menuItem === 'files' ? 'archivo' : 'directorio'} seleccionado.`
       })
     } else {
-      setPathVal(archivo.toString())
+      setPathVal(selectedPath)
       resetStatus()
     }
   }

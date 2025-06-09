@@ -37,7 +37,7 @@ async function main() {
   }
 
   const payload = {
-    filePath: filePath.toString(),
+    filePath: filePath,
     onProgress: sendProgress,
     onEnd,
     extraProps
@@ -49,14 +49,14 @@ async function main() {
         ? await ENCRYPTOR.encryptFile(payload)
         : await ENCRYPTOR.encryptFolder({
             ...payload,
-            folderPath: filePath.toString()
+            folderPath: filePath
           })
     } else if (workerData.action === 'decrypt') {
       workerData.actionFor === 'file'
         ? await ENCRYPTOR.decryptFile(payload)
         : await ENCRYPTOR.decryptFolder({
             ...payload,
-            folderPath: filePath.toString()
+            folderPath: filePath
           })
     } else {
       throw new Error('Acción no válida')
