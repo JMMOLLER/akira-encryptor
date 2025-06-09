@@ -45,7 +45,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
 
       item.status = 'error'
       item.message = data.message
-      item.filePath = data.filePath
+      item.srcPath = data.srcPath
 
       return newMap
     })
@@ -59,7 +59,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
       } else if (!error && action === 'decrypt' && data.extraProps?.backupPath) {
         window.api
           .backupAction({
-            filePath: data.extraProps.backupPath as string,
+            srcPath: data.extraProps.backupPath as string,
             action: 'delete',
             itemId
           })
@@ -131,8 +131,8 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
   }, [])
 
   const findByPath = useCallback(
-    (filePath: string) => {
-      return [...pendingItems.entries()].find(([_, value]) => value.filePath === filePath)?.[1]
+    (srcPath: string) => {
+      return [...pendingItems.entries()].find(([_, value]) => value.srcPath === srcPath)?.[1]
     },
     [pendingItems]
   )

@@ -58,12 +58,12 @@ const useItemCardActions = ({ item }: Props) => {
 
     const basePath = item.path.substring(0, lastSlash)
     const fileName = item.id + (item.type === 'file' ? '.enc' : '')
-    const filePath = `${basePath}${fileName}`
+    const srcPath = `${basePath}${fileName}`
 
     newDecrypt({
       actionFor: item.type,
       id: item.id,
-      srcPath: filePath
+      srcPath
     })
   }
 

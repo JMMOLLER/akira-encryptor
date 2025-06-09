@@ -31,7 +31,7 @@ export default function registerIpcMain() {
   })
 
   ipcMain.handle('backup-action', async (_event, props: BackupActionProps) => {
-    const src = String(props.filePath)
+    const src = String(props.srcPath)
     const { itemId, action } = props
 
     if (action === 'create') {
@@ -88,9 +88,9 @@ export default function registerIpcMain() {
       const mainWindow = BrowserWindow.getAllWindows()[0]
       mainWindow?.webContents.send('onProgressError', {
         message: (error as Error).message,
-        filePath: props.filePath,
+        srcPath: props.srcPath,
         itemId: props.itemId
-      })
+      } as ProgressCallbackErrorProps)
     }
   })
 

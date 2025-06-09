@@ -30,7 +30,11 @@ export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
       }
     })
     .on('error', (err) => {
-      onError({ message: err.message, filePath: rest.filePath, itemId: rest.itemId })
+      onError({
+        message: err.message,
+        srcPath: rest.srcPath,
+        itemId: rest.itemId
+      } as ProgressCallbackErrorProps)
     })
     .once('exit', () => {
       console.log('Encryptor worker exited')

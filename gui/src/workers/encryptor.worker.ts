@@ -2,12 +2,17 @@ import { parentPort, workerData as wd } from 'worker_threads'
 import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
+type PayloadBase = Partial<FolderEncryptor> &
+  Partial<FolderDecryptor> &
+  Partial<FileEncryptor> &
+  Partial<FileDecryptor>
+
 if (!parentPort) throw new Error('IllegalState')
 
 const workerData = wd as WorkerEncryptProps
 
 async function main() {
-  const { filePath, itemId, extraProps } = workerData
+  const { srcPath, itemId, extraProps } = workerData
   const password = Buffer.from(workerData.password)
 
   const ENCRYPTOR = await Encryptor.init(password.toString(), {
@@ -36,28 +41,29 @@ async function main() {
     })
   }
 
-  const payload = {
-    filePath: filePath,
+  const payload: PayloadBase = {
     onProgress: sendProgress,
-    onEnd,
-    extraProps
+    extraProps,
+    onEnd
+  }
+
+  if (workerData.actionFor === 'file') {
+    payload.filePath = srcPath
+  } else if (workerData.actionFor === 'folder') {
+    payload.folderPath = srcPath
+  } else {
+    throw new Error('Invalid actionFor type')
   }
 
   try {
     if (workerData.action === 'encrypt') {
       workerData.actionFor === 'file'
-        ? await ENCRYPTOR.encryptFile(payload)
-        : await ENCRYPTOR.encryptFolder({
-            ...payload,
-            folderPath: filePath
-          })
+        ? await ENCRYPTOR.encryptFile(payload as FileEncryptor)
+        : await ENCRYPTOR.encryptFolder(payload as FolderDecryptor)
     } else if (workerData.action === 'decrypt') {
       workerData.actionFor === 'file'
-        ? await ENCRYPTOR.decryptFile(payload)
-        : await ENCRYPTOR.decryptFolder({
-            ...payload,
-            folderPath: filePath
-          })
+        ? await ENCRYPTOR.decryptFile(payload as FileDecryptor)
+        : await ENCRYPTOR.decryptFolder(payload as FolderDecryptor)
     } else {
       throw new Error('Acción no válida')
     }
@@ -65,7 +71,7 @@ async function main() {
     parentPort!.postMessage({
       type: 'error',
       message: err instanceof Error ? err.message : String(err),
-      filePath: filePath,
+      srcPath,
       itemId
     })
   }
@@ -75,7 +81,7 @@ main().catch((err) => {
   parentPort!.postMessage({
     type: 'error',
     message: err instanceof Error ? err.message : String(err),
-    filePath: workerData.filePath,
+    srcPath: workerData.srcPath,
     itemId: workerData.itemId
   })
 })

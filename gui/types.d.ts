@@ -15,7 +15,7 @@ declare global {
     extraProps?: Record<string, JsonValue>
     action: 'encrypt' | 'decrypt'
     actionFor: 'file' | 'folder'
-    filePath: string
+    srcPath: string
     itemId: string
   }
   type BackupActionProps = Omit<EncryptFileProps, 'action' | 'actionFor'> & {
@@ -65,14 +65,14 @@ declare global {
     status: 'loading' | 'error'
     percent: number
     message?: string
-    filePath?: string
+    srcPath?: string
   }
   type PendingStorage = Map<string, PendingItem>
   interface PendingEncryptContextType {
     pendingItems: PendingStorage
     removePendingItem: (id: string) => void
     addPendingItem: (id: string, item: PendingItem) => void
-    findByPath: (filePath: string) => PendingItem | undefined
+    findByPath: (srcPath: string) => PendingItem | undefined
   }
 
   interface ProgressCallbackProps {
@@ -83,7 +83,7 @@ declare global {
     itemId: string
   }
   interface ProgressCallbackErrorProps {
-    filePath: string
+    srcPath: string
     message: string
     itemId: string
   }

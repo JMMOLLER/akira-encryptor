@@ -50,7 +50,7 @@ export function useNewOperation() {
       })
 
       const res = await window.api.backupAction({
-        filePath: srcPath,
+        srcPath: srcPath,
         action: 'create',
         itemId: id
       })
@@ -91,20 +91,20 @@ export function useNewOperation() {
     addPendingItem(id, {
       type: actionFor,
       status: 'loading',
-      filePath: srcPath,
+      srcPath: srcPath,
       percent: 0
     })
 
     // Set encrypted action to main process
     window.electron.ipcRenderer.send('encryptor-action', {
       actionFor: actionFor,
-      filePath: srcPath,
+      srcPath: srcPath,
       action: 'encrypt',
       itemId: id,
       extraProps: {
         backupPath
       }
-    })
+    } as EncryptFileProps)
   }
 
   const newDecrypt = (props: Props) => {
@@ -128,14 +128,14 @@ export function useNewOperation() {
 
     // Send decrypt action to main process
     window.electron.ipcRenderer.send('encryptor-action', {
-      filePath: srcPath,
+      srcPath: srcPath,
       action: 'decrypt',
       itemId: id,
       actionFor,
       extraProps: {
         backupPath
       }
-    })
+    } as EncryptFileProps)
   }
 
   return { newEncrypt, newDecrypt, hasBackupInProgress: backuping }
