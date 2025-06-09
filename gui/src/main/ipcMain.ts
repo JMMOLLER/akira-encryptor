@@ -61,27 +61,37 @@ export default function registerIpcMain() {
   })
 
   ipcMain.on('encryptor-action', async (_event: IpcMainInvokeEvent, props: EncryptFileProps) => {
-    const mainWindow = BrowserWindow.getAllWindows()[0]
+    try {
+      const mainWindow = BrowserWindow.getAllWindows()[0]
 
-    const onProgress = (progressData: string) => {
-      mainWindow?.webContents.send('onProgress', progressData)
-    }
-    const onEnd = async (endData: string) => {
-      await ENCRYPTOR.refreshStorage()
-      mainWindow?.webContents.send('onOperationEnd', endData)
-    }
-    const onError = (errorData: unknown) => {
-      mainWindow?.webContents.send('onProgressError', errorData)
-      console.error(errorData)
-    }
+      const onProgress = (progressData: string) => {
+        mainWindow?.webContents.send('onProgress', progressData)
+      }
+      const onEnd = async (endData: string) => {
+        await ENCRYPTOR.refreshStorage()
+        mainWindow?.webContents.send('onOperationEnd', endData)
+      }
+      const onError = (errorData: unknown) => {
+        mainWindow?.webContents.send('onProgressError', errorData)
+        console.error(errorData)
+      }
 
-    runEncryptorWorker({
-      ...props,
-      password: PASSWORD,
-      onProgress,
-      onError,
-      onEnd
-    })
+      runEncryptorWorker({
+        ...props,
+        password: PASSWORD,
+        onProgress,
+        onError,
+        onEnd
+      })
+    } catch (error) {
+      console.error('Error in encryptor action:', error)
+      const mainWindow = BrowserWindow.getAllWindows()[0]
+      mainWindow?.webContents.send('onProgressError', {
+        message: (error as Error).message,
+        filePath: props.filePath,
+        itemId: props.itemId
+      })
+    }
   })
 
   ipcMain.handle('open-explorer', async (event: IpcMainInvokeEvent, props: OpenExplorerProps) => {
