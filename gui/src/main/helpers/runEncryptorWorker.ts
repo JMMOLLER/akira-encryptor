@@ -10,10 +10,7 @@ type RunEncryptorWorkerParams = EncryptFileProps & {
 export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
   const { onProgress, onEnd, onError, ...rest } = props
   const worker = encryptorWorker({
-    workerData: {
-      ...rest,
-      filePath: rest.filePath.toString()
-    }
+    workerData: { ...rest }
   })
 
   worker

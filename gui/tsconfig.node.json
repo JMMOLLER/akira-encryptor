@@ -10,11 +10,13 @@
     "../types.d.ts",
     "../core/**/*",
     "types.d.ts",
+    "utils/**/*",
   ],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
     "moduleResolution": "Bundler",
+    "noUnusedLocals": false,
     "baseUrl": "./src",
     "paths": {
       "@core/*": ["../../core/*"],
@@ -25,6 +27,7 @@
       "@utils/*": ["../../core/utils/*"],
       "@configs/*": ["../../core/configs/*"],
       "@adapters/*": ["../../core/adapters/*"],
+      "@crypto/*": ["../../core/crypto/*"],
     },
   }
 }

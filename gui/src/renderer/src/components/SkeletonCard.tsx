@@ -23,11 +23,6 @@ function SkeletonCard(props: SkeletonCardProps) {
             type="circle"
             size={40}
           />
-          {pendingItem.type === 'folder' && (
-            <p className="text-gray-500 text-center text-xs">
-              {pendingItem.processedFiles}/{pendingItem.totalFiles}
-            </p>
-          )}
         </span>
       )}
       <Skeleton

@@ -66,8 +66,6 @@ declare global {
     percent: number
     message?: string
     filePath?: string
-    totalFiles: number
-    processedFiles: number
   }
   type PendingStorage = Map<string, PendingItem>
   interface PendingEncryptContextType {
@@ -151,5 +149,13 @@ declare global {
     $bin: string
     dest: string
     src: string
+  }
+
+  type WorkerEncryptProps = EncryptFileProps & {
+    /**
+     * @note Node.js worker threads do not support `Buffer` directly,
+     * so Node.js casts `Buffer` to `Uint8Array`.
+     */
+    password: Uint8Array
   }
 }

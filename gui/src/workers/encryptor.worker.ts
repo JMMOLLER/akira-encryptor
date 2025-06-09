@@ -2,17 +2,9 @@ import { parentPort, workerData as wd } from 'worker_threads'
 import { ProgressCallback } from '../../../types'
 import Encryptor from '@core/libs/Encryptor'
 
-type Props = EncryptFileProps & {
-  /**
-   * @note Node.js worker threads do not support `Buffer` directly,
-   * so Node.js casts `Buffer` to `Uint8Array`.
-   */
-  password: Uint8Array
-}
-
 if (!parentPort) throw new Error('IllegalState')
 
-const workerData = wd as Props
+const workerData = wd as WorkerEncryptProps
 
 async function main() {
   const { filePath, itemId, extraProps } = workerData
@@ -24,18 +16,11 @@ async function main() {
     silent: true
   })
 
-  const sendProgress: ProgressCallback = (
-    processedBytes,
-    totalBytes,
-    processedFiles,
-    totalFiles
-  ) => {
+  const sendProgress: ProgressCallback = (processedBytes, totalBytes) => {
     parentPort!.postMessage({
       type: 'progress',
       processedBytes,
       totalBytes,
-      processedFiles,
-      totalFiles,
       itemId
     })
   }
@@ -52,7 +37,7 @@ async function main() {
   }
 
   const payload = {
-    filePath,
+    filePath: filePath.toString(),
     onProgress: sendProgress,
     onEnd,
     extraProps
@@ -62,11 +47,17 @@ async function main() {
     if (workerData.action === 'encrypt') {
       workerData.actionFor === 'file'
         ? await ENCRYPTOR.encryptFile(payload)
-        : await ENCRYPTOR.encryptFolder(payload)
+        : await ENCRYPTOR.encryptFolder({
+            ...payload,
+            folderPath: filePath.toString()
+          })
     } else if (workerData.action === 'decrypt') {
       workerData.actionFor === 'file'
         ? await ENCRYPTOR.decryptFile(payload)
-        : await ENCRYPTOR.decryptFolder(payload)
+        : await ENCRYPTOR.decryptFolder({
+            ...payload,
+            folderPath: filePath.toString()
+          })
     } else {
       throw new Error('Acción no válida')
     }
@@ -74,7 +65,7 @@ async function main() {
     parentPort!.postMessage({
       type: 'error',
       message: err instanceof Error ? err.message : String(err),
-      filePath,
+      filePath: filePath,
       itemId
     })
   }
