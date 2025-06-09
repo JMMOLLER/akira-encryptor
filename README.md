@@ -25,10 +25,13 @@
 Puedes crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
 
 ```env
-PASSWORD=<your_password>
+MAX_THREADS=<number_of_threads> #Número de hilos para operaciones multihilo [opcional]
+LIBRARY_PATH=<your_path> #Ruta donde se guardará el storage [opcional]
+ENCODING=<encoding_value> #Codificación de datos [opcional]
+PASSWORD=<your_password> #Contraseña para cifrado/descifrado [opcional]
 ```
 
-> ⚠️ Importante: Esta contraseña es solo para fines de desarrollo. 
+> ⚠️ Importante: `PASSWORD` es solo para fines de desarrollo. 
 > Permite saltear el requisito de ingreso de constraseña en cada operación.
 
 ---
