@@ -1,5 +1,5 @@
-import decryptFile from "core/helpers/decryptFile.helper";
-import encryptFile from "core/helpers/encryptFile.helper";
+import decryptFile from "@crypto/decryptFile";
+import encryptFile from "@crypto/encryptFile";
 
 export default async function run(params: WorkerTask) {
   const { taskType, filePath, tempPath, SECRET_KEY, blockSize } = params;
