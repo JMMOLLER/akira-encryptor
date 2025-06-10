@@ -25,11 +25,5 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-
-    // Paths aliases
-    "baseUrl": ".",
-    "paths": {
-      "@handlers/*": ["handlers/*"],
-    }
   }
 }

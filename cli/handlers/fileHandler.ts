@@ -1,5 +1,6 @@
 import { default as EncryptorClass } from "@akira-encryptor/core";
 import * as utils from "@akira-encryptor/core/utils";
+import { workerPath } from "../const/workerPath";
 import { askForHideItem } from "../prompts";
 import cliProgress from "cli-progress";
 import path from "path";
@@ -68,7 +69,7 @@ async function handleFileAction(props: HanlderProps) {
   };
 
   try {
-    const Encryptor = await EncryptorClass.init(password);
+    const Encryptor = await EncryptorClass.init(password, workerPath);
 
     if (action === "encrypt") {
       const item = await Encryptor.encryptFile({

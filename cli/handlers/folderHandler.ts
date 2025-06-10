@@ -1,5 +1,6 @@
 import { default as EncryptorClass } from "@akira-encryptor/core";
 import * as utils from "@akira-encryptor/core/utils";
+import { workerPath } from "../const/workerPath";
 import { askForHideItem } from "../prompts";
 import cliProgress from "cli-progress";
 import path from "path";
@@ -67,7 +68,7 @@ async function handleFolderAction(props: HanlderProps) {
   };
 
   try {
-    const Encryptor = await EncryptorClass.init(password);
+    const Encryptor = await EncryptorClass.init(password, workerPath);
 
     if (action === "encrypt") {
       const item = await Encryptor.encryptFolder({
@@ -107,7 +108,10 @@ async function handleFolderAction(props: HanlderProps) {
   }
 }
 
-async function handleIsHiddenFile(folderPath: string, Encryptor: EncryptorClass) {
+async function handleIsHiddenFile(
+  folderPath: string,
+  Encryptor: EncryptorClass
+) {
   const storage = Encryptor.getStorage();
   const id = path.basename(folderPath).replace(/^\./, "");
   const item = storage.get(id);

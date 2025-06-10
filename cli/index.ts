@@ -1,6 +1,7 @@
+import "@akira-encryptor/core/dist/workers/encryptor.worker.cjs";
 import { askForOtherOperation, askUserActions } from "./prompts";
-import handleFolderAction from "@handlers/folderHandler";
-import handleFileAction from "@handlers/fileHandler";
+import handleFolderAction from "./handlers/folderHandler";
+import handleFileAction from "./handlers/fileHandler";
 import fs from "fs";
 
 async function main() {

@@ -1,5 +1,6 @@
 import Encryptor, { FileSystem } from "@akira-encryptor/core";
 import * as utils from "@akira-encryptor/core/utils";
+import { workerPath } from "./const/workerPath";
 import inquirer from "inquirer";
 import fs from "fs";
 
@@ -72,7 +73,7 @@ export async function askUserActions() {
   let path: string = "";
 
   if (password && action === "decrypt") {
-    const encryptor = await Encryptor.init(password, {
+    const encryptor = await Encryptor.init(password, workerPath, {
       minDelayPerStep: 0,
       silent: true
     });

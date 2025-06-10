@@ -1,11 +1,11 @@
 {
-  "scripts": "dist/main.cjs",
+  "scripts": "dist/index.js",
   "targets": [
     "node18-win-x64"
   ],
   "assets": [
-    "dist/worker.cjs",
-    "dist/core/workers/**/*",
+    "dist/worker.js",
+    "node_modules/@akira-encryptor/core/dist/workers/encryptor.worker.cjs",
     "dist/nice.win32-x64-msvc-*.node",
     "node_modules/fswin/**/*.node"
   ]
