@@ -7,7 +7,6 @@ import generateUID from "../utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "../configs/env";
-import { fileURLToPath } from "url";
 import delay from "../utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
@@ -27,6 +26,7 @@ class Encryptor {
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
   private static LOG = env.LOG;
+  private workerPath!: string;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
 
@@ -50,7 +50,11 @@ class Encryptor {
    * @description `[ES]` Inicializa la instancia de Encryptor y el almacenamiento.
    * @param password `string` - The password used to generate the secret key.
    */
-  static async init(password: string, options?: EncryptorOptions) {
+  static async init(
+    password: string,
+    workerPath: string,
+    options?: EncryptorOptions
+  ) {
     await sodium.ready;
 
     const instance = new Encryptor(password);
@@ -59,6 +63,7 @@ class Encryptor {
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
+    instance.workerPath = workerPath;
 
     // Initialize worker pool
     instance.startWorkerPool();
@@ -77,30 +82,11 @@ class Encryptor {
    */
   startWorkerPool() {
     if (!Encryptor.workerPool) {
-      let workerPath: string;
-
-      // Use __dirname if available, otherwise fallback to process.cwd()
-      // const baseDir =
-      //   typeof __dirname !== "undefined" ? __dirname : process.cwd();
-      const baseDir = path.dirname(fileURLToPath(import.meta.url));
-      console.log(`Base directory for worker: ${path.resolve}`);
-      const isTest = process.env.NODE_ENV === "test";
-      workerPath = path.resolve(
-        baseDir,
-        isTest
-          ? "../tests/dist/encryptor.worker.cjs"
-          : "../workers/encryptor.worker.js"
-      );
-
-      if (isTest) {
-        console.log(`Using worker path for tests: ${workerPath}`);
-      }
-
       Encryptor.workerPool = new Piscina({
         maxThreads: this.MAX_THREADS,
         concurrentTasksPerWorker: 1,
-        filename: workerPath,
-        idleTimeout: 30000, // 30 seconds
+        filename: this.workerPath,
+        idleTimeout: 30000,
         minThreads: 1
       });
     }
@@ -914,3 +900,5 @@ class Encryptor {
 }
 
 export default Encryptor;
+const WORKER_PATH = path.resolve("../workers/encryptor.worker.ts");
+export { WORKER_PATH };

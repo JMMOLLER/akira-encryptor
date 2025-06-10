@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import generateSecretKey from "@utils/generateSecretKey";
-import generateNonce from "@crypto/generateNonce";
-import encryptText from "@crypto/encryptText";
-import decryptText from "@crypto/decryptText";
-import EncryptorClass from "@libs/Encryptor";
+import generateSecretKey from "../utils/generateSecretKey";
+import generateNonce from "../crypto/generateNonce";
+import encryptText from "../crypto/encryptText";
+import decryptText from "../crypto/decryptText";
+import EncryptorClass from "../libs/Encryptor";
 import sodium from "libsodium-wrappers";
-import { env } from "@configs/env";
+import { env } from "../configs/env";
 import hidefile from "hidefile";
 import path from "path";
 import fs from "fs";
@@ -21,13 +21,13 @@ beforeAll(async () => {
   await sodium.ready;
 
   Encryptor = await (
-    await import("@libs/Encryptor")
-  ).default.init("mypassword", {
+    await import("../libs/Encryptor")
+  ).default.init("mypassword", "dist/workers/encryptor.worker.js", {
     libraryPath: tempDir + "/test-library.json",
     allowExtraProps: true,
     minDelayPerStep: 0,
     maxThreads: 4,
-    silent: true,
+    silent: true
   });
 
   // Crear el directorio temporal y el archivo de prueba
@@ -224,13 +224,13 @@ describe("Encryptor", () => {
   it("should save extra properties in storage", async () => {
     const item = await Encryptor.encryptFile({
       filePath: testFilePath,
-      extraProps: { customProp: "value", anotherProp: 123 },
-    })
+      extraProps: { customProp: "value", anotherProp: 123 }
+    });
     const library = Encryptor.getStorage();
 
     expect(library.get(item.id)).toBeDefined();
     expect(library.get(item.id)?.extraProps).toBeDefined();
     expect(library.get(item.id)?.extraProps!.customProp).toBe("value");
     expect(library.get(item.id)?.extraProps!.anotherProp).toBe(123);
-  })
+  });
 });

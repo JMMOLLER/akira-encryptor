@@ -1,4 +1,4 @@
-import generateNonce from "./generateNonce";
+import generateNonce from "./generateNonce.js";
 import sodium from "libsodium-wrappers";
 
 /**

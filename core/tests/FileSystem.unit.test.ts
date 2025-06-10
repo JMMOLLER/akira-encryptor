@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { FileSystem } from "@libs/FileSystem";
+import { FileSystem } from "../libs/FileSystem";
 import fs from "fs";
 
 vi.mock("fs");

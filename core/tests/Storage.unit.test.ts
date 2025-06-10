@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
-import generateSecretKey from "@utils/generateSecretKey";
-import Encryptor from "@libs/Encryptor";
-import Storage from "@libs/Storage";
-import { env } from "@configs/env";
+import generateSecretKey from "../utils/generateSecretKey";
+import Encryptor from "../libs/Encryptor";
+import Storage from "../libs/Storage";
+import { env } from "../configs/env";
 import path from "path";
 import fs from "fs";
 
 const storagePath = path.resolve(__dirname, "../test-storage.json");
-const testItem: StorageItemType = {
+const testItem: StorageItem = {
   encryptedName: "test.txt",
   path: "test.txt",
   isHidden: false,
@@ -26,7 +26,7 @@ describe("Storage", () => {
   let encryptor: Encryptor;
 
   beforeEach(async () => {
-    encryptor = await Encryptor.init("mypassword");
+    encryptor = await Encryptor.init("mypassword", "dist/workers/encryptor.worker.js");
     storage = await Storage.init(
       generateSecretKey("mypassword"),
       env.ENCODING,

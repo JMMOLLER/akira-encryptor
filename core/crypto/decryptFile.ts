@@ -1,4 +1,4 @@
-import { FileSystem } from "../libs/FileSystem";
+import { FileSystem } from "../libs/FileSystem.js";
 import sodium from "libsodium-wrappers";
 import type { Writable } from "stream";
 
