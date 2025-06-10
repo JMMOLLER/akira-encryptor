@@ -1,0 +1,34 @@
+{
+  "name": "@akira-encryptor/core",
+  "version": "0.4.0-beta",
+  "author": "JMMOLLER",
+  "module": "index.ts",
+  "private": true,
+  "type": "module",
+  "types": "types.d.ts",
+  "scripts": {
+    "typecheck": "bun tsc --noEmit -p tsconfig.json",
+    "tests": "bun build workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vitest": "^3.2.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/hidefile": "^3.0.3",
+    "@types/libsodium-wrappers": "^0.7.14",
+    "chalk": "^5.4.1",
+    "cli-spinners": "^3.2.0",
+    "dotenv": "^16.5.0",
+    "hidefile": "^3.0.0",
+    "libsodium-wrappers": "^0.7.15",
+    "lowdb": "^7.0.1",
+    "nanoid": "^5.1.5",
+    "p-limit": "^6.2.0",
+    "piscina": "^5.0.0",
+    "zod": "^3.25.56"
+  }
+}

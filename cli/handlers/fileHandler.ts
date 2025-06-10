@@ -1,4 +1,4 @@
-import createSpinner from "@utils/createSpinner";
+import createSpinner from "@utilscreateSpinner";
 import { askForHideItem } from "@cli/prompts";
 import type { ProgressCallback } from "types";
 import formatBytes from "@utils/formatBytes";

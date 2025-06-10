@@ -85,7 +85,7 @@ class Encryptor {
       workerPath = path.resolve(
         baseDir,
         isTest
-          ? "../../tests/dist/encryptor.worker.cjs"
+          ? "../tests/dist/encryptor.worker.cjs"
           : "core/workers/encryptor.worker.ts"
       );
 
@@ -497,7 +497,7 @@ class Encryptor {
       this.SECRET_KEY,
       Encryptor.ENCODING
     );
-    let saved: StorageItemType = {
+    let saved: StorageItem = {
       originalName: path.basename(folderPath),
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
@@ -696,7 +696,7 @@ class Encryptor {
   /* ========================== STREAM HANDLERS ========================== */
   private async onEncryptWriteStreamFinish(
     props: EncryptWriteStreamFinish
-  ): Promise<StorageItemType> {
+  ): Promise<StorageItem> {
     const { filePath, tempPath, fileDir, fileStats, fileBaseName } = props;
     let savedItem: FileItem | undefined = undefined;
 

@@ -56,13 +56,13 @@ class Storage {
    */
   async set(item: Omit<FileItem, "id">): Promise<FileItem>;
   async set(item: Omit<FolderItem, "id">): Promise<FolderItem>;
-  async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItemType> {
+  async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItem> {
     const newId = generateUID();
     const newItem = {
       ...item,
       isHidden: !!item.isHidden,
       id: newId
-    } as StorageItemType;
+    } as StorageItem;
 
     Storage.db.data.encryptedItems.set(newItem.id, newItem);
     await Storage.db.write();
@@ -74,13 +74,13 @@ class Storage {
     return await Storage.db.write();
   }
 
-  async replace(id: string, item: StorageItemType) {
+  async replace(id: string, item: StorageItem) {
     const existingItem = this.get(id);
     if (!existingItem) {
       throw new Error(`Item with id ${id} not found`);
     }
 
-    const newItem: StorageItemType = { ...item, id };
+    const newItem: StorageItem = { ...item, id };
     Storage.db.data.encryptedItems.set(id, newItem);
     await Storage.db.write();
     return newItem;

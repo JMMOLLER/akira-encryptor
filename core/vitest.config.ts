@@ -12,11 +12,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@libs": resolve(__dirname, "core/libs"),
-      "@utils": resolve(__dirname, "core/utils"),
-      "@crypto": resolve(__dirname, "core/crypto"),
-      "@configs": resolve(__dirname, "core/configs"),
-      "@adapters": resolve(__dirname, "core/adapters"),
+      "@libs": resolve(__dirname, "libs"),
+      "@utils": resolve(__dirname, "utils"),
+      "@crypto": resolve(__dirname, "crypto"),
+      "@configs": resolve(__dirname, "configs"),
+      "@adapters": resolve(__dirname, "adapters"),
     }
   },
   plugins: []
