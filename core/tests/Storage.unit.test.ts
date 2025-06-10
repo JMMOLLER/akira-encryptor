@@ -1,3 +1,4 @@
+/// <reference path="../types.d.ts" />
 import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
 import generateSecretKey from "../utils/generateSecretKey";
 import Encryptor from "../libs/Encryptor";
@@ -26,7 +27,10 @@ describe("Storage", () => {
   let encryptor: Encryptor;
 
   beforeEach(async () => {
-    encryptor = await Encryptor.init("mypassword", "dist/workers/encryptor.worker.js");
+    encryptor = await Encryptor.init(
+      "mypassword",
+      "dist/workers/encryptor.worker.js"
+    );
     storage = await Storage.init(
       generateSecretKey("mypassword"),
       env.ENCODING,
