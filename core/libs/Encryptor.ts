@@ -7,6 +7,7 @@ import generateUID from "../utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
 import { env } from "../configs/env";
+import { fileURLToPath } from "url";
 import delay from "../utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
@@ -79,14 +80,16 @@ class Encryptor {
       let workerPath: string;
 
       // Use __dirname if available, otherwise fallback to process.cwd()
-      const baseDir =
-        typeof __dirname !== "undefined" ? __dirname : process.cwd();
+      // const baseDir =
+      //   typeof __dirname !== "undefined" ? __dirname : process.cwd();
+      const baseDir = path.dirname(fileURLToPath(import.meta.url));
+      console.log(`Base directory for worker: ${path.resolve}`);
       const isTest = process.env.NODE_ENV === "test";
       workerPath = path.resolve(
         baseDir,
         isTest
           ? "../tests/dist/encryptor.worker.cjs"
-          : "core/workers/encryptor.worker.ts"
+          : "../workers/encryptor.worker.js"
       );
 
       if (isTest) {
