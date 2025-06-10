@@ -49,6 +49,8 @@ class Encryptor {
    * @description `[ENG]` Initializes the Encryptor instance and the storage.
    * @description `[ES]` Inicializa la instancia de Encryptor y el almacenamiento.
    * @param password `string` - The password used to generate the secret key.
+   * @param workerPath `string` - The path to the worker script for encryption/decryption.
+   * @see See the root `package.json` for worker paths.
    */
   static async init(
     password: string,
@@ -900,5 +902,3 @@ class Encryptor {
 }
 
 export default Encryptor;
-const WORKER_PATH = path.resolve("../workers/encryptor.worker.ts");
-export { WORKER_PATH };

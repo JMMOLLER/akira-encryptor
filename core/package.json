@@ -2,16 +2,49 @@
   "name": "@akira-encryptor/core",
   "version": "0.4.0-beta",
   "author": "JMMOLLER",
-  "main": "dist/index.js",
+  "files": ["dist", "utils"],
   "type": "module",
-  "types": "dist/types/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/esm/utils/index.d.ts",
+        "default": "./dist/esm/utils/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/utils/index.d.cts",
+        "default": "./dist/cjs/utils/index.cjs"
+      }
+    },
+    "./workers/encryptor.worker": {
+      "import": "./dist/esm/workers/encryptor.worker.js",
+      "require": "./dist/cjs/workers/encryptor.worker.cjs"
+    }
+  },
   "scripts": {
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
     "tests": "bun run build && bun vitest",
-    "build": "rm -rf dist && tsc -p tsconfig.json && cp types.d.ts dist/types/types.d.ts && bun build workers/encryptor.worker.ts --target=node --format=cjs --outfile=dist/workers/encryptor.worker.cjs --minify"
+    "build": "rm -rf dist && tsc -p tsconfig.json && cp types.d.ts dist/types/types.d.ts && bun run build:workers",
+    "clean": "rm -rf dist",
+    "build:workers": "bun build ./workers/encryptor.worker.ts --target=node --format=cjs --outfile=./dist/cjs/workers/encryptor.worker.cjs --minify && bun build ./workers/encryptor.worker.ts --target=node --format=esm --outfile=./dist/esm/workers/encryptor.worker.js --minify",
+    "build:cjs": "tsup ./index.ts --format=cjs --platform=node --outDir=./dist/cjs/ --sourcemap --dts && tsup ./utils/index.ts --format=cjs --platform=node --outDir=./dist/cjs/utils/ --sourcemap --dts",
+    "build:esm": "tsup ./index.ts --format=esm --platform=node --outDir=./dist/esm/ --sourcemap --dts && tsup ./utils/index.ts --format=esm --platform=node --outDir=./dist/esm/utils/ --sourcemap --dts"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "tsup": "^8.5.0",
     "vitest": "^3.2.3"
   },
   "peerDependencies": {
