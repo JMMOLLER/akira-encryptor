@@ -1,0 +1,24 @@
+{
+  "name": "@akira-encryptor/cli",
+  "version": "0.4.0-beta",
+  "author": "JMMOLLER",
+  "module": "index.ts",
+  "type": "module",
+  "types": "types.d.ts",
+  "scripts": {
+    "start": "pnpm run index.ts",
+    "debug": "pnpx tsx index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cli-progress": "^3.11.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@akira-encryptor/core": "../core",
+    "cli-progress": "^3.12.0",
+    "inquirer": "^12.6.3"
+  }
+}

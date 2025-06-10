@@ -1,8 +1,6 @@
-import createSpinner from "@utilscreateSpinner";
-import { askForHideItem } from "@cli/prompts";
-import type { ProgressCallback } from "types";
-import formatBytes from "@utils/formatBytes";
-import EncryptorClass from "@libs/Encryptor";
+import { default as EncryptorClass } from "@akira-encryptor/core";
+import * as utils from "@akira-encryptor/core/utils";
+import { askForHideItem } from "../prompts";
 import cliProgress from "cli-progress";
 import path from "path";
 
@@ -28,16 +26,16 @@ async function handleFileAction(props: HanlderProps) {
 
   const handleProgress: ProgressCallback = (processed, total) => {
     if (!init) {
-      formattedTotal = formatBytes(total);
+      formattedTotal = utils.formatBytes(total);
       progressBar.start(total, 0, {
-        processed: formatBytes(0),
+        processed: utils.formatBytes(0),
         formattedTotal
       });
       init = true;
     }
 
     progressBar.update(processed, {
-      processed: formatBytes(processed),
+      processed: utils.formatBytes(processed),
       formattedTotal
     });
 
@@ -51,17 +49,21 @@ async function handleFileAction(props: HanlderProps) {
     progressBar.stop();
     // Print the success or error message
     if (!error) {
-      createSpinner(
-        `Archivo '${filePath}' ${
-          action === "encrypt" ? "encriptado" : "desencriptado"
-        } correctamente.`
-      ).succeed();
+      utils
+        .createSpinner(
+          `Archivo '${filePath}' ${
+            action === "encrypt" ? "encriptado" : "desencriptado"
+          } correctamente.`
+        )
+        .succeed();
     } else {
-      createSpinner(
-        `Error al ${
-          action === "encrypt" ? "encriptar" : "desencriptar"
-        } el archivo '${filePath}'.`
-      ).fail();
+      utils
+        .createSpinner(
+          `Error al ${
+            action === "encrypt" ? "encriptar" : "desencriptar"
+          } el archivo '${filePath}'.`
+        )
+        .fail();
     }
   };
 

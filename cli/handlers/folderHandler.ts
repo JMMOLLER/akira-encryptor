@@ -1,9 +1,6 @@
-import createSpinner from "@utils/createSpinner";
-import type { ProgressCallback } from "types";
-import { askForHideItem } from "@cli/prompts";
-import formatBytes from "@utils/formatBytes";
-import EncryptorClass from "@libs/Encryptor";
-import type Encryptor from "@libs/Encryptor";
+import { default as EncryptorClass } from "@akira-encryptor/core";
+import * as utils from "@akira-encryptor/core/utils";
+import { askForHideItem } from "../prompts";
 import cliProgress from "cli-progress";
 import path from "path";
 
@@ -28,16 +25,16 @@ async function handleFolderAction(props: HanlderProps) {
 
   const handleProgress: ProgressCallback = (processed, total) => {
     if (!init) {
-      formattedTotal = formatBytes(total);
+      formattedTotal = utils.formatBytes(total);
       progressBar.start(total, 0, {
-        processed: formatBytes(0),
+        processed: utils.formatBytes(0),
         formattedTotal
       });
       init = true;
     }
 
     progressBar.update(processed, {
-      processed: formatBytes(processed),
+      processed: utils.formatBytes(processed),
       formattedTotal
     });
 
@@ -51,17 +48,21 @@ async function handleFolderAction(props: HanlderProps) {
     progressBar.stop();
     // Print the success or error message
     if (!error) {
-      createSpinner(
-        `Carpeta '${folderPath}' ${
-          action === "encrypt" ? "encriptada" : "desencriptada"
-        } correctamente.`
-      ).succeed();
+      utils
+        .createSpinner(
+          `Carpeta '${folderPath}' ${
+            action === "encrypt" ? "encriptada" : "desencriptada"
+          } correctamente.`
+        )
+        .succeed();
     } else {
-      createSpinner(
-        `Error al ${
-          action === "encrypt" ? "encriptar" : "desencriptar"
-        } la carpeta '${folderPath}'.`
-      ).fail();
+      utils
+        .createSpinner(
+          `Error al ${
+            action === "encrypt" ? "encriptar" : "desencriptar"
+          } la carpeta '${folderPath}'.`
+        )
+        .fail();
     }
   };
 
@@ -106,7 +107,7 @@ async function handleFolderAction(props: HanlderProps) {
   }
 }
 
-async function handleIsHiddenFile(folderPath: string, Encryptor: Encryptor) {
+async function handleIsHiddenFile(folderPath: string, Encryptor: EncryptorClass) {
   const storage = Encryptor.getStorage();
   const id = path.basename(folderPath).replace(/^\./, "");
   const item = storage.get(id);
