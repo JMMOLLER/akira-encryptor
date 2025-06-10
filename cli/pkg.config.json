@@ -5,8 +5,6 @@
   ],
   "assets": [
     "dist/worker.js",
-    "node_modules/@akira-encryptor/core/dist/workers/encryptor.worker.cjs",
-    "dist/nice.win32-x64-msvc-*.node",
-    "node_modules/fswin/**/*.node"
+    "node_modules/@akira-encryptor/core/dist/cjs/workers/encryptor.worker.cjs"
   ]
 }
