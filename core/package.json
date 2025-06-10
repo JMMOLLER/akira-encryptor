@@ -2,13 +2,13 @@
   "name": "@akira-encryptor/core",
   "version": "0.4.0-beta",
   "author": "JMMOLLER",
-  "module": "index.ts",
-  "private": true,
+  "main": "dist/index.js",
   "type": "module",
-  "types": "types.d.ts",
+  "types": "dist/types/index.d.ts",
   "scripts": {
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
-    "tests": "bun build workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest"
+    "tests": "bun build workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest",
+    "build": "tsc -p tsconfig.json && cp types.d.ts dist/types/types.d.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

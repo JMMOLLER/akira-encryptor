@@ -1,9 +1,11 @@
-import type { ReadableStream, WritableStream } from "stream";
-import type createSpinner from "@utils/createSpinner";
+import type createSpinner from "./utils/createSpinner";
+import type { Readable, Writable } from "stream";
+import type { Stats } from "fs";
+import type { Low } from "lowdb";
 
 declare global {
   interface WorkerTask {
-    taskType: CliAction;
+    taskType: 'encrypt' | 'decrypt';
     filePath: string;
     SECRET_KEY: Uint8Array;
     tempPath: string;
@@ -134,9 +136,9 @@ declare global {
     InternalFlow & { folderItem?: FolderItem };
 
   interface StreamHandlerProps {
-    logStream: WritableStream;
-    readStream: ReadableStream;
-    writeStream: WritableStream;
+    logStream: Writable;
+    readStream: Readable;
+    writeStream: Writable;
     reject: (error?: any) => void;
     resolve: (value?: any) => void;
     /**
@@ -150,7 +152,7 @@ declare global {
     filePath: string;
     fileDir: string;
     error: Error;
-    fileStats: fs.Stats;
+    fileStats: Stats;
     streamName: "writeStream" | "readStream";
     onEnd: FileEncryptor["onEnd"];
     extraProps?: Record<string, JsonValue>;
@@ -234,3 +236,8 @@ export interface ProgressBar {
    */
   incompleteChar: string;
 }
+
+export type ProgressCallback = (
+  processedBytes: number,
+  totalBytes: number
+) => void;

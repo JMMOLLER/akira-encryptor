@@ -1,4 +1,4 @@
-import type { ProgressBar } from "types";
+import type { ProgressBar } from "../types";
 
 export default function createBar(props: ProgressBar) {
   const { progress, size, completeChar, incompleteChar } = props;
