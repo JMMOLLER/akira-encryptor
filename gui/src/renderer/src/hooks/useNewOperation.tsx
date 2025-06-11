@@ -1,3 +1,4 @@
+import type { JsonValue } from '@akira-encryptor/core/types'
 import { usePendingOperation } from './usePendingOperation'
 import { useEncryptedItems } from './useEncryptedItems'
 import { useUserConfig } from './useUserConfig'
