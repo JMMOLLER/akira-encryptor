@@ -2,6 +2,5 @@ import { FileSystem } from "./libs/FileSystem";
 import Encryptor from "./libs/Encryptor";
 import Storage from "./libs/Storage";
 
-export type { ProgressCallback } from "./types";
-export { FileSystem, Storage };
+export { FileSystem, Storage, Encryptor };
 export default Encryptor;

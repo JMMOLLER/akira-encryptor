@@ -31,12 +31,11 @@
     "noEmit": false
   },
   "include": [
-    "index.ts",
+    "globals.d.ts",
+    "types.ts",
     "libs",
     "utils",
-    "crypto",
-    "adapters",
-    "configs",
-    "workers"
+    "workers",
+    "index.ts"
   ]
 }

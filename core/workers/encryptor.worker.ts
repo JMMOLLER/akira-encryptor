@@ -29,3 +29,15 @@ export default async function run(params: WorkerTask) {
     });
   }
 }
+
+let workerPath: string | undefined;
+
+if (typeof import.meta !== "undefined" && import.meta.url) {
+  workerPath = import.meta.url;
+} else if (typeof __filename !== "undefined") {
+  workerPath = __filename;
+} else {
+  workerPath = undefined;
+}
+
+export { workerPath };

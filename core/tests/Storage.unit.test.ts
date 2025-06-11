@@ -1,4 +1,4 @@
-/// <reference path="../types.d.ts" />
+/// <reference path="../globals.d.ts" />
 import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
 import generateSecretKey from "../utils/generateSecretKey";
 import Encryptor from "../libs/Encryptor";
