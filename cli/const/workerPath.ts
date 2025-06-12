@@ -1,5 +1,5 @@
+import { workerPath as baseWorkerPath } from "@akira-encryptor/core/workers/encryptor";
+
 export const workerPath = process.pkg
-  ? process.pkg.path.resolve(
-      "../../cli/node_modules/@akira-encryptor/core/dist/cjs/workers/encryptor.worker.cjs"
-    )
-  : import.meta.resolve("@akira-encryptor/core/workers/encryptor.worker");
+  ? process.pkg.path.resolve("encryptor.worker.js")
+  : baseWorkerPath!;

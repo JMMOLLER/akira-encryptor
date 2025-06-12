@@ -1,3 +1,4 @@
+import type { FileItem, FolderItem } from "@akira-encryptor/core/types";
 import Encryptor, { FileSystem } from "@akira-encryptor/core";
 import * as utils from "@akira-encryptor/core/utils";
 import { workerPath } from "./const/workerPath";

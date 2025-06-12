@@ -8,7 +8,7 @@ const { name, author, version, description } = JSON.parse(
 );
 
 // Build configuration for the executable
-const exeName = `${name}-v${version}.exe`;
+const exeName = `cli-v${version}.exe`;
 const outputPath = resolve("dist", exeName);
 const entryFile = resolve("dist", "index.js");
 // const iconPath = resolve("gui", "build", "icon.ico");

@@ -1,5 +1,6 @@
-import { default as EncryptorClass } from "@akira-encryptor/core";
+import type { FileEncryptor, ProgressCallback } from "@akira-encryptor/core/types";
 import * as utils from "@akira-encryptor/core/utils";
+import EncryptorClass from "@akira-encryptor/core";
 import { workerPath } from "../const/workerPath";
 import { askForHideItem } from "../prompts";
 import cliProgress from "cli-progress";

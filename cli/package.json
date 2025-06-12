@@ -7,12 +7,13 @@
   "type": "module",
   "types": "types.d.ts",
   "scripts": {
+    "clean": "rm -rf dist",
     "start": "pnpm run index.ts",
     "debug": "pnpx tsx index.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
-    "build": "rm -rf dist && bun run build:piscina && bun run build:main",
+    "build": "bun run clean && bun run build:workers && bun run build:main",
     "build:main": "esbuild ./index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js --external:fswin --external:@napi-rs/nice-win32-x64-msvc --external:\"*.node\"",
-    "build:piscina": "esbuild node_modules/piscina/dist/worker.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/worker.js --external:fswin --external:@napi-rs/nice-win32-x64-msvc --external:\"*.node\"",
+    "build:workers": "esbuild node_modules/piscina/dist/worker.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/worker.js --external:fswin --external:@napi-rs/nice-win32-x64-msvc --external:\"*.node\" && esbuild ./node_modules/@akira-encryptor/core/workers/encryptor.worker.ts --bundle --platform=node --outdir=dist --target=node18 --format=cjs",
     "build:win": "bun run build && bun run scripts/build/generate-windows-binary.js"
   },
   "devDependencies": {

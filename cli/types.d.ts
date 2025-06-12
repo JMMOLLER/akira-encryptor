@@ -1,5 +1,3 @@
-import { ProgressCallback as PC } from "@akira-encryptor/core";
-
 declare global {
   declare namespace NodeJS {
     interface Process {
@@ -13,7 +11,6 @@ declare global {
     }
   }
 
-  type ProgressCallback = PC;
   type CliAction = "encrypt" | "decrypt";
   type CliActionFor = "file" | "folder";
 }
