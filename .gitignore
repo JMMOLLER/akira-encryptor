@@ -177,6 +177,7 @@ dist
 # Dev
 library.json
 demo/**/*.mp4
+demo/**/*.mkv
 *.enc
 test.ts
 pendings.md
