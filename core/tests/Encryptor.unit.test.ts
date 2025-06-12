@@ -22,7 +22,7 @@ beforeAll(async () => {
 
   Encryptor = await (
     await import("../libs/Encryptor")
-  ).default.init("mypassword", "dist/workers/encryptor.worker.js", {
+  ).default.init("mypassword", "dist/esm/workers/encryptor.worker.js", {
     libraryPath: tempDir + "/test-library.json",
     allowExtraProps: true,
     minDelayPerStep: 0,

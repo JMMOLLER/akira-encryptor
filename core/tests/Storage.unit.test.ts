@@ -1,7 +1,6 @@
 /// <reference path="../globals.d.ts" />
 import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
 import generateSecretKey from "../utils/generateSecretKey";
-import Encryptor from "../libs/Encryptor";
 import Storage from "../libs/Storage";
 import { env } from "../configs/env";
 import path from "path";
@@ -24,13 +23,8 @@ afterAll(() => {
 
 describe("Storage", () => {
   let storage: Storage;
-  let encryptor: Encryptor;
 
   beforeEach(async () => {
-    encryptor = await Encryptor.init(
-      "mypassword",
-      "dist/workers/encryptor.worker.js"
-    );
     storage = await Storage.init(
       generateSecretKey("mypassword"),
       env.ENCODING,
