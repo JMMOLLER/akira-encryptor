@@ -11,7 +11,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "electron-vite preview",
-    "dev": "cp ../.env .env && electron-vite dev",
+    "dev": "cp ../core/.env .env && electron-vite dev",
     "build:core-worker": "cd .. && npm run build:worker",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
