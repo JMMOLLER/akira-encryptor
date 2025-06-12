@@ -1,10 +1,15 @@
+import type * as AkiraTypes from '@akira-encryptor/core/types'
 import type { ItemType } from 'antd/es/menu/interface'
 import { useAppProps } from 'antd/es/app/context'
 import type { OpenDialogOptions } from 'electron'
 import { SevenZipOptions } from 'node-7z'
-import { StorageItem } from '../types'
 
 declare global {
+  type StorageItem = AkiraTypes.StorageItem
+  type FolderEncryptor = AkiraTypes.FolderEncryptor
+  type FolderDecryptor = AkiraTypes.FolderDecryptor
+  type FileEncryptor = AkiraTypes.FileEncryptor
+  type FileDecryptor = AkiraTypes.FileDecryptor
   type OpenExplorerProps = {
     title?: string
     properties: OpenDialogOptions['properties']

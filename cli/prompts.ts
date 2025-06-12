@@ -1,12 +1,12 @@
-import normalizePath from "@utils/normalizePath";
-import { FileSystem } from "@libs/FileSystem";
-import Encryptor from "@libs/Encryptor";
-import { env } from "@configs/env";
+import type { FileItem, FolderItem } from "@akira-encryptor/core/types";
+import Encryptor, { FileSystem } from "@akira-encryptor/core";
+import * as utils from "@akira-encryptor/core/utils";
+import { workerPath } from "./const/workerPath";
 import inquirer from "inquirer";
 import fs from "fs";
 
 interface HidePromptOptions {
-  actionFor: CliType;
+  actionFor: CliActionFor;
   Encryptor: Encryptor;
   item: FileItem | FolderItem;
 }
@@ -42,7 +42,7 @@ export async function askForOtherOperation() {
 }
 
 // Note: If you enter an incorrect password, you will have to restart the program
-let password: string | undefined = env.PASSWORD;
+let password: string | undefined = undefined;
 
 export async function askUserActions() {
   const { action } = await inquirer.prompt<{ action: CliAction }>([
@@ -57,7 +57,7 @@ export async function askUserActions() {
     }
   ]);
 
-  const { type } = await inquirer.prompt<{ type: CliType }>([
+  const { type } = await inquirer.prompt<{ type: CliActionFor }>([
     {
       type: "list",
       name: "type",
@@ -74,7 +74,7 @@ export async function askUserActions() {
   let path: string = "";
 
   if (password && action === "decrypt") {
-    const encryptor = await Encryptor.init(password, {
+    const encryptor = await Encryptor.init(password, workerPath, {
       minDelayPerStep: 0,
       silent: true
     });
@@ -118,9 +118,9 @@ export async function askUserActions() {
         message: `Ruta de ${
           type === "folder" ? "la carpeta" : "el archivo"
         } a ${action === "encrypt" ? "encriptar" : "desencriptar"}:`,
-        filter: normalizePath,
+        filter: utils.normalizePath,
         validate: (v) => {
-          const input = normalizePath(v);
+          const input = utils.normalizePath(v);
 
           if (!fs.existsSync(input)) {
             return "La ruta especificada no existe.";
@@ -139,7 +139,7 @@ export async function askUserActions() {
   }
 
   if (!password) {
-    const storeExists = FileSystem.getInstance().fileExists(env.LIBRARY_PATH);
+    const storeExists = FileSystem.getInstance().fileExists("./library.json");
     const { password: pwd } = await inquirer.prompt<{ password: string }>([
       {
         type: "password",

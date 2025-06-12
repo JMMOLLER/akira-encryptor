@@ -4,6 +4,7 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*.tsx",
     "src/renderer/src/**/*.ts",
+    "../core/globals.d.ts",
     "src/preload/*.d.ts",
     "../core/utils/*",
     "types.d.ts",
@@ -17,7 +18,7 @@
         "src/renderer/src/*"
       ],
       "@gui/utils/*": ["./utils/*"],
-      "@libs/*": ["../core/libs/*"],
+      // "@libs/*": ["../core/libs/*"],
       "@workers/*": ["./workers/*"],
       "@utils/*": ["../core/utils/*"],
       "@gui/configs/*": ["./configs/*"],

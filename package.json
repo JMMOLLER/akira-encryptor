@@ -1,47 +1,21 @@
 {
   "name": "akira-encryptor",
-  "module": "cli/main.ts",
   "version": "0.4.0-beta",
-  "description": "A CLI tool for encrypting and decrypting files and folders using libsodium.",
+  "private": true,
+  "workspaces": [
+    "core",
+    "cli",
+    "gui"
+  ],
   "author": "JMMOLLER",
-  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JMMOLLER/akira-encryptor"
+  },
   "scripts": {
-    "tests": "bun build core/workers/encryptor.worker.ts --target=node --format=cjs --outfile=./tests/dist/encryptor.worker.cjs --minify && bun vitest",
-    "start": "bun run scripts/run/start.js",
-    "debug": "bunx tsx cli/main.ts",
-    "typecheck": "bun tsc --noEmit -p tsconfig.json",
-    "build": "bun run typecheck && bun run build:worker && bun run build:main && bun run build:piscina-worker",
-    "build:win": "bun run build && node scripts/build/generate-windows-binary.js",
-    "build:worker": "esbuild core/workers/encryptor.worker.ts --bundle --platform=node --target=node18 --outfile=dist/core/workers/encryptor.worker.cjs --format=cjs --minify",
-    "build:main": "esbuild cli/main.ts --bundle --platform=node --target=node18 --outfile=dist/main.cjs --format=cjs --external:core/workers/encryptor.worker.cjs --external:fswin --external:hidefile --minify",
-    "build:piscina-worker": "node scripts/build/fixPiscinaWorker.js"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/cli-progress": "^3.11.6",
-    "@types/hidefile": "^3.0.3",
-    "@types/libsodium-wrappers": "^0.7.14",
-    "@yao-pkg/pkg": "^6.5.1",
-    "esbuild": "^0.25.4",
-    "rcedit": "^4.0.1",
-    "tsx": "^4.19.3",
-    "vitest": "^3.1.1"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "chalk": "^5.4.1",
-    "cli-progress": "^3.12.0",
-    "cli-spinners": "^3.2.0",
-    "dotenv": "^16.5.0",
-    "hidefile": "^3.0.0",
-    "inquirer": "^12.5.2",
-    "libsodium-wrappers": "^0.7.15",
-    "lowdb": "^7.0.1",
-    "nanoid": "^5.1.5",
-    "p-limit": "^6.2.0",
-    "piscina": "^5.0.0",
-    "zod": "^3.24.2"
+    "bootstrap": "cd core && pnpm i && cd ../cli && pnpm i && cd ../gui && pnpm i",
+    "build": "cd core && pnpm run build",
+    "typecheck": "cd core && bun run typecheck && cd ../cli && bun run typecheck && cd ../gui && bun run typecheck"
   }
 }

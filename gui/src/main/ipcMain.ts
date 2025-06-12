@@ -1,8 +1,9 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import { workerPath } from '@akira-encryptor/core/workers/encryptor'
 import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
+import Encryptor from '@akira-encryptor/core'
 import CONF from '@gui/configs/electronConf'
-import Encryptor from '@core/libs/Encryptor'
 import moment from 'moment'
 import path from 'path'
 import fs from 'fs'
@@ -18,7 +19,7 @@ export default function registerIpcMain() {
     try {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
-      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), {
+      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), workerPath!, {
         allowExtraProps: true,
         minDelayPerStep: 0,
         silent: true

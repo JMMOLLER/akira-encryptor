@@ -1,0 +1,34 @@
+{
+  "name": "@akira-encryptor/cli",
+  "version": "0.4.0-beta",
+  "author": "JMMOLLER",
+  "module": "index.ts",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "types.d.ts",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "start": "pnpm run index.ts",
+    "debug": "pnpx tsx index.ts",
+    "typecheck": "bun tsc --noEmit -p tsconfig.json",
+    "build": "bun run clean && bun run build:workers && bun run build:main",
+    "build:main": "esbuild ./index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js --external:fswin --external:@napi-rs/nice-win32-x64-msvc --external:\"*.node\"",
+    "build:workers": "esbuild node_modules/piscina/dist/worker.js --bundle --platform=node --target=node18 --format=cjs --outfile=dist/worker.js --external:fswin --external:@napi-rs/nice-win32-x64-msvc --external:\"*.node\" && esbuild ./node_modules/@akira-encryptor/core/workers/encryptor.worker.ts --bundle --platform=node --outdir=dist --target=node18 --format=cjs",
+    "build:win": "bun run build && bun run scripts/build/generate-windows-binary.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cli-progress": "^3.11.6",
+    "esbuild": "^0.25.5",
+    "piscina": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@akira-encryptor/core": "../core",
+    "@yao-pkg/pkg": "^6.5.1",
+    "cli-progress": "^3.12.0",
+    "inquirer": "^12.6.3"
+  }
+}

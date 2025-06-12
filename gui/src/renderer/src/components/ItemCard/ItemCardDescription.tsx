@@ -1,7 +1,7 @@
 import formatBytes from '@utils/formatBytes'
 import { Tooltip } from 'antd'
 
-const ItemCardDescription = ({ item }: { item: StorageItemType }) => (
+const ItemCardDescription = ({ item }: { item: StorageItem }) => (
   <ul>
     <li className="truncate">
       <span className="font-semibold">Nombre:</span>{' '}

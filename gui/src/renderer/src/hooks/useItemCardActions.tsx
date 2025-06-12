@@ -1,15 +1,15 @@
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { useNewOperation } from '@renderer/hooks/useNewOperation'
-import generateUID from '@utils/generateUID'
 import { Popconfirm, Tag, Tooltip } from 'antd'
+import generateUID from '@utils/generateUID'
+import formatBytes from '@utils/formatBytes'
 import * as Icons from '@ant-design/icons'
 import useApp from 'antd/es/app/useApp'
 import { useDrawer } from './useDrawer'
 import delay from '@utils/delay'
-import formatBytes from '@utils/formatBytes'
 
 interface Props {
-  item: StorageItemType
+  item: StorageItem
 }
 
 const useItemCardActions = ({ item }: Props) => {

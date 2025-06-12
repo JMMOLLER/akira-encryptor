@@ -8,20 +8,21 @@ const { name, author, version, description } = JSON.parse(
 );
 
 // Build configuration for the executable
-const exeName = `${name}-cli-v${version}.exe`;
-const outputPath = resolve("cli", "dist", exeName);
-const entryFile = resolve("dist", "main.cjs");
-const iconPath = resolve("gui", "build", "icon.ico");
+const exeName = `cli-v${version}.exe`;
+const outputPath = resolve("dist", exeName);
+const entryFile = resolve("dist", "index.js");
+// const iconPath = resolve("gui", "build", "icon.ico");
 
 try {
   console.log("🔨 Building executable with pkg...");
+  console.log(entryFile)
   await pkg.exec([
     entryFile,
     "--output",
     outputPath,
     "--config",
     "pkg.config.json",
-    // "--debug",
+    "--debug",
   ]);
 
   console.log("✅ Executable generated successfully.");

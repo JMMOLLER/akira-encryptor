@@ -1,6 +1,6 @@
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
-import delay from "@utils/delay";
+import delay from "../utils/delay";
 import path from "path";
 import fs from "fs";
 

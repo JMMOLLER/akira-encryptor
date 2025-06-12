@@ -1,9 +1,9 @@
+import SettingsForm from '@renderer/components/SettingsForm'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
+import type { MenuInfo } from 'rc-menu/lib/interface'
 import items from '@renderer/constants/menuItems'
-import { MenuInfo } from 'rc-menu/lib/interface'
 import Sider from 'antd/es/layout/Sider'
 import { useState } from 'react'
-import SettingsForm from '@renderer/components/SettingsForm'
 
 import { Menu } from 'antd'
 

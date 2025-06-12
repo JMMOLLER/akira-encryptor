@@ -1,0 +1,81 @@
+{
+  "name": "@akira-encryptor/core",
+  "description": "A tool for encrypting and decrypting files and folders using libsodium.",
+  "version": "0.4.0-beta",
+  "author": "JMMOLLER",
+  "files": [
+    "dist",
+    "utils",
+    "workers"
+  ],
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/types/utils/index.d.ts",
+        "default": "./dist/esm/utils/index.js"
+      },
+      "require": {
+        "types": "./dist/types/utils/index.d.ts",
+        "default": "./dist/cjs/utils/index.cjs"
+      }
+    },
+    "./types": {
+      "import": "./dist/types/types.d.ts",
+      "require": "./dist/types/types.d.ts"
+    },
+    "./workers/*": {
+      "import": {
+        "types": "./dist/types/workers/*.worker.d.ts",
+        "default": "./dist/esm/workers/*.worker.js"
+      },
+      "require": {
+        "types": "./dist/types/workers/*.worker.d.ts",
+        "default": "./dist/cjs/workers/*.worker.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "typecheck": "bun tsc --noEmit -p tsconfig.json",
+    "tests": "bun run build && bun vitest",
+    "build": "bun run clean && bun run build:types && tsup && bun run scripts/patch-cjs-requires.ts && bun run scripts/patch-mjs-imports.ts",
+    "build:types": "bun run typecheck && tsc --emitDeclarationOnly"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "glob": "^11.0.2",
+    "tsup": "^8.5.0",
+    "vitest": "^3.2.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/hidefile": "^3.0.3",
+    "@types/libsodium-wrappers": "^0.7.14",
+    "chalk": "^5.4.1",
+    "cli-spinners": "^3.2.0",
+    "dotenv": "^16.5.0",
+    "hidefile": "^3.0.0",
+    "libsodium-wrappers": "^0.7.15",
+    "lowdb": "^7.0.1",
+    "nanoid": "^5.1.5",
+    "p-limit": "^6.2.0",
+    "piscina": "^5.0.0",
+    "zod": "^3.25.56"
+  }
+}

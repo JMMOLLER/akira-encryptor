@@ -1,6 +1,6 @@
 import * as Icons from '@ant-design/icons'
 
-const ItemCardAvatar = ({ item }: { item: StorageItemType }) => {
+const ItemCardAvatar = ({ item }: { item: StorageItem }) => {
   const className = 'w-8 h-8 text-5xl'
 
   if (item.type === 'folder') {

@@ -1,13 +1,13 @@
-import generateSecretKey from "@utils/generateSecretKey";
-import createSpinner from "@utils/createSpinner";
+import generateSecretKey from "../utils/generateSecretKey";
+import createSpinner from "../utils/createSpinner";
 import { MessageChannel } from "worker_threads";
-import encryptText from "@crypto/encryptText";
-import decryptText from "@crypto/decryptText";
-import generateUID from "@utils/generateUID";
+import encryptText from "../crypto/encryptText";
+import decryptText from "../crypto/decryptText";
+import generateUID from "../utils/generateUID";
 import { FileSystem } from "./FileSystem";
 import sodium from "libsodium-wrappers";
-import { env } from "@configs/env";
-import delay from "@utils/delay";
+import { env } from "../configs/env";
+import delay from "../utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
 import Piscina from "piscina";
@@ -26,6 +26,7 @@ class Encryptor {
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
   private static LOG = env.LOG;
+  private workerPath!: string;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
 
@@ -48,8 +49,14 @@ class Encryptor {
    * @description `[ENG]` Initializes the Encryptor instance and the storage.
    * @description `[ES]` Inicializa la instancia de Encryptor y el almacenamiento.
    * @param password `string` - The password used to generate the secret key.
+   * @param workerPath `string` - The path to the worker script for encryption/decryption.
+   * @see See the root `package.json` for worker paths.
    */
-  static async init(password: string, options?: EncryptorOptions) {
+  static async init(
+    password: string,
+    workerPath: string,
+    options?: EncryptorOptions
+  ) {
     await sodium.ready;
 
     const instance = new Encryptor(password);
@@ -58,6 +65,7 @@ class Encryptor {
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
+    instance.workerPath = workerPath;
 
     // Initialize worker pool
     instance.startWorkerPool();
@@ -76,28 +84,11 @@ class Encryptor {
    */
   startWorkerPool() {
     if (!Encryptor.workerPool) {
-      let workerPath: string;
-
-      // Use __dirname if available, otherwise fallback to process.cwd()
-      const baseDir =
-        typeof __dirname !== "undefined" ? __dirname : process.cwd();
-      const isTest = process.env.NODE_ENV === "test";
-      workerPath = path.resolve(
-        baseDir,
-        isTest
-          ? "../../tests/dist/encryptor.worker.cjs"
-          : "core/workers/encryptor.worker.ts"
-      );
-
-      if (isTest) {
-        console.log(`Using worker path for tests: ${workerPath}`);
-      }
-
       Encryptor.workerPool = new Piscina({
         maxThreads: this.MAX_THREADS,
         concurrentTasksPerWorker: 1,
-        filename: workerPath,
-        idleTimeout: 30000, // 30 seconds
+        filename: this.workerPath,
+        idleTimeout: 30000,
         minThreads: 1
       });
     }
@@ -497,7 +488,7 @@ class Encryptor {
       this.SECRET_KEY,
       Encryptor.ENCODING
     );
-    let saved: StorageItemType = {
+    let saved: StorageItem = {
       originalName: path.basename(folderPath),
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
@@ -696,7 +687,7 @@ class Encryptor {
   /* ========================== STREAM HANDLERS ========================== */
   private async onEncryptWriteStreamFinish(
     props: EncryptWriteStreamFinish
-  ): Promise<StorageItemType> {
+  ): Promise<StorageItem> {
     const { filePath, tempPath, fileDir, fileStats, fileBaseName } = props;
     let savedItem: FileItem | undefined = undefined;
 

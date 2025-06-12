@@ -1,6 +1,6 @@
-import generateNonce from "@crypto/generateNonce";
+import generateNonce from "../crypto/generateNonce";
 import type { Readable, Writable } from "stream";
-import { FileSystem } from "@libs/FileSystem";
+import { FileSystem } from "../libs/FileSystem";
 import sodium from "libsodium-wrappers";
 
 interface FileEncryptionProps {

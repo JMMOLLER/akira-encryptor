@@ -1,6 +1,7 @@
+import type { ProgressCallback } from '@akira-encryptor/core/types'
+import { workerPath } from '@akira-encryptor/core/workers/encryptor'
 import { parentPort, workerData as wd } from 'worker_threads'
-import { ProgressCallback } from '../../../types'
-import Encryptor from '@core/libs/Encryptor'
+import Encryptor from '@akira-encryptor/core'
 
 type PayloadBase = Partial<FolderEncryptor> &
   Partial<FolderDecryptor> &
@@ -15,7 +16,7 @@ async function main() {
   const { srcPath, itemId, extraProps } = workerData
   const password = Buffer.from(workerData.password)
 
-  const ENCRYPTOR = await Encryptor.init(password.toString(), {
+  const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath!, {
     allowExtraProps: true,
     minDelayPerStep: 0,
     silent: true

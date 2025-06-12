@@ -3,7 +3,7 @@ import { AntdIconProps } from '@ant-design/icons/lib/components/AntdIcon'
 import { MessageInstance } from 'antd/es/message/interface'
 
 type OnClickProps = {
-  item: StorageItemType
+  item: StorageItem
   password: string
 }
 

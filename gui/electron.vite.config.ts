@@ -13,26 +13,26 @@ export default defineConfig({
       externalizeDepsPlugin(),
       viteStaticCopy({
         targets: [
-          {
-            src: '../node_modules/piscina/dist/worker.js',
-            dest: './'
-          },
-          {
-            src: '../node_modules/piscina/dist/symbols.js',
-            dest: './'
-          },
-          {
-            src: '../node_modules/piscina/dist/common.js',
-            dest: './'
-          },
-          {
-            src: '../dist/core/workers/encryptor.worker.cjs',
-            rename: 'encryptor.worker.js',
-            dest: './core/workers'
-          }
+          // {
+          //   src: '../node_modules/piscina/dist/worker.js',
+          //   dest: './'
+          // },
+          // {
+          //   src: '../node_modules/piscina/dist/symbols.js',
+          //   dest: './'
+          // },
+          // {
+          //   src: '../node_modules/piscina/dist/common.js',
+          //   dest: './'
+          // },
+          // {
+          //   src: '../dist/core/workers/encryptor.worker.cjs',
+          //   rename: 'encryptor.worker.js',
+          //   dest: './core/workers'
+          // }
         ]
-      }),
-      adjustWorkerImports()
+      })
+      // adjustWorkerImports()
     ],
     resolve: {
       alias: {
@@ -49,6 +49,13 @@ export default defineConfig({
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          format: 'es'
+        }
+      }
     }
   },
   preload: {

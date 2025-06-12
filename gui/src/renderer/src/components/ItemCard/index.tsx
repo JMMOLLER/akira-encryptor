@@ -4,7 +4,7 @@ import ItemCardAvatar from './ItemCardAvatar'
 import { Card } from 'antd'
 
 interface ItemCardProps {
-  item: StorageItemType
+  item: StorageItem
 }
 
 const ItemCard = ({ item }: ItemCardProps) => {

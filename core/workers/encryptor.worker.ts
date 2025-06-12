@@ -1,5 +1,5 @@
-import decryptFile from "@crypto/decryptFile";
-import encryptFile from "@crypto/encryptFile";
+import decryptFile from "../crypto/decryptFile";
+import encryptFile from "../crypto/encryptFile";
 
 export default async function run(params: WorkerTask) {
   const { taskType, filePath, tempPath, SECRET_KEY, blockSize } = params;
@@ -23,9 +23,21 @@ export default async function run(params: WorkerTask) {
 
     return;
   } catch (error) {
-    postMessage({
+    params.port?.postMessage({
       type: "error",
       error: error instanceof Error ? error.message : String(error)
     });
   }
 }
+
+let workerPath: string | undefined;
+
+if (typeof import.meta !== "undefined" && import.meta.url) {
+  workerPath = import.meta.url;
+} else if (typeof __filename !== "undefined") {
+  workerPath = __filename;
+} else {
+  workerPath = undefined;
+}
+
+export { workerPath };
