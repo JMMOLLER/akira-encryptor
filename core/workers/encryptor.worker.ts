@@ -23,7 +23,7 @@ export default async function run(params: WorkerTask) {
 
     return;
   } catch (error) {
-    postMessage({
+    params.port?.postMessage({
       type: "error",
       error: error instanceof Error ? error.message : String(error)
     });
