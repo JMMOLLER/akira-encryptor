@@ -1,5 +1,5 @@
-import decryptFile from "../crypto/decryptFile.js";
-import encryptFile from "../crypto/encryptFile.js";
+import decryptFile from "../crypto/decryptFile";
+import encryptFile from "../crypto/encryptFile";
 
 export default async function run(params: WorkerTask) {
   const { taskType, filePath, tempPath, SECRET_KEY, blockSize } = params;
