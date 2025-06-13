@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
-import { workerPath } from '@akira-encryptor/core/workers/encryptor'
+import type { BasicEncryptor, EncryptorOptions } from '@akira-encryptor/core/types'
 import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
 import Encryptor from '@akira-encryptor/core'
@@ -11,19 +11,26 @@ import fs from 'fs'
 const getUserConfig = () => CONF.get('userConfig')
 
 let isDialogOpen = false
-let ENCRYPTOR: Encryptor
+let ENCRYPTOR: BasicEncryptor
 let PASSWORD: Buffer
+let EncryptorConfig: EncryptorOptions = {
+  allowExtraProps: true,
+  minDelayPerStep: 0,
+  silent: true
+}
 
 export default function registerIpcMain() {
   ipcMain.handle('initialize-encryptor', async (_event: IpcMainInvokeEvent, password: string) => {
     try {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
-      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), workerPath!, {
-        allowExtraProps: true,
-        minDelayPerStep: 0,
-        silent: true
-      })
+      if (getUserConfig().maxThreads) {
+        EncryptorConfig = {
+          ...EncryptorConfig,
+          maxThreads: getUserConfig().maxThreads
+        }
+      }
+      ENCRYPTOR = await Encryptor.init(PASSWORD.toString()) // This instance is only used for refreshing the storage.
       return { error: null, success: true }
     } catch (error) {
       console.error('Error initializing encryptor:', error)
@@ -80,6 +87,7 @@ export default function registerIpcMain() {
       runEncryptorWorker({
         ...props,
         password: PASSWORD,
+        EncryptorConfig,
         onProgress,
         onError,
         onEnd

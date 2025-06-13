@@ -162,5 +162,6 @@ declare global {
      * so Node.js casts `Buffer` to `Uint8Array`.
      */
     password: Uint8Array
+    EncryptorConfig?: AkiraTypes.EncryptorOptions
   }
 }

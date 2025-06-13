@@ -1,5 +1,5 @@
-import type { ProgressCallback } from '@akira-encryptor/core/types'
 import { workerPath } from '@akira-encryptor/core/workers/encryptor'
+import type { ProgressCallback } from '@akira-encryptor/core/types'
 import { parentPort, workerData as wd } from 'worker_threads'
 import Encryptor from '@akira-encryptor/core'
 
@@ -13,14 +13,10 @@ if (!parentPort) throw new Error('IllegalState')
 const workerData = wd as WorkerEncryptProps
 
 async function main() {
-  const { srcPath, itemId, extraProps } = workerData
+  const { srcPath, itemId, extraProps, EncryptorConfig } = workerData
   const password = Buffer.from(workerData.password)
 
-  const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath!, {
-    allowExtraProps: true,
-    minDelayPerStep: 0,
-    silent: true
-  })
+  const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath!, EncryptorConfig)
 
   const sendProgress: ProgressCallback = (processedBytes, totalBytes) => {
     parentPort!.postMessage({

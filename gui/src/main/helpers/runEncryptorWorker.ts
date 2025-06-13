@@ -1,11 +1,11 @@
 import encryptorWorker from '@workers/encryptor.worker?nodeWorker'
 
-type RunEncryptorWorkerParams = EncryptFileProps & {
-  onProgress: (data: string) => void
-  onError: (data: unknown) => void
-  onEnd: (data: string) => void
-  password: Buffer
-}
+type RunEncryptorWorkerParams = EncryptFileProps &
+  WorkerEncryptProps & {
+    onProgress: (data: string) => void
+    onError: (data: unknown) => void
+    onEnd: (data: string) => void
+  }
 
 export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
   const { onProgress, onEnd, onError, ...rest } = props
@@ -30,6 +30,7 @@ export default function runEncryptorWorker(props: RunEncryptorWorkerParams) {
       }
     })
     .on('error', (err) => {
+      console.error('Encryptor worker error:', err)
       onError({
         message: err.message,
         srcPath: rest.srcPath,

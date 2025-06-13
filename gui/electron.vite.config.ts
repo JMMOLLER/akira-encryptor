@@ -1,6 +1,4 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
-import { adjustWorkerImports } from './utils/adjustWorkerImports'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -9,31 +7,7 @@ const corePath = resolve(__dirname, '../core')
 
 export default defineConfig({
   main: {
-    plugins: [
-      externalizeDepsPlugin(),
-      viteStaticCopy({
-        targets: [
-          // {
-          //   src: '../node_modules/piscina/dist/worker.js',
-          //   dest: './'
-          // },
-          // {
-          //   src: '../node_modules/piscina/dist/symbols.js',
-          //   dest: './'
-          // },
-          // {
-          //   src: '../node_modules/piscina/dist/common.js',
-          //   dest: './'
-          // },
-          // {
-          //   src: '../dist/core/workers/encryptor.worker.cjs',
-          //   rename: 'encryptor.worker.js',
-          //   dest: './core/workers'
-          // }
-        ]
-      })
-      // adjustWorkerImports()
-    ],
+    plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
         '@core': corePath,
