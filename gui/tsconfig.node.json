@@ -7,8 +7,6 @@
     "src/workers/**/*",
     "src/utils/**/*",
     "src/main/**/*",
-    // "../types.d.ts",
-    // "../core/**/*",
     "types.d.ts",
     "utils/**/*",
   ],
@@ -19,15 +17,8 @@
     "noUnusedLocals": false,
     "baseUrl": "./src",
     "paths": {
-      // "@core/*": ["../../core/*"],
-      // "@workers/*": ["./workers/*"],
       "@gui/utils/*": ["./utils/*"],
-      // "@libs/*": ["../../core/libs/*"],
       "@gui/configs/*": ["./configs/*"],
-      // "@utils/*": ["../../core/utils/*"],
-      // "@configs/*": ["../../core/configs/*"],
-      // "@adapters/*": ["../../core/adapters/*"],
-      // "@crypto/*": ["../../core/crypto/*"],
     },
   }
 }
