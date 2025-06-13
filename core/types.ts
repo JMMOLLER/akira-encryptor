@@ -81,6 +81,13 @@ export interface EncryptorOptions {
   maxThreads?: number;
 }
 
+export interface BasicEncryptor {
+  getStorage: () => Map<string, StorageItem>;
+  refreshStorage: () => Promise<void>;
+  revealStoredItem: (item: string) => Promise<boolean | undefined>;
+  hideStoredItem: (item: string) => Promise<boolean | undefined>;
+}
+
 export interface EncryptorProps {
   /**
    * @description `[ESP]` - Función que se ejecuta cuando se procesa un bloque de datos.

@@ -56,7 +56,17 @@ class Encryptor {
     password: string,
     workerPath: string,
     options?: EncryptorOptions
-  ) {
+  ): Promise<Encryptor>;
+  static async init(
+    password: string,
+    workerPath?: undefined,
+    options?: EncryptorOptions
+  ): Promise<BasicEncryptor>;
+  static async init(
+    password: string,
+    workerPath?: string,
+    options?: EncryptorOptions
+  ): Promise<Encryptor | BasicEncryptor> {
     await sodium.ready;
 
     const instance = new Encryptor(password);
@@ -65,16 +75,27 @@ class Encryptor {
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.SILENT = options?.silent || false;
-    instance.workerPath = workerPath;
-
-    // Initialize worker pool
-    instance.startWorkerPool();
 
     Encryptor.STORAGE = await Storage.init(
       instance.SECRET_KEY,
       Encryptor.ENCODING,
       options?.libraryPath
     );
+
+    if (!workerPath) {
+      return {
+        getStorage: instance.getStorage,
+        refreshStorage: instance.refreshStorage,
+        revealStoredItem: instance.revealStoredItem,
+        hideStoredItem: instance.hideStoredItem
+      };
+    }
+
+    instance.workerPath = workerPath;
+
+    // Initialize worker pool
+    instance.startWorkerPool();
+
     return instance;
   }
 

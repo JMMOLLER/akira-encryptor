@@ -33,4 +33,5 @@ declare global {
   type EncryptedDataStore = Type.EncryptedDataStore;
   type ProgressBar = Type.ProgressBar;
   type ProgressCallback = Type.ProgressCallback;
+  type BasicEncryptor = Type.BasicEncryptor;
 }
