@@ -32,11 +32,7 @@ class MapAdapter<T extends EncryptedDataStore> implements Adapter<T> {
       return this.data;
     }
 
-    const decrypted = decryptText(
-      encrypted,
-      this.secretKey,
-      this.encoding
-    );
+    const decrypted = decryptText(encrypted, this.secretKey, this.encoding);
     const raw = JSON.parse(decrypted) as T;
 
     if (raw && raw.encryptedItems) {
@@ -56,7 +52,7 @@ class MapAdapter<T extends EncryptedDataStore> implements Adapter<T> {
     };
 
     const json = JSON.stringify(toWrite, null, 2);
-    const encrypted = encryptText(json, this.secretKey, this.encoding);
+    const encrypted = await encryptText(json, this.secretKey, this.encoding);
 
     await this.adapter.write(encrypted);
   }

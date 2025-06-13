@@ -72,7 +72,7 @@ async function onEncryptReadStream(params: ReadStreamProps) {
   const { readStream, writeStream, tempPath } = params;
   const { chunk, onProgress, reject } = params;
   try {
-    const nonce = generateNonce();
+    const nonce = await generateNonce();
     const chunkArray =
       typeof chunk === "string"
         ? sodium.from_string(chunk)

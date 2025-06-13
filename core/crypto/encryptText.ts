@@ -6,14 +6,14 @@ import sodium from "libsodium-wrappers";
  * @description `[ES]` Cifra el texto dado utilizando la clave secreta y un nonce.
  * @param txt - The text to be encrypted
  */
-export default function encryptText(
+export default async function encryptText(
   txt: string,
   SECRET_KEY: Uint8Array,
   encoding: BufferEncoding
-): string {
+): Promise<string> {
   // Convert the text to bytes
   const textBytes = sodium.from_string(txt);
-  const nonce = generateNonce();
+  const nonce = await generateNonce();
 
   // Encrypt the text using the nonce and secret key
   const cipher = sodium.crypto_secretbox_easy(textBytes, nonce, SECRET_KEY);

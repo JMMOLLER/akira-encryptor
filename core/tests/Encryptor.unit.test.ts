@@ -50,23 +50,23 @@ afterAll(async () => {
 });
 
 describe("Encryptor", () => {
-  it("should handle empty strings correctly", () => {
-    const encrypted = encryptText("", pwd, env.ENCODING);
+  it("should handle empty strings correctly", async () => {
+    const encrypted = await encryptText("", pwd, env.ENCODING);
     const decrypted = decryptText(encrypted, pwd, env.ENCODING);
 
     expect(decrypted).toBe("");
   });
 
-  it("should encrypt and decrypt a simple message", () => {
+  it("should encrypt and decrypt a simple message", async () => {
     const message = "Hola mundo seguro!";
-    const encrypted = encryptText(message, pwd, env.ENCODING);
+    const encrypted = await encryptText(message, pwd, env.ENCODING);
     const decrypted = decryptText(encrypted, pwd, env.ENCODING);
 
     expect(decrypted).toBe(message);
   });
 
-  it("should throw an error when decrypting tampered data", () => {
-    const encrypted = encryptText("Mensaje original", pwd, env.ENCODING);
+  it("should throw an error when decrypting tampered data", async () => {
+    const encrypted = await encryptText("Mensaje original", pwd, env.ENCODING);
     const tampered = encrypted.slice(0, -4) + "1234"; // tampering the encrypted string
 
     expect(() => decryptText(tampered, pwd, env.ENCODING)).toThrow(
@@ -74,15 +74,15 @@ describe("Encryptor", () => {
     );
   });
 
-  it("should return a base64 encoded encrypted string", () => {
-    const encrypted = encryptText("Texto para test", pwd, env.ENCODING);
+  it("should return a base64 encoded encrypted string", async () => {
+    const encrypted = await encryptText("Texto para test", pwd, env.ENCODING);
     expect(typeof encrypted).toBe("string");
     expect(encrypted).toMatch(/^[A-Za-z0-9+/=]+$/);
   });
 
-  it("should generate a unique nonce each time", () => {
-    const nonce1 = generateNonce();
-    const nonce2 = generateNonce();
+  it("should generate a unique nonce each time", async () => {
+    const nonce1 = await generateNonce();
+    const nonce2 = await generateNonce();
 
     expect(nonce1).not.toBe(nonce2);
     expect(nonce1).toBeInstanceOf(Uint8Array);
