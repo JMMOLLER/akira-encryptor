@@ -6,6 +6,7 @@ const FS = FileSystem.getInstance();
 
 interface FileDecryptionProps {
   filePath: Readonly<string>;
+  enableLogging?: boolean;
   blockSize: number;
   onProgress: (processedBytes: number) => void;
   SECRET_KEY: Uint8Array;
@@ -19,6 +20,10 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
   const readStream = FS.createReadStream(filePath, blockSize);
   const writeStream = FS.createWriteStream(tempPath);
 
+  const logStream = props.enableLogging
+    ? FS.createWriteStream(filePath + ".dec.log")
+    : undefined;
+
   /**
    * @description `[ESP]` - `leftover` es un buffer que almacena los datos que no se procesan hasta completar el bloque.
    * @description `[ENG]` - `leftover` is a buffer that stores data that is not processed until the block is complete.
@@ -26,23 +31,34 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
   let leftover = Buffer.alloc(0);
 
   return new Promise((resolve, reject) => {
-    readStream.on(
-      "data",
-      async (chunk) =>
-        (leftover = await onDecryptReadStream({
-          writeStream,
-          leftover,
-          onProgress,
-          chunk,
-          reject,
-          tempPath,
-          SECRET_KEY: props.SECRET_KEY,
-          nonceLength: sodium.crypto_secretbox_NONCEBYTES,
-          macLength: sodium.crypto_secretbox_MACBYTES
-        }))
-    );
+    let chunkCount = 0;
+    if (logStream) {
+      const fileStats = FS.getStatFile(filePath);
+      logStream.write(`🟢 Inicio de decifrado: ${filePath}\n`);
+      logStream.write(`Tamaño total: ${fileStats.size} bytes\n`);
+    }
+
+    readStream.on("data", async (chunk) => {
+      chunkCount++;
+      leftover = await onDecryptReadStream({
+        writeStream,
+        leftover,
+        onProgress,
+        chunk,
+        reject,
+        tempPath,
+        chunkCount,
+        logStream,
+        SECRET_KEY: props.SECRET_KEY,
+        nonceLength: sodium.crypto_secretbox_NONCEBYTES,
+        macLength: sodium.crypto_secretbox_MACBYTES
+      });
+    });
 
     readStream.on("end", () => {
+      if (logStream) {
+        logStream.end(`✅ Decifrado completado: ${filePath}\n`);
+      }
       writeStream.end();
     });
 
@@ -55,7 +71,12 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
       });
     });
 
-    writeStream.once("finish", () => {
+    writeStream.once("finish", async () => {
+      if (logStream) {
+        await new Promise<void>((res) => {
+          logStream.on("close", res);
+        });
+      }
       resolve();
     });
 
@@ -80,6 +101,8 @@ interface ReadStreampProps {
   leftover: Buffer<ArrayBuffer>;
   nonceLength: number;
   macLength: number;
+  logStream?: Writable;
+  chunkCount?: number;
 }
 
 async function onDecryptReadStream(
@@ -123,6 +146,14 @@ async function onDecryptReadStream(
 
       writeStream.write(Buffer.from(decrypted));
 
+      if (params.logStream && !params.logStream.closed) {
+        params.logStream.write(`📦 Chunk #${params.chunkCount}\n`);
+        params.logStream.write(
+          ` - Nonce: ${Buffer.from(chunkNonce).toString("hex")}\n`
+        );
+        params.logStream.write(` - Encrypted Length: ${encryptedLength}\n`);
+      }
+
       params.onProgress?.(nonceLength + 4 + encryptedLength);
     } catch (err) {
       if (tempPath) await FS.removeFile(tempPath);
@@ -134,9 +165,12 @@ async function onDecryptReadStream(
 }
 
 async function onDecryptStreamError(params: DecryptStreamError) {
-  const { reject, streamName, error, tempPath } = params;
+  const { reject, error, tempPath, logStream } = params;
 
   if (tempPath) await FS.removeFile(tempPath);
+  if (logStream) {
+    logStream.end(`❌ Error al cifrar chunk: ${(error as Error).message}\n`);
+  }
   reject(error);
 }
 

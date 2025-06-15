@@ -25,7 +25,7 @@ class Encryptor {
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
-  private static LOG = env.LOG;
+  private LOG: boolean = false;
   private workerPath!: string;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
@@ -74,6 +74,7 @@ class Encryptor {
     instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
+    instance.LOG = options?.enableLogging || env.LOG;
     instance.SILENT = options?.silent || false;
 
     Encryptor.STORAGE = await Storage.init(
@@ -240,6 +241,9 @@ class Encryptor {
       );
       error.name = "FileAlreadyEncrypted";
       return Promise.reject(error);
+    } else if (filePath.includes(".enc.log") || filePath.includes(".dec.log")) {
+      // skip logs file
+      return Promise.resolve();
     }
 
     const fileStats = Encryptor.FS.getStatFile(filePath);
@@ -281,6 +285,7 @@ class Encryptor {
       await Encryptor.workerPool.run(
         {
           SECRET_KEY: this.SECRET_KEY,
+          enableLogging: this.LOG,
           taskType: "encrypt",
           port: channel.port1,
           tempPath,
@@ -369,6 +374,7 @@ class Encryptor {
         {
           filePath: filePath,
           SECRET_KEY: this.SECRET_KEY,
+          enableLogging: this.LOG,
           port: channel.port1,
           taskType: "decrypt",
           blockSize,

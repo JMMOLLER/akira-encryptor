@@ -18,7 +18,8 @@ export default async function run(params: WorkerTask) {
       },
       SECRET_KEY,
       tempPath,
-      blockSize: blockSize!
+      blockSize: blockSize!,
+      enableLogging: params.enableLogging
     });
 
     return;
