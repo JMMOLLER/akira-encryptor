@@ -243,7 +243,9 @@ class Encryptor {
       return Promise.reject(error);
     } else if (filePath.includes(".enc.log") || filePath.includes(".dec.log")) {
       // skip logs file
-      return Promise.resolve();
+      return Promise.reject(
+        "El archivo no puede ser cifrado porque es un archivo de registro."
+      );
     }
 
     const fileStats = Encryptor.FS.getStatFile(filePath);
@@ -470,6 +472,12 @@ class Encryptor {
 
     for (const entry of entries) {
       if (entry.isFile()) {
+        if (
+          entry.name.includes(".enc.log") ||
+          entry.name.includes(".dec.log")
+        ) {
+          continue; // Skip log files
+        }
         const fullPath = path.join(folderPath, entry.name);
         const fileTask = limit(async () => {
           try {
