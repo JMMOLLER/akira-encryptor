@@ -257,8 +257,8 @@ class Encryptor {
     const fileBaseName = path.basename(filePath, path.extname(filePath));
     const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}.enc.tmp`);
 
+    const channel = new MessageChannel();
     try {
-      const channel = new MessageChannel();
       channel.port2.on(
         "message",
         (message: { type: string; [x: string]: any }) => {
@@ -313,6 +313,8 @@ class Encryptor {
       error = err as Error;
       return Promise.reject(err);
     } finally {
+      channel.port1.close();
+      channel.port2.close();
       if (props.onEnd) props.onEnd(error);
       if (!isInternalFlow) {
         await this.destroy();
@@ -345,8 +347,8 @@ class Encryptor {
       path.basename(filePath).replace(".enc", ".dec.tmp")
     );
 
+    const channel = new MessageChannel();
     try {
-      const channel = new MessageChannel();
       channel.port2.on(
         "message",
         (message: { type: string; [x: string]: any }) => {
@@ -399,6 +401,8 @@ class Encryptor {
       error = err as Error;
       return Promise.reject(err);
     } finally {
+      channel.port1.close();
+      channel.port2.close();
       if (props.onEnd) props.onEnd(error);
       if (!props.isInternalFlow) {
         await this.destroy();
