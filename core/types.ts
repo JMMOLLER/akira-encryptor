@@ -11,7 +11,7 @@ export interface WorkerTask {
   enableLogging?: boolean;
   SECRET_KEY: Uint8Array;
   tempPath: string;
-  port?: MessagePort;
+  port: MessagePort;
   blockSize?: number;
 }
 

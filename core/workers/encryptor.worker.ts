@@ -2,7 +2,7 @@ import decryptFile from "../crypto/decryptFile";
 import encryptFile from "../crypto/encryptFile";
 
 export default async function run(params: WorkerTask) {
-  const { taskType, filePath, tempPath, SECRET_KEY, blockSize } = params;
+  const { taskType, filePath, tempPath, SECRET_KEY, blockSize, port } = params;
   try {
     if (taskType === "decrypt" && !params.blockSize) {
       throw new Error("Block size is required for decryption.");
@@ -11,7 +11,7 @@ export default async function run(params: WorkerTask) {
     await handlerFunction({
       filePath,
       onProgress: (processedBytes) => {
-        params.port?.postMessage({
+        port.postMessage({
           type: "progress",
           processedBytes
         });
@@ -22,23 +22,11 @@ export default async function run(params: WorkerTask) {
       enableLogging: params.enableLogging
     });
 
-    return;
+    return true;
   } catch (error) {
-    params.port?.postMessage({
+    port.postMessage({
       type: "error",
       error: error instanceof Error ? error.message : String(error)
     });
   }
 }
-
-let workerPath: string | undefined;
-
-if (typeof import.meta !== "undefined" && import.meta.url) {
-  workerPath = import.meta.url;
-} else if (typeof __filename !== "undefined") {
-  workerPath = __filename;
-} else {
-  workerPath = undefined;
-}
-
-export { workerPath };

@@ -37,14 +37,14 @@
       "import": "./dist/types/types.d.ts",
       "require": "./dist/types/types.d.ts"
     },
-    "./workers/*": {
+    "./workers": {
       "import": {
-        "types": "./dist/types/workers/*.worker.d.ts",
-        "default": "./dist/esm/workers/*.worker.js"
+        "types": "./dist/types/workers/index.d.ts",
+        "default": "./dist/esm/workers/index.js"
       },
       "require": {
-        "types": "./dist/types/workers/*.worker.d.ts",
-        "default": "./dist/cjs/workers/*.worker.cjs"
+        "types": "./dist/types/workers/index.d.ts",
+        "default": "./dist/cjs/workers/index.cjs"
       }
     }
   },
