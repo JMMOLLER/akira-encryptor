@@ -39,8 +39,8 @@ importers:
         specifier: ^6.2.0
         version: 6.2.0
       piscina:
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       typescript:
         specifier: ^5
         version: 5.8.3
@@ -797,9 +797,9 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
-  piscina@5.0.0:
-    resolution: {integrity: sha512-R+arufwL7sZvGjAhSMK3TfH55YdGOqhpKXkcwQJr432AAnJX/xxX19PA4QisrmJ+BTTfZVggaz6HexbkQq1l1Q==}
-    engines: {node: '>=18.x'}
+  piscina@5.1.0:
+    resolution: {integrity: sha512-dJrEDIyG0SlQNgl5iq2fWRLxvI8yH9ica4A7SEGBevlFUN9THvyJ+WwSO50cN92UVwAljMlu0SAPdqLYLB/ztQ==}
+    engines: {node: '>=20.x'}
 
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
@@ -1649,7 +1649,7 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  piscina@5.0.0:
+  piscina@5.1.0:
     optionalDependencies:
       '@napi-rs/nice': 1.0.1
 
