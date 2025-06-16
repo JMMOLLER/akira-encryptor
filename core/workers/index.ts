@@ -9,20 +9,17 @@ if (typeof import.meta !== "undefined" && import.meta.url) {
   thisExt = undefined;
 }
 
-let encryptedWorkerPath: string | undefined;
+let encryptorWorkerPath: string | undefined;
 
 if (typeof import.meta !== "undefined" && import.meta.dirname) {
-  encryptedWorkerPath = path.resolve(
+  encryptorWorkerPath = path.resolve(
     import.meta.dirname,
     `./encryptor.worker${thisExt}`
   );
 } else if (typeof __dirname !== "undefined") {
-  encryptedWorkerPath = path.resolve(
-    __dirname,
-    `./encryptor.worker${thisExt}`
-  );
+  encryptorWorkerPath = path.resolve(__dirname, `./encryptor.worker${thisExt}`);
 } else {
-  encryptedWorkerPath = undefined;
+  encryptorWorkerPath = undefined;
 }
 
-export { encryptedWorkerPath as workerPath };
+export { encryptorWorkerPath };
