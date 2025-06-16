@@ -1,4 +1,4 @@
-import { workerPath } from '@akira-encryptor/core/workers/encryptor'
+import { encryptorWorkerPath as workerPath } from '@akira-encryptor/core/workers'
 import type { ProgressCallback } from '@akira-encryptor/core/types'
 import { parentPort, workerData as wd } from 'worker_threads'
 import Encryptor from '@akira-encryptor/core'
@@ -16,7 +16,11 @@ async function main() {
   const { srcPath, itemId, extraProps, EncryptorConfig } = workerData
   const password = Buffer.from(workerData.password)
 
-  const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath!, EncryptorConfig)
+  if (!workerPath) {
+    throw new Error('Worker path is not defined. Please check your build configuration.')
+  }
+
+  const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath, EncryptorConfig)
 
   const sendProgress: ProgressCallback = (processedBytes, totalBytes) => {
     parentPort!.postMessage({
