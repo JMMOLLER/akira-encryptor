@@ -1,5 +1,7 @@
-import { workerPath as baseWorkerPath } from "@akira-encryptor/core/workers/encryptor";
+import { encryptorWorkerPath } from "@akira-encryptor/core/workers";
 
-export const workerPath = process.pkg
-  ? process.pkg.path.resolve("encryptor.worker.js")
-  : baseWorkerPath!;
+if (!encryptorWorkerPath) {
+  throw new Error("Unable to find the encryptor worker path.");
+}
+
+export const workerPath = encryptorWorkerPath;
