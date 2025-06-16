@@ -1,15 +1,18 @@
 import generateNonce from "../crypto/generateNonce";
-import type { Readable, Writable } from "stream";
 import { FileSystem } from "../libs/FileSystem";
+import { pipeline, Transform } from "stream";
 import sodium from "libsodium-wrappers";
+import { promisify } from "util";
 
 interface FileEncryptionProps {
   filePath: Readonly<string>;
   onProgress: (processedBytes: number) => void;
+  enableLogging?: boolean;
   SECRET_KEY: Uint8Array;
   tempPath: string;
 }
 
+const pipelineAsync = promisify(pipeline);
 const FS = FileSystem.getInstance();
 
 /**
@@ -20,90 +23,70 @@ const FS = FileSystem.getInstance();
  * @param saveOnEnd `boolean` - Optional flag to save the encrypted file in storage.
  */
 async function encryptFile(props: FileEncryptionProps): Promise<void> {
-  const { filePath, onProgress, tempPath } = props;
+  const { filePath, onProgress, tempPath, SECRET_KEY } = props;
 
-  const readStream = FS.createReadStream(filePath);
+  // Streams for reading and writing file
+  const rs = FS.createReadStream(filePath);
+  const ws = FS.createWriteStream(tempPath);
 
-  const writeStream = FS.createWriteStream(tempPath);
-
-  return new Promise((resolve, reject) => {
-    readStream.on("data", (chunk) =>
-      onEncryptReadStream({
-        readStream,
-        writeStream,
-        onProgress,
-        SECRET_KEY: props.SECRET_KEY,
-        tempPath,
-        reject,
-        chunk
-      })
-    );
-
-    readStream.on("end", () => {
-      writeStream.end();
-    });
-
-    readStream.on("error", async (error) => {
-      await onEncryptReadStreamError({
-        writeStream,
-        tempPath,
-        reject,
-        error
-      });
-    });
-
-    writeStream.once("finish", () => {
-      resolve();
-    });
-  });
-}
-
-interface ReadStreamProps {
-  chunk: Buffer | string;
-  tempPath: string;
-  SECRET_KEY: Uint8Array;
-  reject: (error?: any) => void;
-  writeStream: Writable;
-  readStream: Readable;
-  onProgress: (processedBytes: number) => void;
-}
-
-async function onEncryptReadStream(params: ReadStreamProps) {
-  const { readStream, writeStream, tempPath } = params;
-  const { chunk, onProgress, reject } = params;
-  try {
-    const nonce = await generateNonce();
-    const chunkArray =
-      typeof chunk === "string"
-        ? sodium.from_string(chunk)
-        : new Uint8Array(chunk);
-    const encryptedChunk = sodium.crypto_secretbox_easy(
-      chunkArray,
-      nonce,
-      params.SECRET_KEY
-    );
-
-    const lenBuf = Buffer.alloc(4);
-    lenBuf.writeUInt32BE(encryptedChunk.length, 0);
-
-    writeStream.write(Buffer.from(nonce));
-    writeStream.write(lenBuf);
-    writeStream.write(Buffer.from(encryptedChunk));
-
-    onProgress?.(chunk.length);
-  } catch (err) {
-    readStream.destroy();
-    writeStream.destroy();
-    if (tempPath) await FS.removeFile(tempPath);
-    return reject(err);
+  // If logging is enabled, create a write stream for logging
+  let log: ReturnType<typeof FS.createWriteStream> | null = null;
+  let chunkCount = 0;
+  if (props.enableLogging) {
+    log = FS.createWriteStream(filePath + ".enc.log");
+    log.write(`🟢 Inicio de cifrado: ${filePath}\n`);
+    log.write(`Tamaño total: ${FS.getStatFile(filePath).size} bytes\n`);
   }
-}
 
-async function onEncryptReadStreamError(params: EncryptReadStreamError) {
-  const { writeStream, reject, error, tempPath } = params;
-  writeStream.destroy();
-  if (tempPath) await FS.removeFile(tempPath);
-  reject(error);
+  // Transform stream to handle encryption
+  const encryptStream = new Transform({
+    async transform(chunk, _enc, cb) {
+      try {
+        chunkCount++;
+        const nonce = await generateNonce();
+        const chunkBuf = Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk as string);
+        const encrypted = sodium.crypto_secretbox_easy(
+          chunkBuf,
+          nonce,
+          SECRET_KEY
+        );
+
+        // Prepare the output - buffer with nonce + length + data
+        const lenBuf = Buffer.alloc(4);
+        lenBuf.writeUInt32BE(encrypted.length, 0);
+        const out = Buffer.concat([
+          Buffer.from(nonce),
+          lenBuf,
+          Buffer.from(encrypted)
+        ]);
+
+        // Send the progress
+        onProgress?.(chunkBuf.length);
+
+        // Write to the writable stream logging
+        if (log) {
+          log.write(`📦 Chunk #${chunkCount}\n`);
+          log.write(` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`);
+          log.write(` - Encrypted Length: ${Buffer.from(encrypted).length}\n`);
+        }
+
+        cb(null, out);
+      } catch (err) {
+        cb(err as Error);
+      }
+    }
+  });
+
+  // This call handles the piping of the read stream to the encrypt stream and then to the write stream
+  await pipelineAsync(rs, encryptStream, ws);
+
+  // Ensure the write stream logging is closed
+  if (log) {
+    log.end(`✅ Cifrado completado: ${filePath}\n`);
+    await new Promise<void>((resolve) => log.on("close", resolve));
+  }
 }
 
 export default encryptFile;

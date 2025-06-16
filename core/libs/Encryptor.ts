@@ -25,7 +25,7 @@ class Encryptor {
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
-  private static LOG = env.LOG;
+  private LOG: boolean = false;
   private workerPath!: string;
   private SILENT!: boolean;
   /* ========================== ENCRYPT PROPERTIES ========================== */
@@ -74,6 +74,7 @@ class Encryptor {
     instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
+    instance.LOG = options?.enableLogging || env.LOG;
     instance.SILENT = options?.silent || false;
 
     Encryptor.STORAGE = await Storage.init(
@@ -240,6 +241,11 @@ class Encryptor {
       );
       error.name = "FileAlreadyEncrypted";
       return Promise.reject(error);
+    } else if (filePath.includes(".enc.log") || filePath.includes(".dec.log")) {
+      // skip logs file
+      return Promise.reject(
+        "El archivo no puede ser cifrado porque es un archivo de registro."
+      );
     }
 
     const fileStats = Encryptor.FS.getStatFile(filePath);
@@ -251,8 +257,8 @@ class Encryptor {
     const fileBaseName = path.basename(filePath, path.extname(filePath));
     const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}.enc.tmp`);
 
+    const channel = new MessageChannel();
     try {
-      const channel = new MessageChannel();
       channel.port2.on(
         "message",
         (message: { type: string; [x: string]: any }) => {
@@ -281,6 +287,7 @@ class Encryptor {
       await Encryptor.workerPool.run(
         {
           SECRET_KEY: this.SECRET_KEY,
+          enableLogging: this.LOG,
           taskType: "encrypt",
           port: channel.port1,
           tempPath,
@@ -306,6 +313,8 @@ class Encryptor {
       error = err as Error;
       return Promise.reject(err);
     } finally {
+      channel.port1.close();
+      channel.port2.close();
       if (props.onEnd) props.onEnd(error);
       if (!isInternalFlow) {
         await this.destroy();
@@ -338,8 +347,8 @@ class Encryptor {
       path.basename(filePath).replace(".enc", ".dec.tmp")
     );
 
+    const channel = new MessageChannel();
     try {
-      const channel = new MessageChannel();
       channel.port2.on(
         "message",
         (message: { type: string; [x: string]: any }) => {
@@ -369,6 +378,7 @@ class Encryptor {
         {
           filePath: filePath,
           SECRET_KEY: this.SECRET_KEY,
+          enableLogging: this.LOG,
           port: channel.port1,
           taskType: "decrypt",
           blockSize,
@@ -391,6 +401,8 @@ class Encryptor {
       error = err as Error;
       return Promise.reject(err);
     } finally {
+      channel.port1.close();
+      channel.port2.close();
       if (props.onEnd) props.onEnd(error);
       if (!props.isInternalFlow) {
         await this.destroy();
@@ -464,6 +476,12 @@ class Encryptor {
 
     for (const entry of entries) {
       if (entry.isFile()) {
+        if (
+          entry.name.includes(".enc.log") ||
+          entry.name.includes(".dec.log")
+        ) {
+          continue; // Skip log files
+        }
         const fullPath = path.join(folderPath, entry.name);
         const fileTask = limit(async () => {
           try {

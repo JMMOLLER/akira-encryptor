@@ -1,7 +1,7 @@
 {
   "name": "@akira-encryptor/core",
   "description": "A tool for encrypting and decrypting files and folders using libsodium.",
-  "version": "0.4.0-beta",
+  "version": "0.4.1-beta",
   "author": "JMMOLLER",
   "files": [
     "dist",
@@ -37,14 +37,14 @@
       "import": "./dist/types/types.d.ts",
       "require": "./dist/types/types.d.ts"
     },
-    "./workers/*": {
+    "./workers": {
       "import": {
-        "types": "./dist/types/workers/*.worker.d.ts",
-        "default": "./dist/esm/workers/*.worker.js"
+        "types": "./dist/types/workers/index.d.ts",
+        "default": "./dist/esm/workers/index.js"
       },
       "require": {
-        "types": "./dist/types/workers/*.worker.d.ts",
-        "default": "./dist/cjs/workers/*.worker.cjs"
+        "types": "./dist/types/workers/index.d.ts",
+        "default": "./dist/cjs/workers/index.cjs"
       }
     }
   },
@@ -75,7 +75,7 @@
     "lowdb": "^7.0.1",
     "nanoid": "^5.1.5",
     "p-limit": "^6.2.0",
-    "piscina": "^5.0.0",
+    "piscina": "^5.1.0",
     "zod": "^3.25.56"
   }
 }

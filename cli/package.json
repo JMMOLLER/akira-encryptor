@@ -8,7 +8,7 @@
   "types": "types.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "start": "pnpm run index.ts",
+    "start": "pnpx tsx index.ts",
     "debug": "pnpx tsx index.ts",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
     "build": "bun run clean && bun run build:workers && bun run build:main",

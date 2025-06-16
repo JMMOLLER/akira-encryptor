@@ -182,3 +182,5 @@ demo/**/*.mkv
 test.ts
 pendings.md
 tests/tmp
+*.csv
+*.ps1

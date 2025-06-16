@@ -8,9 +8,10 @@ import type { Stats } from "fs";
 export interface WorkerTask {
   taskType: "encrypt" | "decrypt";
   filePath: string;
+  enableLogging?: boolean;
   SECRET_KEY: Uint8Array;
   tempPath: string;
-  port?: MessagePort;
+  port: MessagePort;
   blockSize?: number;
 }
 
@@ -79,6 +80,12 @@ export interface EncryptorOptions {
    * @default 1
    */
   maxThreads?: number;
+
+  /**
+   * @description `[ESP]` - Permite crear un archivo de log para cada archivo en la operación de cifrado/descifrado.
+   * @description `[ENG]` - Allows creating a log file for each file in the encryption/decryption operation.
+   */
+  enableLogging?: boolean;
 }
 
 export interface BasicEncryptor {
@@ -150,8 +157,6 @@ export interface FolderDecryptor extends EncryptorProps {
   folderPath: Readonly<string>;
 }
 
-
-
 //====================== STREAM TYPES ======================//
 
 export interface StreamHandlerProps {
@@ -160,7 +165,7 @@ export interface StreamHandlerProps {
    */
   isInternalFlow: boolean;
 
-  logStream: Writable;
+  logStream?: Writable;
   readStream: Readable;
   writeStream: Writable;
   reject: (error?: any) => void;
@@ -178,11 +183,6 @@ export interface StreamHandlerProps {
   extraProps?: Record<string, JsonValue>;
 }
 
-export type EncryptReadStreamError = Pick<
-  StreamHandlerProps,
-  "writeStream" | "error" | "reject" | "tempPath"
->;
-
 export type EncryptWriteStreamFinish = Pick<
   StreamHandlerProps,
   | "extraProps"
@@ -197,11 +197,6 @@ export type EncryptWriteStreamFinish = Pick<
 export type DecryptWriteStreamFinish = Pick<
   StreamHandlerProps,
   "folderPath" | "isInternalFlow" | "tempPath" | "fileItem"
->;
-
-export type DecryptStreamError = Pick<
-  StreamHandlerProps,
-  "streamName" | "error" | "reject" | "tempPath"
 >;
 
 //====================== STORAGE TYPES ======================//

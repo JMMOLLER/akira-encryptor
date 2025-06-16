@@ -1,4 +1,4 @@
-import type { FileEncryptor, ProgressCallback } from "@akira-encryptor/core/types";
+import type * as EncryptorType from "@akira-encryptor/core/types";
 import * as utils from "@akira-encryptor/core/utils";
 import EncryptorClass from "@akira-encryptor/core";
 import { workerPath } from "../const/workerPath";
@@ -25,7 +25,7 @@ async function handleFolderAction(props: HanlderProps) {
     cliProgress.Presets.shades_classic
   );
 
-  const handleProgress: ProgressCallback = (processed, total) => {
+  const handleProgress: EncryptorType.ProgressCallback = (processed, total) => {
     if (!init) {
       formattedTotal = utils.formatBytes(total);
       progressBar.start(total, 0, {
@@ -45,7 +45,7 @@ async function handleFolderAction(props: HanlderProps) {
     }
   };
 
-  const handleEnd: FileEncryptor["onEnd"] = (error) => {
+  const handleEnd: EncryptorType.FileEncryptor["onEnd"] = (error) => {
     // Fallback to stop the progress bar
     progressBar.stop();
     // Print the success or error message
