@@ -183,11 +183,6 @@ export interface StreamHandlerProps {
   extraProps?: Record<string, JsonValue>;
 }
 
-export type EncryptReadStreamError = Pick<
-  StreamHandlerProps,
-  "writeStream" | "error" | "reject" | "tempPath" | "logStream"
->;
-
 export type EncryptWriteStreamFinish = Pick<
   StreamHandlerProps,
   | "extraProps"
@@ -202,11 +197,6 @@ export type EncryptWriteStreamFinish = Pick<
 export type DecryptWriteStreamFinish = Pick<
   StreamHandlerProps,
   "folderPath" | "isInternalFlow" | "tempPath" | "fileItem"
->;
-
-export type DecryptStreamError = Pick<
-  StreamHandlerProps,
-  "streamName" | "error" | "reject" | "tempPath" | "logStream"
 >;
 
 //====================== STORAGE TYPES ======================//
