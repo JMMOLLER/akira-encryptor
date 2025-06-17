@@ -389,10 +389,15 @@ class Encryptor {
         }
       );
 
+      const outPath =
+        props.isInternalFlow && props.fileItem
+          ? props.fileItem.path
+          : undefined;
       await this.onDecryptWriteStreamFinish({
         isInternalFlow: !!props.isInternalFlow,
         fileItem: props.fileItem,
         folderPath: filePath,
+        outPath,
         tempPath
       });
 
@@ -418,8 +423,22 @@ class Encryptor {
   async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem>;
   async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem> {
     const { folderPath, onProgress, isInternalFlow } = props;
+
+    const baseName = path.basename(folderPath);
+    let tempPath = folderPath;
+    if (!isInternalFlow) {
+      tempPath = path.join(Encryptor.tempDir, baseName);
+      const exist = Encryptor.FS.itemExists(tempPath);
+      if (exist) {
+        await Encryptor.FS.removeItem(tempPath);
+      }
+      await Encryptor.FS.copyItem(folderPath, tempPath);
+    } else if (props.tempPath) {
+      tempPath = props.tempPath;
+    }
+
     // 1. Read and sort directory entries: directories first, then files alphabetically
-    const entries = Encryptor.FS.readDir(folderPath);
+    const entries = Encryptor.FS.readDir(tempPath);
     entries.sort((a, b) => {
       if (a.isDirectory() && b.isFile()) return -1;
       if (a.isFile() && b.isDirectory()) return 1;
@@ -432,7 +451,7 @@ class Encryptor {
     // 3. If not an internal (recursive) call
     if (!isInternalFlow) {
       // bcs we not show the spinner in internal flow
-      this.totalFolderBytes = Encryptor.FS.getFolderSize(folderPath);
+      this.totalFolderBytes = Encryptor.FS.getFolderSize(tempPath);
       this.stepDelay = 0;
     }
 
@@ -446,12 +465,12 @@ class Encryptor {
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        const fullPath = path.join(folderPath, entry.name);
         const subfolderTask = limit(async () => {
           // Recursively encrypt subfolder
           return await this.encryptFolder({
             isInternalFlow: true,
-            folderPath: fullPath,
+            folderPath: path.join(folderPath, entry.name),
+            tempPath: path.join(tempPath, entry.name),
             onProgress
           });
         });
@@ -482,7 +501,7 @@ class Encryptor {
         ) {
           continue; // Skip log files
         }
-        const fullPath = path.join(folderPath, entry.name);
+        const fullPath = path.join(tempPath, entry.name);
         const fileTask = limit(async () => {
           try {
             // Encrypt the file (this function already updates processedBytes)
@@ -493,6 +512,7 @@ class Encryptor {
                 onProgress?.(this.processedBytes, this.totalFolderBytes);
               }
             });
+            subFile.path = subFile.path.replace(tempPath, folderPath);
             return subFile;
           } catch (err) {
             // Only skip files that are already encrypted
@@ -523,12 +543,12 @@ class Encryptor {
     // PHASE D: Encrypt current folder’s name & register
     // --------------------
     const encryptedName = await encryptText(
-      path.basename(folderPath),
+      baseName,
       this.SECRET_KEY,
       Encryptor.ENCODING
     );
     let saved: StorageItem = {
-      originalName: path.basename(folderPath),
+      originalName: baseName,
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
       id: generateUID(),
@@ -565,21 +585,36 @@ class Encryptor {
     // --------------------
     // PHASE E: Rename/move the original folder to encrypted ID
     // --------------------
-    const encryptedPath = path.join(path.dirname(folderPath), saved.id);
-    await Encryptor.FS.safeRenameFolder(folderPath, encryptedPath);
+    const encryptedPath = path.join(path.dirname(tempPath), saved.id);
+    await Encryptor.FS.safeRenameFolder(tempPath, encryptedPath);
 
     // --------------------
     // PHASE F: Final callbacks and cleanup
     // --------------------
     if (!isInternalFlow) {
-      props.onEnd?.();
-      if (skippedFiles > 0 && !this.SILENT) {
-        createSpinner(
-          `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
-        ).warn();
+      const mvStep = createSpinner(
+        `Remplazando carpeta original por la encriptada...`
+      );
+      try {
+        const destEncryptedFolder = folderPath.replace(baseName, saved.id);
+        await Encryptor.FS.copyItem(encryptedPath, destEncryptedFolder);
+        await Encryptor.FS.removeItem(encryptedPath);
+        await Encryptor.FS.removeItem(folderPath);
+        mvStep.succeed("Carpeta original reemplazada por la encriptada.");
+        props.onEnd?.();
+        if (skippedFiles > 0 && !this.SILENT) {
+          createSpinner(
+            `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
+          ).warn();
+        }
+      } catch (err) {
+        await Encryptor.FS.removeItem(encryptedPath).catch(() => {});
+        mvStep.fail("Error al reemplazar la carpeta original.");
+        return Promise.reject(err);
+      } finally {
+        this.resetFileIndicators();
+        await this.destroy();
       }
-      this.resetFileIndicators();
-      await this.destroy();
     }
 
     return Promise.resolve(saved);
@@ -696,11 +731,20 @@ class Encryptor {
     const decryptedPath = path.join(path.dirname(folderPath), originalName);
 
     try {
-      // Rename folder in file system
-      await Encryptor.FS.safeRenameFolder(folderPath, decryptedPath);
+      if (!isInternalFlow) {
+        if (!this.SILENT) {
+          this.removeStep = createSpinner("Eliminando carpeta encriptada...");
+        }
+        // Rename folder in file system
+        await Encryptor.FS.removeItem(folderPath);
+        this.removeStep?.succeed("Carpeta encriptada eliminada correctamente.");
+      }
       // Remove folder entry from storage
       await Encryptor.STORAGE.delete(currentFolder.id);
     } catch (err) {
+      if (!isInternalFlow && this.removeStep) {
+        this.removeStep.fail("Error al eliminar la carpeta encriptada.");
+      }
       error = err as Error;
       console.error(err);
       // If rename or delete fails, return original path
@@ -854,7 +898,7 @@ class Encryptor {
   }
 
   private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
-    const { folderPath, isInternalFlow, tempPath, fileItem } = params;
+    const { folderPath, isInternalFlow, tempPath, fileItem, outPath } = params;
     let error: Error | undefined = undefined;
 
     try {
@@ -876,8 +920,8 @@ class Encryptor {
         throw new Error("No se pudo descifrar el nombre del archivo.");
       }
 
-      const restoredPath = folderPath.replace(
-        path.basename(folderPath),
+      const restoredPath = (outPath ? outPath : folderPath).replace(
+        path.basename(outPath ? outPath : folderPath),
         originalFileName
       );
       const data = Encryptor.FS.readFile(tempPath);
@@ -892,15 +936,17 @@ class Encryptor {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");
       });
 
-      if (!isInternalFlow && !this.SILENT) {
-        this.removeStep = createSpinner("Eliminando archivo temporal...");
+      if (!outPath) {
+        if (!isInternalFlow && !this.SILENT) {
+          this.removeStep = createSpinner("Eliminando archivo temporal...");
+        }
+        await Promise.all([
+          Encryptor.FS.removeItem(folderPath),
+          delay(this.stepDelay)
+        ]).then(() => {
+          this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
+        });
       }
-      await Promise.all([
-        Encryptor.FS.removeItem(folderPath),
-        delay(this.stepDelay)
-      ]).then(() => {
-        this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
-      });
 
       if (!isInternalFlow) {
         if (!this.SILENT) {

@@ -175,6 +175,7 @@ export interface StreamHandlerProps {
   folderPath: string;
   tempPath: string;
   filePath: string;
+  outPath?: string;
   fileDir: string;
   error: Error;
   fileStats: Stats;
@@ -196,7 +197,7 @@ export type EncryptWriteStreamFinish = Pick<
 
 export type DecryptWriteStreamFinish = Pick<
   StreamHandlerProps,
-  "folderPath" | "isInternalFlow" | "tempPath" | "fileItem"
+  "folderPath" | "isInternalFlow" | "tempPath" | "fileItem" | "outPath"
 >;
 
 //====================== STORAGE TYPES ======================//

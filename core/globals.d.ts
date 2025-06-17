@@ -14,7 +14,7 @@ declare global {
   type InternalFileDecryptor = Type.FileDecryptor &
     InternalFlow & { fileItem?: Type.FileItem };
   type InternalFolderEncryptor = Type.FolderEncryptor &
-    InternalFlow & { folderItem?: Type.FolderItem };
+    InternalFlow & { folderItem?: Type.FolderItem; tempPath?: string };
   type InternalFolderDecryptor = FolderDecryptor &
     InternalFlow & { folderItem?: FolderItem };
   type StreamHandlerProps = Type.StreamHandlerProps;
