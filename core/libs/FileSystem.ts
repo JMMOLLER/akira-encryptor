@@ -87,18 +87,34 @@ export class FileSystem {
    * @param path `string` - The path of the file to be removed.
    * @param retries `number` - The number of retries to attempt if the removal fails (default: 15).
    */
-  async removeFile(path: string, retries = 15) {
+  async removeItem(path: string, retries = 15) {
     if (!fs.existsSync(path)) {
-      return Promise.reject(new Error(`File not found: ${path}`));
+      return Promise.reject(new Error(`Path not found: ${path}`));
     }
+
+    let itemType: "file" | "directory" = "file";
+    const stat = this.getStatFile(path);
 
     for (let i = 0; i < retries; i++) {
       try {
-        fs.unlinkSync(path);
+        if (stat.isDirectory()) {
+          itemType = "directory";
+          fs.rmSync(path, {
+            recursive: true,
+            force: true
+          });
+        } else {
+          fs.unlinkSync(path);
+        }
         return;
       } catch (error) {
         if (error instanceof Error) {
-          await this.printAttempt(`remove file '${path}'`, error, i, retries);
+          await this.printAttempt(
+            `remove ${itemType} '${path}'`,
+            error,
+            i,
+            retries
+          );
         } else {
           return Promise.reject(error);
         }
@@ -172,6 +188,8 @@ export class FileSystem {
           : Readable.from(data); // Es un buffer/memoria
 
       const writable = fs.createWriteStream(newPath);
+      const dir = path.dirname(newPath)
+      if(!this.itemExists(dir)) this.createFolder(dir);
       await pipeline(readable, writable);
 
       // Solo eliminar si 'source' ≠ 'newPath' y no es el mismo archivo
@@ -281,14 +299,25 @@ export class FileSystem {
     }
   }
 
-  async copyFile(src: string, dest: string, retries = 15): Promise<void> {
+  async copyItem(src: string, dest: string, retries = 15): Promise<void> {
+    const srcStat = this.getStatFile(src);
+    let itemType: "file" | "directory" = "file";
     for (let i = 0; i < retries; i++) {
       try {
-        fs.copyFileSync(src, dest);
+        if (srcStat.isDirectory()) {
+          itemType = "directory";
+          fs.cpSync(src, dest, {
+            preserveTimestamps: true,
+            errorOnExist: false,
+            recursive: true
+          });
+        } else {
+          fs.copyFileSync(src, dest);
+        }
         return;
       } catch (err) {
         if (err instanceof Error) {
-          await this.printAttempt(`copy file '${src}'`, err, i, retries);
+          await this.printAttempt(`copy ${itemType} '${src}'`, err, i, retries);
         } else {
           return Promise.reject(err);
         }
@@ -296,7 +325,7 @@ export class FileSystem {
     }
   }
 
-  fileExists(path: string): boolean {
+  itemExists(path: string): boolean {
     try {
       return fs.existsSync(path);
     } catch (error) {

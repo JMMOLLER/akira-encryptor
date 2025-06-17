@@ -63,9 +63,14 @@ describe("FileSystem", () => {
 
   it("should remove a file", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
+    vi.spyOn(fs, "statSync").mockReturnValue({
+      isDirectory: () => false,
+      isFile: () => true,
+      size: 1234
+    } as any);
     const unlinkSyncSpy = vi.spyOn(fs, "unlinkSync");
 
-    fileSystem.removeFile("/mock/path");
+    fileSystem.removeItem("/mock/path");
 
     expect(unlinkSyncSpy).toHaveBeenCalledWith("/mock/path");
   });
@@ -73,7 +78,7 @@ describe("FileSystem", () => {
   it("should handle non-existent files gracefully when removing", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-    expect(() => fileSystem.removeFile("/mock/path")).rejects.toThrow();
+    expect(() => fileSystem.removeItem("/mock/path")).rejects.toThrow();
   });
 
   it("should read a directory", () => {

@@ -809,7 +809,7 @@ class Encryptor {
         this.copyStep = createSpinner("Moviendo archivo encriptado...");
       }
       await Promise.all([
-        Encryptor.FS.copyFile(renamedTempFile, destPath),
+        Encryptor.FS.copyItem(renamedTempFile, destPath),
         delay(this.stepDelay)
       ]).then(() => {
         this.copyStep?.succeed("Archivo encriptado movido correctamente.");
@@ -823,8 +823,8 @@ class Encryptor {
         this.removeStep = createSpinner("Eliminando archivo original...");
       }
       await Promise.all([
-        Encryptor.FS.removeFile(filePath),
-        Encryptor.FS.removeFile(renamedTempFile),
+        Encryptor.FS.removeItem(filePath),
+        Encryptor.FS.removeItem(renamedTempFile),
         delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo original eliminado correctamente.");
@@ -896,7 +896,7 @@ class Encryptor {
         this.removeStep = createSpinner("Eliminando archivo temporal...");
       }
       await Promise.all([
-        Encryptor.FS.removeFile(folderPath),
+        Encryptor.FS.removeItem(folderPath),
         delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
@@ -935,7 +935,7 @@ class Encryptor {
       if (!isInternalFlow && this.saveStep)
         this.saveStep.fail("Error al eliminar el archivo del registro.");
 
-      if (tempPath) await Encryptor.FS.removeFile(tempPath);
+      if (tempPath) await Encryptor.FS.removeItem(tempPath);
       return Promise.reject(error);
     }
   }

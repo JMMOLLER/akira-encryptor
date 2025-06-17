@@ -9,6 +9,8 @@ import fs from "fs";
 const storagePath = path.resolve(__dirname, "../test-storage.json");
 const testItem: StorageItem = {
   encryptedName: "test.txt",
+  originalName: "test.txt",
+  encryptedAt: new Date(),
   path: "test.txt",
   isHidden: false,
   id: "mock-uid",
