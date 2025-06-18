@@ -126,27 +126,6 @@ class Encryptor {
     }
   }
 
-  /**
-   * @description `[ENG]` Counts the number of files in a folder recursively.
-   * @description `[ES]` Cuenta el número de archivos en una carpeta de forma recursiva.
-   * @param folderPath `string` - The path of the folder to count files in.
-   */
-  private countFilesInFolder(folderPath: string): number {
-    const entries = Encryptor.FS.readDir(folderPath);
-    let count = 0;
-
-    for (const entry of entries) {
-      const fullPath = path.join(folderPath, entry.name);
-      if (entry.isDirectory()) {
-        count += this.countFilesInFolder(fullPath); // Recursively count files in subfolders
-      } else if (entry.isFile()) {
-        count++;
-      }
-    }
-
-    return count;
-  }
-
   private resetFileIndicators() {
     this.totalFolderBytes = 0;
     this.processedBytes = 0;
@@ -847,12 +826,6 @@ class Encryptor {
             "Archivo encriptado registrado correctamente."
           );
           savedItem = storageItem;
-          // if (logStream) {
-          //   logStream.write(
-          //     `✅ Registro de encriptado exitoso: ${this.savedItem.id}\n`
-          //   );
-          //   logStream.end();
-          // }
         });
       }
       const encryptedFileName = savedItem.id + ".enc";
@@ -872,11 +845,6 @@ class Encryptor {
         this.renameStep?.succeed(
           "Archivo encriptado renombrado correctamente."
         );
-        // if (logStream) {
-        //   logStream.write(
-        //     `✅ Archivo encriptado renombrado: ${renamedTempFile}\n`
-        //   );
-        // }
       });
 
       // Move the temp file to the final destination
@@ -888,9 +856,6 @@ class Encryptor {
         utils.delay(this.stepDelay)
       ]).then(() => {
         this.copyStep?.succeed("Archivo encriptado movido correctamente.");
-        // if (logStream) {
-        //   logStream.write(`✅ Archivo encriptado movido: ${destPath}\n`);
-        // }
       });
 
       // Remove the original file and temp file
@@ -903,9 +868,6 @@ class Encryptor {
         utils.delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo original eliminado correctamente.");
-        // if (logStream) {
-        //   logStream.write(`✅ Archivo original eliminado: ${filePath}\n`);
-        // }
       });
 
       return savedItem;
@@ -922,8 +884,6 @@ class Encryptor {
       if (!props.isInternalFlow && this.removeStep)
         this.removeStep.fail("Error al eliminar el archivo original.");
 
-      // if (logStream)
-      //   logStream.end(`❌ Error post‐proceso: ${(err as Error).message}\n`);
       throw err;
     }
   }
@@ -946,10 +906,6 @@ class Encryptor {
       const originalFileName = originalName;
 
       if (!originalFileName) {
-        // if (logStream) {
-        //   logStream.write("❌ No se pudo descifrar el nombre del archivo.\n");
-        //   logStream.end();
-        // }
         throw new Error("No se pudo descifrar el nombre del archivo.");
       }
 
@@ -999,19 +955,9 @@ class Encryptor {
         });
       }
 
-      // if (logStream) {
-      //   logStream.write(
-      //     `✅ Archivo descifrado correctamente.\nNombre original restaurado: ${originalFileName}\nRuta destino: ${restoredPath}\n`
-      //   );
-      //   logStream.end();
-      // }
       return Promise.resolve();
     } catch (err) {
       error = err as Error;
-      // if (logStream) {
-      //   logStream.write(`❌ Error finalizando descifrado: ${err}\n`);
-      //   logStream.end();
-      // }
 
       if (!isInternalFlow && this.renameStep)
         this.renameStep.fail("Error al reemplazar el archivo original.");
