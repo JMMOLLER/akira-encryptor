@@ -1,4 +1,4 @@
-import type createSpinner from "./utils/createSpinner";
+import type createSpinner from "../utils/createSpinner";
 import type { Readable, Writable } from "stream";
 import type { Low } from "lowdb";
 import type { Stats } from "fs";
@@ -84,6 +84,7 @@ export interface EncryptorOptions {
   /**
    * @description `[ESP]` - Permite crear un archivo de log para cada archivo en la operación de cifrado/descifrado.
    * @description `[ENG]` - Allows creating a log file for each file in the encryption/decryption operation.
+   * @default false
    */
   enableLogging?: boolean;
 }

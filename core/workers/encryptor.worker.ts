@@ -1,3 +1,4 @@
+import type { WorkerTask } from "../types/public";
 import decryptFile from "../crypto/decryptFile";
 import encryptFile from "../crypto/encryptFile";
 

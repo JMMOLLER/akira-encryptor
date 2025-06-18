@@ -1,12 +1,13 @@
 import MapAdapter from "../adapters/MapAdapter";
 import generateUID from "../utils/generateUID";
+import type { Types } from "../types";
 import { JSONFile } from "lowdb/node";
 import { env } from "../configs/env";
 import { Low } from "lowdb";
 
 class Storage {
   private static LIBRARY_PATH: string;
-  private static db: LowStoreType;
+  private static db: Types.LowStoreType;
 
   private constructor() {}
 
@@ -23,7 +24,7 @@ class Storage {
   ) {
     Storage.LIBRARY_PATH = dbPath;
     const adapter = new MapAdapter(
-      new JSONFile<EncryptedDataStore>(Storage.LIBRARY_PATH),
+      new JSONFile<Types.EncryptedDataStore>(Storage.LIBRARY_PATH),
       secretKey,
       encoding
     );
@@ -54,15 +55,17 @@ class Storage {
    * @description `[ESP]` Almacena un elemento en el almacenamiento. Si el elemento tiene un `id`, será reemplazado.
    * @param item `Omit<StorageItem, "id">` - The item to be stored. It should not contain the `id` property.
    */
-  async set(item: Omit<FileItem, "id">): Promise<FileItem>;
-  async set(item: Omit<FolderItem, "id">): Promise<FolderItem>;
-  async set(item: Omit<FileItem | FolderItem, "id">): Promise<StorageItem> {
+  async set(item: Omit<Types.FileItem, "id">): Promise<Types.FileItem>;
+  async set(item: Omit<Types.FolderItem, "id">): Promise<Types.FolderItem>;
+  async set(
+    item: Omit<Types.FileItem | Types.FolderItem, "id">
+  ): Promise<Types.StorageItem> {
     const newId = generateUID();
     const newItem = {
       ...item,
       isHidden: !!item.isHidden,
       id: newId
-    } as StorageItem;
+    } as Types.StorageItem;
 
     Storage.db.data.encryptedItems.set(newItem.id, newItem);
     await Storage.db.write();
@@ -74,13 +77,13 @@ class Storage {
     return await Storage.db.write();
   }
 
-  async replace(id: string, item: StorageItem) {
+  async replace(id: string, item: Types.StorageItem) {
     const existingItem = this.get(id);
     if (!existingItem) {
       throw new Error(`Item with id ${id} not found`);
     }
 
-    const newItem: StorageItem = { ...item, id };
+    const newItem: Types.StorageItem = { ...item, id };
     Storage.db.data.encryptedItems.set(id, newItem);
     await Storage.db.write();
     return newItem;

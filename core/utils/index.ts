@@ -1,21 +1,21 @@
-import collectFileSizes from "../utils/collectFileSizes";
 import createProgressBar from "../utils/createProgressBar";
-import createSpinner from "../utils/createSpinner";
-import delay from "../utils/delay";
-import formatBytes from "../utils/formatBytes";
 import generateSecretKey from "../utils/generateSecretKey";
-import generateUID from "../utils/generateUID";
+import collectFileSizes from "../utils/collectFileSizes";
 import normalizePath from "../utils/normalizePath";
+import createSpinner from "../utils/createSpinner";
+import formatBytes from "../utils/formatBytes";
+import generateUID from "../utils/generateUID";
 import validateUID from "../utils/validateUID";
+import delay from "../utils/delay";
 
 export {
-  collectFileSizes,
-  createProgressBar,
-  createSpinner,
-  delay,
-  formatBytes,
   generateSecretKey,
-  generateUID,
+  createProgressBar,
+  collectFileSizes,
   normalizePath,
-  validateUID
+  createSpinner,
+  validateUID,
+  formatBytes,
+  generateUID,
+  delay
 };

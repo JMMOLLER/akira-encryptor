@@ -31,8 +31,7 @@
     "noEmit": false
   },
   "include": [
-    "globals.d.ts",
-    "types.ts",
+    "types/**/*",
     "libs",
     "utils",
     "workers",

@@ -1,5 +1,6 @@
 import generateSecretKey from "../utils/generateSecretKey";
 import createSpinner from "../utils/createSpinner";
+import type { Internal, Types } from "../types";
 import { MessageChannel } from "worker_threads";
 import encryptText from "../crypto/encryptText";
 import decryptText from "../crypto/decryptText";
@@ -21,7 +22,7 @@ class Encryptor {
   private static readonly tempDir = tmpdir();
   private DEFAULT_STEP_DELAY!: number;
   private ALLOW_EXTRA_PROPS!: boolean;
-  private static workerPool: Piscina<WorkerTask, void>;
+  private static workerPool: Piscina<Types.WorkerTask, void>;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
@@ -34,10 +35,10 @@ class Encryptor {
   private readonly chunkSize = 64 * 1024;
   /* ========================== COMMON PROPERTIES ========================== */
   private stepDelay = this.DEFAULT_STEP_DELAY;
-  private renameStep?: CliSpinner;
-  private removeStep?: CliSpinner;
-  private saveStep?: CliSpinner;
-  private copyStep?: CliSpinner;
+  private renameStep?: Types.CliSpinner;
+  private removeStep?: Types.CliSpinner;
+  private saveStep?: Types.CliSpinner;
+  private copyStep?: Types.CliSpinner;
   private totalFolderBytes = 0;
   private processedBytes = 0;
 
@@ -55,18 +56,18 @@ class Encryptor {
   static async init(
     password: string,
     workerPath: string,
-    options?: EncryptorOptions
+    options?: Types.EncryptorOptions
   ): Promise<Encryptor>;
   static async init(
     password: string,
     workerPath?: undefined,
-    options?: EncryptorOptions
-  ): Promise<BasicEncryptor>;
+    options?: Types.EncryptorOptions
+  ): Promise<Types.BasicEncryptor>;
   static async init(
     password: string,
     workerPath?: string,
-    options?: EncryptorOptions
-  ): Promise<Encryptor | BasicEncryptor> {
+    options?: Types.EncryptorOptions
+  ): Promise<Encryptor | Types.BasicEncryptor> {
     await sodium.ready;
 
     const instance = new Encryptor(password);
@@ -104,7 +105,7 @@ class Encryptor {
    * @description `[ENG]` Starts the worker pool for encrypting and decrypting files.
    * @description `[ES]` Inicia el grupo de workers para cifrar y descifrar archivos.
    */
-  startWorkerPool() {
+  private startWorkerPool() {
     if (!Encryptor.workerPool) {
       Encryptor.workerPool = new Piscina({
         maxThreads: this.MAX_THREADS,
@@ -229,9 +230,13 @@ class Encryptor {
    * @description `[ENG]` Encrypts a file using the secret key and saves it with a new name.
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    */
-  async encryptFile(props: FileEncryptor): Promise<FileItem>;
-  async encryptFile(props: InternalFileEncryptor): Promise<FileItem>;
-  async encryptFile(props: InternalFileEncryptor) {
+  async encryptFile(props: Types.FileEncryptor) {
+    return this._encryptFile({
+      ...props,
+      isInternalFlow: false
+    });
+  }
+  private async _encryptFile(props: Internal.FileEncryptor) {
     const { filePath, onProgress, isInternalFlow } = props;
     let error: Error | undefined = undefined;
     // prevent encrypting the file again
@@ -298,7 +303,7 @@ class Encryptor {
         }
       );
 
-      const fileItem = await this.onEncryptWriteStreamFinish({
+      const fileItem = (await this.onEncryptWriteStreamFinish({
         isInternalFlow: !!isInternalFlow,
         extraProps: props.extraProps,
         tempPath: tempPath,
@@ -306,7 +311,7 @@ class Encryptor {
         fileStats,
         fileDir,
         filePath
-      });
+      })) as Types.FileItem;
 
       return Promise.resolve(fileItem);
     } catch (err) {
@@ -326,17 +331,21 @@ class Encryptor {
    * @description `[ENG]` Decrypts a file using the secret key and saves it with the original name.
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    */
-  async decryptFile(props: FileDecryptor): Promise<void>;
-  async decryptFile(props: InternalFileDecryptor): Promise<void>;
-  async decryptFile(props: InternalFileDecryptor): Promise<void> {
-    const { filePath, onProgress } = props;
+  async decryptFile(props: Types.FileDecryptor) {
+    return this._decryptFile({
+      ...props,
+      isInternalFlow: false
+    });
+  }
+  private async _decryptFile(props: Internal.FileDecryptor) {
+    const { filePath, fileItem, onProgress, isInternalFlow } = props;
     let error: Error | undefined = undefined;
     // skip logs file
     if (filePath.includes(".encrypt.log")) return Promise.resolve();
     if (filePath.includes(".dec.tmp")) return Promise.resolve();
     if (path.extname(filePath) !== ".enc") return Promise.resolve();
 
-    if (!props.isInternalFlow) this.processedBytes = 0;
+    if (!isInternalFlow) this.processedBytes = 0;
     const fileStats = Encryptor.FS.getStatFile(filePath);
     const totalFileSize = fileStats.size;
 
@@ -389,14 +398,11 @@ class Encryptor {
         }
       );
 
-      const outPath =
-        props.isInternalFlow && props.fileItem
-          ? props.fileItem.path
-          : undefined;
+      const outPath = isInternalFlow && fileItem ? fileItem.path : undefined;
       await this.onDecryptWriteStreamFinish({
-        isInternalFlow: !!props.isInternalFlow,
-        fileItem: props.fileItem,
+        isInternalFlow: !!isInternalFlow,
         folderPath: filePath,
+        fileItem,
         outPath,
         tempPath
       });
@@ -409,7 +415,7 @@ class Encryptor {
       channel.port1.close();
       channel.port2.close();
       if (props.onEnd) props.onEnd(error);
-      if (!props.isInternalFlow) {
+      if (!isInternalFlow) {
         await this.destroy();
       }
     }
@@ -419,9 +425,13 @@ class Encryptor {
    * @description `[ENG]` Recursively encrypts all files within a folder.
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
    */
-  async encryptFolder(props: FolderEncryptor): Promise<FolderItem>;
-  async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem>;
-  async encryptFolder(props: InternalFolderEncryptor): Promise<FolderItem> {
+  async encryptFolder(props: Types.FolderEncryptor) {
+    return this._encryptFolder({
+      ...props,
+      isInternalFlow: false
+    });
+  }
+  private async _encryptFolder(props: Internal.FolderEncryptor) {
     const { folderPath, onProgress, isInternalFlow } = props;
 
     const baseName = path.basename(folderPath);
@@ -461,13 +471,13 @@ class Encryptor {
     // --------------------
     // PHASE A: Process subfolders first (DFS)
     // --------------------
-    const subfolderPromises: Promise<FolderItem | null>[] = [];
+    const subfolderPromises: Promise<Types.FolderItem | null>[] = [];
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const subfolderTask = limit(async () => {
           // Recursively encrypt subfolder
-          return await this.encryptFolder({
+          return await this._encryptFolder({
             isInternalFlow: true,
             folderPath: path.join(folderPath, entry.name),
             tempPath: path.join(tempPath, entry.name),
@@ -480,18 +490,18 @@ class Encryptor {
 
     // Wait for ALL subfolder tasks to finish (or abort on first error)
     const subfolderResults = await Promise.all(subfolderPromises);
-    // At this point, subfolderResults is FolderItem[]
+    // At this point, subfolderResults is Types.FolderItem[]
 
     // --------------------
     // PHASE B: Process files in this folder
     // --------------------
-    const subfolders: FolderItem[] = subfolderResults.filter(
-      (item): item is FolderItem => item !== null
+    const subfolders: Types.FolderItem[] = subfolderResults.filter(
+      (item): item is Types.FolderItem => item !== null
     );
 
     // ------------- FASE B: Procesar ARCHIVOS -------------
     // Ahora que todas las subcarpetas profundas fueron procesadas, encriptamos archivos
-    const filePromises: Promise<FileItem | null>[] = [];
+    const filePromises: Promise<Types.FileItem | null>[] = [];
 
     for (const entry of entries) {
       if (entry.isFile()) {
@@ -505,7 +515,7 @@ class Encryptor {
         const fileTask = limit(async () => {
           try {
             // Encrypt the file (this function already updates processedBytes)
-            const subFile = await this.encryptFile({
+            const subFile = await this._encryptFile({
               filePath: fullPath,
               isInternalFlow: true,
               onProgress: () => {
@@ -530,14 +540,17 @@ class Encryptor {
 
     // Wait for ALL file tasks to finish (or abort on first error)
     const fileResults = await Promise.all(filePromises);
-    const files: FileItem[] = fileResults.filter(
-      (item): item is FileItem => item !== null
+    const files: Types.FileItem[] = fileResults.filter(
+      (item): item is Types.FileItem => item !== null
     );
 
     // --------------------
     // PHASE C: Build the content array (subfolders first, then files)
     // --------------------
-    const content: (FileItem | FolderItem)[] = [...subfolders, ...files];
+    const content: (Types.FileItem | Types.FolderItem)[] = [
+      ...subfolders,
+      ...files
+    ];
 
     // --------------------
     // PHASE D: Encrypt current folder’s name & register
@@ -547,7 +560,7 @@ class Encryptor {
       this.SECRET_KEY,
       Encryptor.ENCODING
     );
-    let saved: StorageItem = {
+    let saved: Types.StorageItem = {
       originalName: baseName,
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
@@ -624,9 +637,13 @@ class Encryptor {
    * @description `[ENG]` Recursively decrypts all files within a folder.
    * @description `[ES]` Descifra recursivamente todos los archivos dentro de una carpeta.
    */
-  async decryptFolder(props: FolderDecryptor): Promise<string>;
-  async decryptFolder(props: InternalFolderDecryptor): Promise<string>;
-  async decryptFolder(props: InternalFolderDecryptor): Promise<string> {
+  async decryptFolder(props: Types.FolderDecryptor) {
+    return this._decryptFolder({
+      ...props,
+      isInternalFlow: false
+    });
+  }
+  private async _decryptFolder(props: Internal.FolderDecryptor) {
     const { folderPath, onProgress, isInternalFlow, folderItem, onEnd } = props;
     let error: Error | undefined = undefined;
     let skippedItems = 0;
@@ -660,7 +677,7 @@ class Encryptor {
       if (item.type === "folder") {
         const fullPath = path.join(folderPath, item.id); // encrypted folder is named by item.id
         const task = limit(async () => {
-          return this.decryptFolder({
+          return this._decryptFolder({
             folderPath: fullPath,
             isInternalFlow: true,
             folderItem: item,
@@ -685,7 +702,7 @@ class Encryptor {
         const task = limit(async () => {
           try {
             // decryptFile uses workerPool internally
-            await this.decryptFile({
+            await this._decryptFile({
               filePath: encryptedFilePath,
               isInternalFlow: true,
               fileItem: item,
@@ -697,7 +714,7 @@ class Encryptor {
             // Only skip if error indicates file was not registered
             if (err instanceof Error && err.name === "FileNotRegistered") {
               skippedItems++;
-              return;
+              return; // Skip this file
             }
             // Any other error should abort the entire operation
             throw err;
@@ -769,10 +786,10 @@ class Encryptor {
 
   /* ========================== STREAM HANDLERS ========================== */
   private async onEncryptWriteStreamFinish(
-    props: EncryptWriteStreamFinish
-  ): Promise<StorageItem> {
+    props: Types.EncryptWriteStreamFinish
+  ): Promise<Types.StorageItem> {
     const { filePath, tempPath, fileDir, fileStats, fileBaseName } = props;
-    let savedItem: FileItem | undefined = undefined;
+    let savedItem: Types.FileItem | undefined = undefined;
 
     try {
       if (!fileBaseName) {
@@ -897,7 +914,9 @@ class Encryptor {
     }
   }
 
-  private async onDecryptWriteStreamFinish(params: DecryptWriteStreamFinish) {
+  private async onDecryptWriteStreamFinish(
+    params: Types.DecryptWriteStreamFinish
+  ) {
     const { folderPath, isInternalFlow, tempPath, fileItem, outPath } = params;
     let error: Error | undefined = undefined;
 

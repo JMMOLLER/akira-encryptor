@@ -34,8 +34,8 @@
       }
     },
     "./types": {
-      "import": "./dist/types/types.d.ts",
-      "require": "./dist/types/types.d.ts"
+      "import": "./dist/types/types/public.d.ts",
+      "require": "./dist/types/types/public.d.ts"
     },
     "./workers": {
       "import": {
