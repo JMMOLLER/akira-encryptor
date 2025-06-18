@@ -87,6 +87,13 @@ export interface EncryptorOptions {
    * @default false
    */
   enableLogging?: boolean;
+
+  /**
+   * @description `[ESP]` - Permite modificar la codificación con la que se guardan los datos en el `Storage`.
+   * @description `[ENG]` - Allows you to modify the encoding with which data is stored in the `Storage`.
+   * @default "base64"
+   */
+  encoding?: BufferEncoding;
 }
 
 export interface BasicEncryptor {

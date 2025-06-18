@@ -14,12 +14,12 @@ import { tmpdir } from "os";
 import path from "path";
 
 class Encryptor {
-  private static readonly ENCODING = env.ENCODING as BufferEncoding;
+  private static workerPool: Piscina<Types.WorkerTask, void>;
   private static readonly FS = FileSystem.getInstance();
   private static readonly tempDir = tmpdir();
   private DEFAULT_STEP_DELAY!: number;
   private ALLOW_EXTRA_PROPS!: boolean;
-  private static workerPool: Piscina<Types.WorkerTask, void>;
+  private ENCODING!: BufferEncoding;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;
@@ -71,13 +71,14 @@ class Encryptor {
     instance.DEFAULT_STEP_DELAY = options?.minDelayPerStep || 300;
     instance.ALLOW_EXTRA_PROPS = options?.allowExtraProps || false;
     instance.MAX_THREADS = options?.maxThreads || env.MAX_THREADS;
+    instance.ENCODING = options?.encoding || env.ENCODING;
     instance.stepDelay = instance.DEFAULT_STEP_DELAY;
     instance.LOG = options?.enableLogging || env.LOG;
     instance.SILENT = options?.silent || false;
 
     Encryptor.STORAGE = await Storage.init(
       instance.SECRET_KEY,
-      Encryptor.ENCODING,
+      instance.ENCODING,
       options?.libraryPath
     );
 
@@ -555,7 +556,7 @@ class Encryptor {
     const encryptedName = await encryptText(
       baseName,
       this.SECRET_KEY,
-      Encryptor.ENCODING
+      this.ENCODING
     );
     let saved: Types.StorageItem = {
       originalName: baseName,
@@ -735,7 +736,7 @@ class Encryptor {
     const originalName = decryptText(
       currentFolder.encryptedName,
       this.SECRET_KEY,
-      Encryptor.ENCODING
+      this.ENCODING
     );
 
     if (!originalName) {
@@ -812,7 +813,7 @@ class Encryptor {
       const encryptedName = await encryptText(
         fileBaseName,
         this.SECRET_KEY,
-        Encryptor.ENCODING
+        this.ENCODING
       );
       savedItem = {
         encryptedName,
