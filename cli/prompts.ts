@@ -139,7 +139,7 @@ export async function askUserActions() {
   }
 
   if (!password) {
-    const storeExists = FileSystem.getInstance().fileExists("./library.json");
+    const storeExists = FileSystem.getInstance().itemExists("./library.json");
     const { password: pwd } = await inquirer.prompt<{ password: string }>([
       {
         type: "password",
