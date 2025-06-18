@@ -1,14 +1,11 @@
-import generateSecretKey from "../utils/generateSecretKey";
-import createSpinner from "../utils/createSpinner";
 import type { Internal, Types } from "../types";
 import { MessageChannel } from "worker_threads";
 import encryptText from "../crypto/encryptText";
 import decryptText from "../crypto/decryptText";
-import generateUID from "../utils/generateUID";
 import { FileSystem } from "./FileSystem";
+import * as utils from "../utils/index";
 import sodium from "libsodium-wrappers";
 import { env } from "../configs/env";
-import delay from "../utils/delay";
 import Storage from "./Storage";
 import hidefile from "hidefile";
 import Piscina from "piscina";
@@ -43,7 +40,7 @@ class Encryptor {
   private processedBytes = 0;
 
   private constructor(password: string) {
-    this.SECRET_KEY = generateSecretKey(password);
+    this.SECRET_KEY = utils.generateSecretKey(password);
   }
 
   /**
@@ -564,7 +561,7 @@ class Encryptor {
       originalName: baseName,
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
-      id: generateUID(),
+      id: utils.generateUID(),
       path: folderPath,
       type: "folder",
       encryptedName,
@@ -575,20 +572,24 @@ class Encryptor {
       // Restore default delay
       this.stepDelay = this.DEFAULT_STEP_DELAY;
       if (!this.SILENT) {
-        this.saveStep = createSpinner("Registrando carpeta encriptada...");
+        this.saveStep = utils.createSpinner(
+          "Registrando carpeta encriptada..."
+        );
       }
       if (this.ALLOW_EXTRA_PROPS && props.extraProps) {
         saved.extraProps = props.extraProps;
       } else if (props.extraProps && !this.ALLOW_EXTRA_PROPS) {
-        createSpinner(
-          "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
-        ).warn();
+        utils
+          .createSpinner(
+            "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
+          )
+          .warn();
       }
 
       // Save to storage, then mark spinner as succeeded
       await Promise.all([
         Encryptor.STORAGE.set(saved),
-        delay(this.stepDelay)
+        utils.delay(this.stepDelay)
       ]).then(([storageItem]) => {
         saved = storageItem;
         this.saveStep?.succeed("Carpeta encriptada registrada correctamente.");
@@ -605,7 +606,7 @@ class Encryptor {
     // PHASE F: Final callbacks and cleanup
     // --------------------
     if (!isInternalFlow) {
-      const mvStep = createSpinner(
+      const mvStep = utils.createSpinner(
         `Remplazando carpeta original por la encriptada...`
       );
       try {
@@ -616,9 +617,11 @@ class Encryptor {
         mvStep.succeed("Carpeta original reemplazada por la encriptada.");
         props.onEnd?.();
         if (skippedFiles > 0 && !this.SILENT) {
-          createSpinner(
-            `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
-          ).warn();
+          utils
+            .createSpinner(
+              `Se omitieron ${skippedFiles} archivo(s) porque ya estaban cifrados.`
+            )
+            .warn();
         }
       } catch (err) {
         await Encryptor.FS.removeItem(encryptedPath).catch(() => {});
@@ -737,9 +740,9 @@ class Encryptor {
 
     if (!originalName) {
       if (!this.SILENT) {
-        createSpinner(
-          `Could not decrypt folder name: ${currentFolder.id}`
-        ).warn();
+        utils
+          .createSpinner(`Could not decrypt folder name: ${currentFolder.id}`)
+          .warn();
       }
       // If unable to decrypt folder name, return original path
       return folderPath;
@@ -750,7 +753,9 @@ class Encryptor {
     try {
       if (!isInternalFlow) {
         if (!this.SILENT) {
-          this.removeStep = createSpinner("Eliminando carpeta encriptada...");
+          this.removeStep = utils.createSpinner(
+            "Eliminando carpeta encriptada..."
+          );
         }
         // Rename folder in file system
         await Encryptor.FS.removeItem(folderPath);
@@ -771,9 +776,11 @@ class Encryptor {
         onEnd?.(error);
 
         if (skippedItems > 0 && !this.SILENT) {
-          createSpinner(
-            `${skippedItems} file(s) were skipped because they were not registered in storage.`
-          ).warn();
+          utils
+            .createSpinner(
+              `${skippedItems} file(s) were skipped because they were not registered in storage.`
+            )
+            .warn();
         }
 
         this.resetFileIndicators();
@@ -813,23 +820,27 @@ class Encryptor {
         path: path.resolve(filePath),
         size: fileStats.size,
         encryptedAt: new Date(),
-        id: generateUID(),
+        id: utils.generateUID(),
         type: "file"
       };
       if (!props.isInternalFlow) {
         if (!this.SILENT) {
-          this.saveStep = createSpinner("Registrando archivo encriptado...");
+          this.saveStep = utils.createSpinner(
+            "Registrando archivo encriptado..."
+          );
         }
         if (this.ALLOW_EXTRA_PROPS && props.extraProps) {
           savedItem.extraProps = props.extraProps;
         } else if (props.extraProps && !this.ALLOW_EXTRA_PROPS) {
-          createSpinner(
-            "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
-          ).warn();
+          utils
+            .createSpinner(
+              "Propiedades extra no permitidas. Configura 'allowExtraProps' a true."
+            )
+            .warn();
         }
         await Promise.all([
           Encryptor.STORAGE.set(savedItem),
-          delay(this.stepDelay)
+          utils.delay(this.stepDelay)
         ]).then(([storageItem]) => {
           this.saveStep?.succeed(
             "Archivo encriptado registrado correctamente."
@@ -849,11 +860,13 @@ class Encryptor {
 
       // Rename the temp file to the final file name
       if (!props.isInternalFlow && !this.SILENT) {
-        this.renameStep = createSpinner("Renombrando archivo encriptado...");
+        this.renameStep = utils.createSpinner(
+          "Renombrando archivo encriptado..."
+        );
       }
       await Promise.all([
         Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile),
-        delay(this.stepDelay)
+        utils.delay(this.stepDelay)
       ]).then(() => {
         this.renameStep?.succeed(
           "Archivo encriptado renombrado correctamente."
@@ -867,11 +880,11 @@ class Encryptor {
 
       // Move the temp file to the final destination
       if (!props.isInternalFlow && !this.SILENT) {
-        this.copyStep = createSpinner("Moviendo archivo encriptado...");
+        this.copyStep = utils.createSpinner("Moviendo archivo encriptado...");
       }
       await Promise.all([
         Encryptor.FS.copyItem(renamedTempFile, destPath),
-        delay(this.stepDelay)
+        utils.delay(this.stepDelay)
       ]).then(() => {
         this.copyStep?.succeed("Archivo encriptado movido correctamente.");
         // if (logStream) {
@@ -881,12 +894,12 @@ class Encryptor {
 
       // Remove the original file and temp file
       if (!props.isInternalFlow && !this.SILENT) {
-        this.removeStep = createSpinner("Eliminando archivo original...");
+        this.removeStep = utils.createSpinner("Eliminando archivo original...");
       }
       await Promise.all([
         Encryptor.FS.removeItem(filePath),
         Encryptor.FS.removeItem(renamedTempFile),
-        delay(this.stepDelay)
+        utils.delay(this.stepDelay)
       ]).then(() => {
         this.removeStep?.succeed("Archivo original eliminado correctamente.");
         // if (logStream) {
@@ -946,22 +959,26 @@ class Encryptor {
       const data = Encryptor.FS.readFile(tempPath);
 
       if (!isInternalFlow && !this.SILENT) {
-        this.renameStep = createSpinner("Remplazando archivo original...");
+        this.renameStep = utils.createSpinner(
+          "Remplazando archivo original..."
+        );
       }
       await Promise.all([
         Encryptor.FS.replaceFile(tempPath, restoredPath, data),
-        delay(this.stepDelay)
+        utils.delay(this.stepDelay)
       ]).then(() => {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");
       });
 
       if (!outPath) {
         if (!isInternalFlow && !this.SILENT) {
-          this.removeStep = createSpinner("Eliminando archivo temporal...");
+          this.removeStep = utils.createSpinner(
+            "Eliminando archivo temporal..."
+          );
         }
         await Promise.all([
           Encryptor.FS.removeItem(folderPath),
-          delay(this.stepDelay)
+          utils.delay(this.stepDelay)
         ]).then(() => {
           this.removeStep?.succeed("Archivo temporal eliminado correctamente.");
         });
@@ -969,11 +986,13 @@ class Encryptor {
 
       if (!isInternalFlow) {
         if (!this.SILENT) {
-          this.saveStep = createSpinner("Eliminando archivo del registro...");
+          this.saveStep = utils.createSpinner(
+            "Eliminando archivo del registro..."
+          );
         }
         await Promise.all([
           Encryptor.STORAGE.delete(fileName),
-          delay(this.stepDelay)
+          utils.delay(this.stepDelay)
         ]).then(() => {
           this.saveStep?.succeed("Archivo eliminado del registro.");
         });
