@@ -99,8 +99,8 @@ export interface EncryptorOptions {
 export interface BasicEncryptor {
   getStorage: () => Map<string, StorageItem>;
   refreshStorage: () => Promise<void>;
-  revealStoredItem: (item: string) => Promise<boolean | undefined>;
-  hideStoredItem: (item: string) => Promise<boolean | undefined>;
+  revealStoredItem: (item: string) => Promise<boolean>;
+  hideStoredItem: (item: string) => Promise<boolean>;
 }
 
 export interface EncryptorProps {

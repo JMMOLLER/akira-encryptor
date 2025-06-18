@@ -152,7 +152,7 @@ class Encryptor {
   async hideStoredItem(itemId: string) {
     try {
       const { item, itemPath } = this.visibilityHelper(itemId);
-      if (item.isHidden) return;
+      if (item.isHidden) return true;
 
       const newPath = hidefile.hideSync(itemPath);
       if (typeof newPath !== "string") {
@@ -171,7 +171,7 @@ class Encryptor {
   async revealStoredItem(itemId: string) {
     try {
       const { item, itemPath } = this.visibilityHelper(itemId);
-      if (!item.isHidden) return;
+      if (!item.isHidden) return true;
 
       const newPath = hidefile.revealSync(itemPath);
       if (typeof newPath !== "string") {
