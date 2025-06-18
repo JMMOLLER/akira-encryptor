@@ -86,8 +86,8 @@ class Encryptor {
       return {
         getStorage: instance.getStorage,
         refreshStorage: instance.refreshStorage,
-        revealStoredItem: instance.revealStoredItem,
-        hideStoredItem: instance.hideStoredItem
+        revealStoredItem: instance.revealStoredItem.bind(instance),
+        hideStoredItem: instance.hideStoredItem.bind(instance)
       };
     }
 
