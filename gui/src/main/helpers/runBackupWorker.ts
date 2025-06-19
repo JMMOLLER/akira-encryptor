@@ -2,6 +2,7 @@ import getCompressionOptions from '@utils/getCompressionOptions'
 import backupWorker from '@workers/backup.worker?nodeWorker'
 import { is } from '@electron-toolkit/utils'
 import { path7za } from '7zip-bin'
+import { app } from 'electron'
 
 interface Props {
   password: Buffer
@@ -25,6 +26,15 @@ export default function runBackupWorker({ src, dest, password }: Props): Promise
         src
       } satisfies BackupWorkerProps
     })
+
+    // Listen for the app's before-quit event to handle aborting the worker
+    const onAbort = () => {
+      console.log('[backup worker] Sending abort signal to thread...')
+      worker.postMessage({ type: 'abort' })
+      app.removeListener('before-quit', onAbort)
+    }
+    // Register the abort handler to be called when the app is about to quit
+    app.once('before-quit', onAbort)
 
     let settled = false
 
