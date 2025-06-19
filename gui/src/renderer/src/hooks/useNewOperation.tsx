@@ -1,4 +1,4 @@
-import type { JsonValue } from '@akira-encryptor/core/types'
+import type { Types as Encryptor } from '@akira-encryptor/core/types'
 import { usePendingOperation } from './usePendingOperation'
 import { useEncryptedItems } from './useEncryptedItems'
 import { useUserConfig } from './useUserConfig'
@@ -7,7 +7,7 @@ import { useState } from 'react'
 
 interface Props {
   actionFor: EncryptFileProps['actionFor']
-  extraProps?: Record<string, JsonValue>
+  extraProps?: Record<string, Encryptor.JsonValue>
   srcPath: string
   id: string
 }
