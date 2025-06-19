@@ -1,4 +1,5 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -33,13 +34,19 @@ export default defineConfig({
     }
   },
   renderer: {
+    plugins: [
+      react(),
+      tailwindcss(),
+      nodePolyfills({
+        include: ['util', 'crypto', 'stream', 'fs', 'path']
+      })
+    ],
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
         '@workers': resolve('src/workers'),
         '@utils': resolve('src/utils')
       }
-    },
-    plugins: [react(), tailwindcss()]
+    }
   }
 })
