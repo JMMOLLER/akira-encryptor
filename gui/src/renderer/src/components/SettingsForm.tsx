@@ -16,11 +16,11 @@ function SettingsForm() {
   const { menuItem, setMenuItem } = useMenuItem()
   const { userConfig, updateUserConfig } = useUserConfig()
   const threadUsage = useMemo(
-    () => window.api.calculateUsageFromThreads(userConfig.maxThreads),
-    [userConfig.maxThreads]
+    () => window.api.calculateUsageFromThreads(userConfig.encryptorConfig.maxThreads),
+    [userConfig.encryptorConfig]
   )
   const [cpuUsage, setCpuUsage] = useState(threadUsage)
-  const [usageToThreads, setThreads] = useState(userConfig.maxThreads)
+  const [usageToThreads, setThreads] = useState(userConfig.encryptorConfig.maxThreads)
   const [form] = Form.useForm<CustomUserConf>()
 
   const getGradientColor = useCallback(() => {
