@@ -103,7 +103,7 @@ declare global {
     autoBackup: boolean
     backupPath: string
     coreReady: boolean
-    maxThreads: number
+    encryptorConfig: AkiraTypes.EncryptorOptions
   }
   interface UserConfigContext {
     userConfig: UserConfig & { isLoggedIn: boolean }

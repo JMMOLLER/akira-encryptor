@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
-import type { BasicEncryptor, EncryptorOptions } from '@akira-encryptor/core/types'
+import type { BasicEncryptor } from '@akira-encryptor/core/types'
 import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
 import Encryptor from '@akira-encryptor/core'
@@ -9,28 +9,18 @@ import path from 'path'
 import fs from 'fs'
 
 const getUserConfig = () => CONF.get('userConfig')
+const EncryptorConfig = getUserConfig().encryptorConfig
 
 let isDialogOpen = false
 let ENCRYPTOR: BasicEncryptor
 let PASSWORD: Buffer
-let EncryptorConfig: EncryptorOptions = {
-  allowExtraProps: true,
-  minDelayPerStep: 0,
-  silent: true
-}
 
 export default function registerIpcMain() {
   ipcMain.handle('initialize-encryptor', async (_event: IpcMainInvokeEvent, password: string) => {
     try {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
-      if (getUserConfig().maxThreads) {
-        EncryptorConfig = {
-          ...EncryptorConfig,
-          maxThreads: getUserConfig().maxThreads
-        }
-      }
-      ENCRYPTOR = await Encryptor.init(PASSWORD.toString()) // This instance is only used for refreshing the storage.
+      ENCRYPTOR = await Encryptor.init(PASSWORD.toString()) // This is a basic instance of the Encryptor class
       return { error: null, success: true }
     } catch (error) {
       console.error('Error initializing encryptor:', error)
@@ -53,7 +43,7 @@ export default function registerIpcMain() {
         const result = await runBackupWorker({ src, dest, password: PASSWORD })
         return { error: null, success: true, dest: result.dest }
       } catch (error) {
-        console.error('Worker error:', error)
+        console.error(error)
         return { error: (error as Error).message, success: false, dest: null }
       }
     } else {
@@ -150,6 +140,7 @@ export default function registerIpcMain() {
     'visibility-action',
     async (_event: IpcMainInvokeEvent, props: VisibilityActions) => {
       const { action, itemId } = props
+      let success = false
       try {
         const storage = ENCRYPTOR.getStorage()
         const item = storage.get(itemId)
@@ -157,16 +148,16 @@ export default function registerIpcMain() {
           throw new Error('Item not found')
         }
         if (action === 'show') {
-          await ENCRYPTOR.revealStoredItem(itemId)
+          success = await ENCRYPTOR.revealStoredItem(itemId)
         } else {
-          await ENCRYPTOR.hideStoredItem(itemId)
+          success = await ENCRYPTOR.hideStoredItem(itemId)
         }
-        return { error: null, success: true }
+        return { error: null, success }
       } catch (error) {
         console.error('Error in visibility action:', error)
         return {
           error: (error as Error).message,
-          success: false
+          success
         }
       }
     }

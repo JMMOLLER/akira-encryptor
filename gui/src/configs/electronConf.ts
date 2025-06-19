@@ -7,11 +7,19 @@ const CONF = new Conf<Partial<ConfStoreType>>({
     userConfig: {
       coreReady: false,
       autoBackup: true,
-      maxThreads: calculateThreads(50),
       backupPath: ensureBackupFolder(),
       compressionAlgorithm: '-m0=lzma2',
       hashedPassword: undefined,
-      compressionLvl: '-mx=5'
+      compressionLvl: '-mx=5',
+      encryptorConfig: {
+        maxThreads: calculateThreads(50),
+        libraryPath: undefined, // This will be set later if needed
+        allowExtraProps: true,
+        enableLogging: false,
+        minDelayPerStep: 0,
+        encoding: 'base64',
+        silent: true
+      }
     }
   },
 
@@ -38,9 +46,46 @@ const CONF = new Conf<Partial<ConfStoreType>>({
             type: 'string',
             default: ensureBackupFolder()
           },
-          maxThreads: {
-            type: 'number',
-            default: calculateThreads(50)
+          encryptorConfig: {
+            type: 'object',
+            nullable: false,
+            properties: {
+              maxThreads: {
+                type: 'number',
+                nullable: true,
+                default: calculateThreads(50)
+              },
+              allowExtraProps: {
+                type: 'boolean',
+                nullable: true,
+                default: true
+              },
+              enableLogging: {
+                type: 'boolean',
+                nullable: true,
+                default: false
+              },
+              encoding: {
+                type: 'string',
+                nullable: true,
+                default: 'base64'
+              },
+              minDelayPerStep: {
+                type: 'number',
+                default: 0,
+                nullable: true
+              },
+              silent: {
+                type: 'boolean',
+                nullable: true,
+                default: true
+              },
+              libraryPath: {
+                type: 'string',
+                nullable: true,
+                default: undefined // This will be set later if needed
+              }
+            }
           },
           compressionAlgorithm: {
             type: 'string',
@@ -51,7 +96,7 @@ const CONF = new Conf<Partial<ConfStoreType>>({
             default: '-mx=5'
           }
         },
-        required: ['coreReady', 'autoBackup', 'backupPath', 'maxThreads']
+        required: ['coreReady', 'autoBackup', 'backupPath', 'encryptorConfig']
       }
     }
   }
