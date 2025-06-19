@@ -237,7 +237,7 @@ class Encryptor {
     // Temp route and final route
     const fileDir = path.dirname(filePath);
     const fileBaseName = path.basename(filePath, path.extname(filePath));
-    const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}.enc.tmp`);
+    const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}-${utils.generateUID()}.enc.tmp`);
 
     const channel = new MessageChannel();
     try {
