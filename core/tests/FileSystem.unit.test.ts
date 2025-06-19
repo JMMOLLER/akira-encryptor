@@ -103,7 +103,7 @@ describe("FileSystem", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
     const renameSyncSpy = vi.spyOn(fs, "renameSync");
 
-    await fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder");
+    await fileSystem.safeRename("/mock/folder", "/mock/new-folder");
 
     expect(renameSyncSpy).toHaveBeenCalledWith(
       "/mock/folder",
@@ -115,8 +115,8 @@ describe("FileSystem", () => {
     vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
     await expect(async () =>
-      fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder")
-    ).rejects.toThrow("Directory not found: /mock/folder");
+      fileSystem.safeRename("/mock/folder", "/mock/new-folder")
+    ).rejects.toThrow("Path not found: /mock/folder");
   });
 
   it("should create a folder", () => {
@@ -156,7 +156,7 @@ describe("FileSystem", () => {
 
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
 
-    await fileSystem.safeRenameFolder("/mock/folder", "/mock/new-folder");
+    await fileSystem.safeRename("/mock/folder", "/mock/new-folder");
 
     expect(renameSyncSpy).toHaveBeenCalledTimes(3);
     expect(renameSyncSpy).toHaveBeenCalledWith(

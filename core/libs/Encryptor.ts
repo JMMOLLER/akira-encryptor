@@ -583,7 +583,7 @@ class Encryptor {
     // PHASE E: Rename/move the original folder to encrypted ID
     // --------------------
     const encryptedPath = path.join(path.dirname(tempPath), saved.id);
-    await Encryptor.FS.safeRenameFolder(tempPath, encryptedPath);
+    await Encryptor.FS.safeRename(tempPath, encryptedPath);
 
     // --------------------
     // PHASE F: Final callbacks and cleanup
@@ -845,7 +845,7 @@ class Encryptor {
         );
       }
       await Promise.all([
-        Encryptor.FS.safeRenameFolder(tempPath, renamedTempFile),
+        Encryptor.FS.safeRename(tempPath, renamedTempFile),
         utils.delay(this.stepDelay)
       ]).then(() => {
         this.renameStep?.succeed(

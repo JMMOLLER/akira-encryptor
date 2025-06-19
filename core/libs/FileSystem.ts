@@ -190,8 +190,8 @@ export class FileSystem {
           : Readable.from(data); // Es un buffer/memoria
 
       const writable = fs.createWriteStream(newPath);
-      const dir = path.dirname(newPath)
-      if(!this.itemExists(dir)) this.createFolder(dir);
+      const dir = path.dirname(newPath);
+      if (!this.itemExists(dir)) this.createFolder(dir);
       await pipeline(readable, writable);
 
       // Solo eliminar si 'source' ≠ 'newPath' y no es el mismo archivo
@@ -244,9 +244,9 @@ export class FileSystem {
    * @param folderPath `string` - The path of the folder to be renamed.
    * @param newPath `string` - The new path for the folder.
    */
-  private renameFolder(folderPath: string, newPath: string) {
+  private renameItem(folderPath: string, newPath: string) {
     if (!fs.existsSync(folderPath)) {
-      throw new Error(`Directory not found: ${folderPath}`);
+      throw new Error(`Path not found: ${folderPath}`);
     }
 
     try {
@@ -282,18 +282,19 @@ export class FileSystem {
    * @param dest `string` - The destination path for the renamed folder.
    * @param retries `number` - The number of retries to attempt if the rename fails (default: 20).
    */
-  async safeRenameFolder(
-    src: string,
-    dest: string,
-    retries = 15
-  ): Promise<void> {
+  async safeRename(src: string, dest: string, retries = 15): Promise<void> {
     for (let i = 0; i < retries; i++) {
       try {
-        this.renameFolder(src, dest);
+        this.renameItem(src, dest);
         return;
       } catch (err) {
         if (err instanceof Error) {
-          await this.printAttempt(`rename folder '${src}'`, err, i, retries);
+          await this.printAttempt(
+            `rename folder/file '${src}'`,
+            err,
+            i,
+            retries
+          );
         } else {
           return Promise.reject(err);
         }
