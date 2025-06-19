@@ -16,7 +16,7 @@ function SettingsForm() {
   const { menuItem, setMenuItem } = useMenuItem()
   const { userConfig, updateUserConfig } = useUserConfig()
   const threadUsage = useMemo(
-    () => window.api.calculateUsageFromThreads(userConfig.encryptorConfig.maxThreads),
+    () => window.api.calculateUsageFromThreads(userConfig.encryptorConfig.maxThreads!),
     [userConfig.encryptorConfig]
   )
   const [cpuUsage, setCpuUsage] = useState(threadUsage)

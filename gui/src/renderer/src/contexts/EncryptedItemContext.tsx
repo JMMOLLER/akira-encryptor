@@ -1,7 +1,7 @@
 import { createContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
+import { delay } from '@akira-encryptor/core/utils'
 import useApp from 'antd/es/app/useApp'
-import delay from '@utils/delay'
 
 // Initialize the type for the context
 const EncryptedItemContext = createContext<EncryptedItemContextType | undefined>(undefined)

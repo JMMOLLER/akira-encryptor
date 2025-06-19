@@ -1,4 +1,4 @@
-import formatBytes from '@utils/formatBytes'
+import { formatBytes } from '@akira-encryptor/core/utils'
 import { Tooltip } from 'antd'
 
 const ItemCardDescription = ({ item }: { item: StorageItem }) => (
