@@ -7,8 +7,7 @@ import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
 
-interface CustomUserConf
-  extends Omit<UserConfig, 'coreReady' | 'hashedPassword' | 'maxThreads' | 'backupPath'> {
+interface CustomUserConf extends Omit<UserConfig, 'coreReady' | 'hashedPassword' | 'backupPath'> {
   cpuUsage?: number
 }
 
@@ -66,14 +65,17 @@ function SettingsForm() {
   const handleFinish = useCallback(
     async (values: CustomUserConf) => {
       delete values.cpuUsage
-      const updatedValues = {
+      const updatedValues: CustomUserConf = {
         ...values,
-        maxThreads: usageToThreads
+        encryptorConfig: {
+          ...userConfig.encryptorConfig,
+          maxThreads: usageToThreads
+        }
       }
       updateUserConfig(updatedValues)
       handleClose()
     },
-    [usageToThreads, updateUserConfig, handleClose]
+    [usageToThreads, userConfig, updateUserConfig, handleClose]
   )
 
   const handleSliderChange = useCallback(
