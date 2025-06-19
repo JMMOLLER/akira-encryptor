@@ -1,6 +1,6 @@
-/// <reference path="../globals.d.ts" />
 import { describe, it, expect, beforeEach, vi, afterAll } from "vitest";
 import generateSecretKey from "../utils/generateSecretKey";
+import type { StorageItem } from "../types/public";
 import Storage from "../libs/Storage";
 import { env } from "../configs/env";
 import path from "path";
