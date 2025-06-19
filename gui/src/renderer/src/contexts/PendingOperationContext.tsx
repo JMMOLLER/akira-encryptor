@@ -36,20 +36,26 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
     })
   }, [])
 
-  const onProgressErrorHandler = useCallback((_: unknown, data: ProgressCallbackErrorProps) => {
-    setPendingItems((prev) => {
-      const newMap = new Map(prev)
-      const item = newMap.get(data.itemId)
+  const onErrorHandler = useCallback(
+    (_: unknown, data: ProgressCallbackErrorProps) => {
+      setPendingItems((prev) => {
+        const newMap = new Map(prev)
+        const item = newMap.get(data.itemId)
 
-      if (!item) return prev
+        if (!item) return prev
 
-      item.status = 'error'
-      item.message = data.message
-      item.srcPath = data.srcPath
+        item.status = 'error'
+        item.message = data.message
+        item.srcPath = data.srcPath
 
-      return newMap
-    })
-  }, [])
+        return newMap
+      })
+
+      // Force to update the encrypted items
+      setItems(undefined)
+    },
+    [setItems]
+  )
 
   const onEncryptEndHandler = useCallback(
     (_: unknown, data: EncryptEndEvent) => {
@@ -102,10 +108,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
   // Register the listeners
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on('onProgress', onProgressHandler)
-    const onErrorUnsubscribe = window.electron.ipcRenderer.on(
-      'onProgressError',
-      onProgressErrorHandler
-    )
+    const onErrorUnsubscribe = window.electron.ipcRenderer.on('onProgressError', onErrorHandler)
     const onOperationEnd = window.electron.ipcRenderer.on('onOperationEnd', onEncryptEndHandler)
 
     return () => {
@@ -114,7 +117,7 @@ export function PendingOperationProvider({ children }: { children: ReactNode }) 
       onOperationEnd()
       onErrorUnsubscribe()
     }
-  }, [onEncryptEndHandler, onProgressErrorHandler, onProgressHandler])
+  }, [onEncryptEndHandler, onErrorHandler, onProgressHandler])
 
   const addItem = useCallback((id: string, item: PendingItem) => {
     setPendingItems((prev) => {
