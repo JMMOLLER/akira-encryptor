@@ -14,7 +14,7 @@ interface Props {
 
 export function useNewOperation() {
   const { addPendingItem, findByPath } = usePendingOperation()
-  const [backuping, setBacking] = useState(false)
+  const [backuping, setBackuping] = useState(false)
   const { setItems } = useEncryptedItems()
   const { userConfig } = useUserConfig()
   const { message, modal } = useApp()
@@ -42,7 +42,7 @@ export function useNewOperation() {
     }
 
     if (userConfig.autoBackup) {
-      setBacking(true)
+      setBackuping(true)
       message.open({
         key: id,
         duration: 0,
@@ -84,8 +84,8 @@ export function useNewOperation() {
         })
       }
 
+      setBackuping(false)
       if (skipBackupOnError) return
-      setBacking(false)
     }
 
     // Set pending item
