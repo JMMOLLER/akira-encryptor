@@ -4,9 +4,7 @@
   "version": "0.4.1-beta",
   "author": "JMMOLLER",
   "files": [
-    "dist",
-    "utils",
-    "workers"
+    "dist"
   ],
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -15,45 +13,57 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/types/index.d.ts",
+        "types": "./dist/esm/types/index.d.ts",
         "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/types/index.d.ts",
+        "types": "./dist/cjs/types/index.d.ts",
         "default": "./dist/cjs/index.cjs"
       }
     },
     "./utils": {
       "import": {
-        "types": "./dist/types/utils/index.d.ts",
+        "types": "./dist/esm/types/utils/index.d.ts",
         "default": "./dist/esm/utils/index.js"
       },
       "require": {
-        "types": "./dist/types/utils/index.d.ts",
+        "types": "./dist/cjs/types/utils/index.d.ts",
         "default": "./dist/cjs/utils/index.cjs"
       }
     },
     "./types": {
-      "import": "./dist/types/types/public.d.ts",
-      "require": "./dist/types/types/public.d.ts"
+      "import": {
+        "types": "./dist/esm/types/types/public.d.ts"
+      },
+      "require": {
+        "types": "./dist/cjs/types/types/public.d.ts"
+      }
     },
     "./workers": {
       "import": {
-        "types": "./dist/types/workers/index.d.ts",
+        "types": "./dist/esm/types/workers/index.d.ts",
         "default": "./dist/esm/workers/index.js"
       },
       "require": {
-        "types": "./dist/types/workers/index.d.ts",
+        "types": "./dist/cjs/types/workers/index.d.ts",
         "default": "./dist/cjs/workers/index.cjs"
       }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "types": [
+        "./dist/esm/types/types/public.d.ts"
+      ]
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
     "typecheck": "bun tsc --noEmit -p tsconfig.json",
     "tests": "bun run build && bun vitest",
-    "build": "bun run clean && bun run build:types && tsup && bun run scripts/patch-cjs-requires.ts && bun run scripts/patch-mjs-imports.ts",
-    "build:types": "bun run typecheck && tsc --emitDeclarationOnly"
+    "build": "bun run clean && bun run build:types && tsup && bun run scripts/patch-cjs-requires.ts && bun run scripts/patch-mjs-imports.ts && pnpm pack",
+    "build:types": "bun run typecheck && tsc --emitDeclarationOnly && bun run copy:types && rm -rf dist/types",
+    "copy:types": "cp -R dist/types dist/cjs/types && cp -R dist/types dist/esm/types"
   },
   "devDependencies": {
     "@types/bun": "latest",
