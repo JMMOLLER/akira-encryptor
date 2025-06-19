@@ -1,11 +1,13 @@
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
+import { Readable, pipeline as p } from "stream";
 import delay from "../utils/delay";
+import { promisify } from "util";
 import path from "path";
 import fs from "fs";
 
 // TODO: Add a function to check if a file or directory is locked.
 // TODO: agregar una funcion para bloquear un archivo o directorio.
+
+const pipeline = promisify(p);
 
 export class FileSystem {
   private static instance: FileSystem;
