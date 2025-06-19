@@ -443,7 +443,10 @@ class Encryptor {
     }
 
     // 4. Create a p-limit instance to restrict concurrency
-    const limit = pLimit(Math.min(this.MAX_THREADS, entries.length));
+    const minTasks = Math.min(this.MAX_THREADS, entries.length);
+    const limit = pLimit(
+      Math.max(1, minTasks) // Ensure at least 1 thread
+    );
 
     // --------------------
     // PHASE A: Process subfolders first (DFS)
@@ -649,7 +652,10 @@ class Encryptor {
     const contentItems = currentFolder.content;
 
     // Create p-limit instance with max threads = min(MAX_THREADS, number of items)
-    const limit = pLimit(Math.min(this.MAX_THREADS, contentItems.length));
+    const minTasks = Math.min(this.MAX_THREADS, contentItems.length);
+    const limit = pLimit(
+      Math.max(1, minTasks) // Ensure at least 1 thread
+    );
 
     // --------------------
     // PHASE A: Process subfolders in parallel (DFS)
