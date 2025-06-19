@@ -54,6 +54,9 @@
     "*": {
       "types": [
         "./dist/esm/types/types/public.d.ts"
+      ],
+      "utils": [
+        "./dist/esm/types/utils/index.d.ts"
       ]
     }
   },
