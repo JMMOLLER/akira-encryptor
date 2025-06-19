@@ -111,6 +111,7 @@ function SettingsForm() {
     <Modal
       open={menuItem === 'settings'}
       onCancel={handleClose}
+      destroyOnHidden
       onOk={handleOk}
       title={
         <h1 className="text-lg font-semibold! inline-flex items-center">
@@ -118,7 +119,6 @@ function SettingsForm() {
           Configuración
         </h1>
       }
-      destroyOnClose
       centered
     >
       <Form
