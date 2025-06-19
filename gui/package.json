@@ -1,6 +1,6 @@
 {
   "name": "akira-encryptor-gui",
-  "version": "0.3.1-beta",
+  "version": "0.4.0-beta",
   "description": "A GUI for Akira Encryptor",
   "main": "./out/main/index.mjs",
   "author": "JMMOLLER",
