@@ -76,12 +76,17 @@ function NewEncrypt() {
     if (!selectedPath) {
       setStatus({
         type: 'error',
-        message: `Por favor seleccione ${menuItem === 'files' ? 'un archivo' : 'una carpeta'}`
+        message: `Por favor seleccione ${menuItem === 'files' ? 'un archivo.' : 'una carpeta.'}`
       })
     } else if (findByPath(selectedPath)) {
       setStatus({
         type: 'error',
         message: `Ya existe una operación pendiente para el ${menuItem === 'files' ? 'archivo' : 'directorio'} seleccionado.`
+      })
+    } else if (selectedPath.endsWith('.enc')) {
+      setStatus({
+        type: 'error',
+        message: `El archivo seleccionado ya esta encriptado. Por favor, seleccione otro.`
       })
     } else {
       setPathVal(selectedPath)
