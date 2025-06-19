@@ -100,12 +100,13 @@ function SettingsForm() {
 
   useEffect(() => {
     if (menuItem !== 'settings') {
+      setCpuUsage(threadUsage)
       form.setFieldsValue({
         ...userConfig,
-        cpuUsage: cpuUsage
+        cpuUsage
       })
     }
-  }, [menuItem, userConfig, cpuUsage, form])
+  }, [menuItem, userConfig, cpuUsage, form, threadUsage])
 
   return (
     <Modal
