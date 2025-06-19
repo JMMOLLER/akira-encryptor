@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@akira-encryptor/core':
-        specifier: file:..\core\akira-encryptor-core-0.4.1-beta.tgz
-        version: file:../core/akira-encryptor-core-0.4.1-beta.tgz(typescript@5.8.3)
+        specifier: file:..\core\akira-encryptor-core-0.4.2-beta.tgz
+        version: file:../core/akira-encryptor-core-0.4.2-beta.tgz(typescript@5.8.3)
       '@yao-pkg/pkg':
         specifier: ^6.5.1
         version: 6.5.1
@@ -39,9 +39,9 @@ importers:
 
 packages:
 
-  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.1-beta.tgz':
-    resolution: {integrity: sha512-8TnRJRtomF/m3HcE4Xw6ls3gUgPc1XLO6wk3jn8yJndyvChokNLnKBOP30LceAu4iuGZyaN5K1agj9EuorBFhQ==, tarball: file:../core/akira-encryptor-core-0.4.1-beta.tgz}
-    version: 0.4.1-beta
+  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.2-beta.tgz':
+    resolution: {integrity: sha512-pdHsmAlT+9NZDP1Pyd6bA00mmvFFnOruUk74XMXk3QfCulGqzC6ItRq6Zj5l4EOZmhBL9eNi9kGZ90sVd3eN9w==, tarball: file:../core/akira-encryptor-core-0.4.2-beta.tgz}
+    version: 0.4.2-beta
     peerDependencies:
       typescript: ^5
 
@@ -991,7 +991,7 @@ packages:
 
 snapshots:
 
-  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.1-beta.tgz(typescript@5.8.3)':
+  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.2-beta.tgz(typescript@5.8.3)':
     dependencies:
       '@types/hidefile': 3.0.3
       '@types/libsodium-wrappers': 0.7.14
