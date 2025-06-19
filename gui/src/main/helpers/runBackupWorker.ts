@@ -50,9 +50,7 @@ export default function runBackupWorker({ src, dest, password }: Props): Promise
               await worker.terminate()
               safeResolve({ dest })
             } catch (terminateErr) {
-              safeReject(
-                new Error('Error al finalizar el worker: ' + (terminateErr as Error).message)
-              )
+              safeReject(new Error('Error terminating worker: ' + (terminateErr as Error).message))
             }
             break
           case 'error':
