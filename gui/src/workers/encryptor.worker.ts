@@ -34,6 +34,7 @@ async function main() {
   const onEnd = (error?: Error | null) => {
     parentPort!.postMessage({
       error: error ? error.message : null,
+      stack: error ? error.stack : undefined,
       actionFor: workerData.actionFor,
       action: workerData.action,
       type: 'end',
@@ -72,6 +73,7 @@ async function main() {
     parentPort!.postMessage({
       type: 'error',
       message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
       srcPath,
       itemId
     })
