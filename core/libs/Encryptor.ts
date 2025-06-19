@@ -237,7 +237,10 @@ class Encryptor {
     // Temp route and final route
     const fileDir = path.dirname(filePath);
     const fileBaseName = path.basename(filePath, path.extname(filePath));
-    const tempPath = path.join(Encryptor.tempDir, `${fileBaseName}-${utils.generateUID()}.enc.tmp`);
+    const tempPath = path.join(
+      Encryptor.tempDir,
+      `${fileBaseName}-${utils.generateUID()}.enc.tmp`
+    );
 
     const channel = new MessageChannel();
     try {
@@ -589,15 +592,17 @@ class Encryptor {
     // PHASE F: Final callbacks and cleanup
     // --------------------
     if (!isInternalFlow) {
-      const mvStep = utils.createSpinner(
-        `Remplazando carpeta original por la encriptada...`
-      );
+      const mvStep = !this.SILENT
+        ? utils.createSpinner(
+            `Remplazando carpeta original por la encriptada...`
+          )
+        : undefined;
       try {
         const destEncryptedFolder = folderPath.replace(baseName, saved.id);
         await Encryptor.FS.copyItem(encryptedPath, destEncryptedFolder);
         await Encryptor.FS.removeItem(encryptedPath);
         await Encryptor.FS.removeItem(folderPath);
-        mvStep.succeed("Carpeta original reemplazada por la encriptada.");
+        mvStep?.succeed("Carpeta original reemplazada por la encriptada.");
         props.onEnd?.();
         if (skippedFiles > 0 && !this.SILENT) {
           utils
@@ -608,7 +613,7 @@ class Encryptor {
         }
       } catch (err) {
         await Encryptor.FS.removeItem(encryptedPath).catch(() => {});
-        mvStep.fail("Error al reemplazar la carpeta original.");
+        mvStep?.fail("Error al reemplazar la carpeta original.");
         return Promise.reject(err);
       } finally {
         this.resetFileIndicators();
