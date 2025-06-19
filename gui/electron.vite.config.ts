@@ -10,15 +10,9 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
-        '@core': corePath,
         '@workers': resolve('src/workers'),
-        '@libs': resolve(corePath, 'libs'),
         '@gui/utils': resolve('src/utils'),
-        '@utils': resolve(corePath, 'utils'),
-        '@crypto': resolve(corePath, 'crypto'),
-        '@gui/configs': resolve('src/configs'),
-        '@configs': resolve(corePath, 'configs'),
-        '@adapters': resolve(corePath, 'adapters')
+        '@gui/configs': resolve('src/configs')
       }
     },
     define: {
@@ -43,9 +37,7 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
-        '@configs': resolve(corePath, 'configs'),
         '@renderer': resolve('src/renderer/src'),
-        '@utils': resolve(corePath, 'utils'),
         '@gui/utils': resolve('src/utils'),
         '@workers': resolve('src/workers')
       }

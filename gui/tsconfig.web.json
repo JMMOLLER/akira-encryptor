@@ -19,7 +19,6 @@
       ],
       "@gui/utils/*": ["./utils/*"],
       "@workers/*": ["./workers/*"],
-      "@utils/*": ["../core/utils/*"],
       "@gui/configs/*": ["./configs/*"],
     }
   }
