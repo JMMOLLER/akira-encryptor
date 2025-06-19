@@ -1,5 +1,5 @@
-import ensureBackupFolder from '@gui/utils/ensureBackupFolder'
-import calculateThreads from '@gui/utils/calculateThreads'
+import ensureBackupFolder from '@utils/ensureBackupFolder'
+import calculateThreads from '@utils/calculateThreads'
 import { Conf } from 'electron-conf/main'
 
 const CONF = new Conf<Partial<ConfStoreType>>({

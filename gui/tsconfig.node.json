@@ -17,8 +17,8 @@
     "noUnusedLocals": false,
     "baseUrl": "./src",
     "paths": {
-      "@gui/utils/*": ["./utils/*"],
-      "@gui/configs/*": ["./configs/*"],
+      "@utils/*": ["./utils/*"],
+      "@configs/*": ["./configs/*"],
     },
   }
 }

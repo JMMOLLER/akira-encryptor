@@ -3,16 +3,14 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
-const corePath = resolve(__dirname, '../core')
-
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
         '@workers': resolve('src/workers'),
-        '@gui/utils': resolve('src/utils'),
-        '@gui/configs': resolve('src/configs')
+        '@configs': resolve('src/configs'),
+        '@utils': resolve('src/utils')
       }
     },
     define: {
@@ -30,7 +28,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
-        '@gui/utils': resolve('src/utils')
+        '@utils': resolve('src/utils')
       }
     }
   },
@@ -38,8 +36,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@gui/utils': resolve('src/utils'),
-        '@workers': resolve('src/workers')
+        '@workers': resolve('src/workers'),
+        '@utils': resolve('src/utils')
       }
     },
     plugins: [react(), tailwindcss()]

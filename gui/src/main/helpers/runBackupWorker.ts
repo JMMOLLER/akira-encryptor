@@ -1,4 +1,4 @@
-import getCompressionOptions from '@gui/utils/getCompressionOptions'
+import getCompressionOptions from '@utils/getCompressionOptions'
 import backupWorker from '@workers/backup.worker?nodeWorker'
 import { is } from '@electron-toolkit/utils'
 import { path7za } from '7zip-bin'

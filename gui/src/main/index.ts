@@ -3,7 +3,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { app, shell, BrowserWindow } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import registerIpcMain from './ipcMain'
-import '@gui/configs/electronConf'
+import '@configs/electronConf'
 import path from 'path'
 import fs from 'fs'
 

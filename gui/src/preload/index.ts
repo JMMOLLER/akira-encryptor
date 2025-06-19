@@ -1,5 +1,5 @@
-import calculateUsageFromThreads from '@gui/utils/calculateUsageFromThreads'
-import calculateThreads from '@gui/utils/calculateThreads'
+import calculateUsageFromThreads from '@utils/calculateUsageFromThreads'
+import calculateThreads from '@utils/calculateThreads'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 import { exposeConf } from 'electron-conf/preload'

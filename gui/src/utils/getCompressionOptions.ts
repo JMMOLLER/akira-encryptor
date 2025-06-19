@@ -1,4 +1,4 @@
-import CONF from '@gui/configs/electronConf'
+import CONF from '@configs/electronConf'
 
 export default function getCompressionOptions() {
   const config = CONF.get('userConfig')

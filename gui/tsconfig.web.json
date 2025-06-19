@@ -17,9 +17,9 @@
       "@renderer/*": [
         "src/renderer/src/*"
       ],
-      "@gui/utils/*": ["./utils/*"],
+      "@utils/*": ["./utils/*"],
       "@workers/*": ["./workers/*"],
-      "@gui/configs/*": ["./configs/*"],
+      "@configs/*": ["./configs/*"],
     }
   }
 }
