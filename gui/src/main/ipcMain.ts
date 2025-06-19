@@ -20,7 +20,9 @@ export default function registerIpcMain() {
     try {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
-      ENCRYPTOR = await Encryptor.init(PASSWORD.toString()) // This is a basic instance of the Encryptor class
+      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), undefined, {
+        libraryPath: EncryptorConfig.libraryPath
+      }) // This is a basic instance of the Encryptor class
       return { error: null, success: true }
     } catch (error) {
       console.error('Error initializing encryptor:', error)

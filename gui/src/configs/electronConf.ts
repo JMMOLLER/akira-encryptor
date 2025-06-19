@@ -1,6 +1,10 @@
 import ensureBackupFolder from '@utils/ensureBackupFolder'
 import calculateThreads from '@utils/calculateThreads'
 import { Conf } from 'electron-conf/main'
+import { app } from 'electron'
+import { join } from 'path'
+
+const libraryPath = join(app.getPath('userData'), 'storage.json')
 
 const CONF = new Conf<Partial<ConfStoreType>>({
   defaults: {
@@ -13,12 +17,12 @@ const CONF = new Conf<Partial<ConfStoreType>>({
       compressionLvl: '-mx=5',
       encryptorConfig: {
         maxThreads: calculateThreads(50),
-        libraryPath: undefined, // This will be set later if needed
         allowExtraProps: true,
         enableLogging: false,
         minDelayPerStep: 0,
         encoding: 'base64',
-        silent: true
+        silent: true,
+        libraryPath
       }
     }
   },
@@ -83,7 +87,7 @@ const CONF = new Conf<Partial<ConfStoreType>>({
               libraryPath: {
                 type: 'string',
                 nullable: true,
-                default: undefined // This will be set later if needed
+                default: libraryPath
               }
             }
           },
