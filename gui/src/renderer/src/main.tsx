@@ -3,6 +3,7 @@ import './assets/main.css'
 import { PendingOperationProvider } from './contexts/PendingOperationContext'
 import { EncryptedItemProvider } from './contexts/EncryptedItemContext'
 import fluentColorIcons from '@iconify-json/fluent-color/icons.json'
+import { OperationProvider } from './contexts/OperationContext'
 import { MenuItemProvider } from './contexts/MenuItemContext'
 import { UserConfigProvider } from './contexts/UserConfig'
 import { DrawerProvider } from './contexts/DrawerContext'
@@ -23,11 +24,13 @@ createRoot(document.getElementById('root')!).render(
         <UserConfigProvider>
           <EncryptedItemProvider>
             <PendingOperationProvider>
-              <MenuItemProvider>
-                <DrawerProvider>
-                  <App />
-                </DrawerProvider>
-              </MenuItemProvider>
+              <OperationProvider>
+                <MenuItemProvider>
+                  <DrawerProvider>
+                    <App />
+                  </DrawerProvider>
+                </MenuItemProvider>
+              </OperationProvider>
             </PendingOperationProvider>
           </EncryptedItemProvider>
         </UserConfigProvider>
