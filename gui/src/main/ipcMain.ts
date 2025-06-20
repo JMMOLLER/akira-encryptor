@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import type { BasicEncryptor } from '@akira-encryptor/core/types'
 import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
@@ -9,7 +9,16 @@ import path from 'path'
 import fs from 'fs'
 
 const getUserConfig = () => CONF.get('userConfig')
-const EncryptorConfig = getUserConfig().encryptorConfig
+let EncryptorConfig = getUserConfig().encryptorConfig
+
+CONF.onDidChange('userConfig', (newConfig) => {
+  if (!newConfig) {
+    console.warn('No userConfig found, using default EncryptorConfig')
+    return
+  }
+  console.log('[ipcMain] UserConfing has been updated')
+  EncryptorConfig = newConfig.encryptorConfig
+})
 
 let isDialogOpen = false
 let ENCRYPTOR: BasicEncryptor
@@ -21,7 +30,8 @@ export default function registerIpcMain() {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
       ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), undefined, {
-        libraryPath: EncryptorConfig.libraryPath
+        libraryPath: EncryptorConfig.libraryPath,
+        encoding: EncryptorConfig.encoding
       }) // This is a basic instance of the Encryptor class
       return { error: null, success: true }
     } catch (error) {
