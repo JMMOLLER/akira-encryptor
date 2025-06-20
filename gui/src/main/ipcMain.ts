@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import { BrowserWindow, dialog, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import deleteStorageAndReload from '@utils/deleteStorageAndReload'
 import type { BasicEncryptor } from '@akira-encryptor/core/types'
 import runEncryptorWorker from './helpers/runEncryptorWorker'
 import runBackupWorker from './helpers/runBackupWorker'
@@ -185,6 +186,47 @@ export default function registerIpcMain() {
       shell.openPath(path.resolve(targetPath))
     } else {
       shell.showItemInFolder(path.resolve(targetPath))
+    }
+  })
+
+  ipcMain.on('reset-action', async (_event: IpcMainInvokeEvent, action: ResetActions) => {
+    const libraryPath = EncryptorConfig.libraryPath!
+    switch (action) {
+      case 'reset-storage': {
+        try {
+          await deleteStorageAndReload(libraryPath)
+          break
+        } catch (error) {
+          console.error('Error resetting storage:', error)
+          break
+        }
+      }
+      case 'reset-pwd': {
+        try {
+          const conf = CONF.get('userConfig')
+          delete conf.hashedPassword
+          CONF.set('userConfig', conf)
+          await deleteStorageAndReload(libraryPath)
+          break
+        } catch (error) {
+          console.error('Error resetting config:', error)
+          break
+        }
+      }
+      default: {
+        console.warn('Acción no reconocida:', action)
+        break
+      }
+    }
+  })
+
+  ipcMain.handle('exist-storage', async () => {
+    try {
+      const storageExists = fs.existsSync(EncryptorConfig.libraryPath!)
+      return storageExists
+    } catch (error) {
+      console.error('Error checking storage existence:', error)
+      return false
     }
   })
 }

@@ -36,8 +36,10 @@ declare global {
     initEncryptor: (password: string) => Promise<IpcResponseStatus>
     encryptorAction: (props: EncryptFileProps) => Promise<void>
     calculateUsageFromThreads: (threads: number) => number
+    resetAction: (action: ResetActions) => Promise<void>
     calculateThreads: (usage: number) => number
     openPath: (targetPath: string) => void
+    existStorage: () => Promise<boolean>
     openDevTools: () => void
   }
 
@@ -163,5 +165,20 @@ declare global {
      */
     password: Uint8Array
     EncryptorConfig?: AkiraTypes.EncryptorOptions
+  }
+
+  type ResetActions = 'reset-storage' | 'reset-pwd' | 'reset-config'
+
+  interface OperationProps {
+    actionFor: EncryptFileProps['actionFor']
+    extraProps?: Record<string, AkiraTypes.JsonValue>
+    srcPath: string
+    id: string
+  }
+
+  interface OperationContextValue {
+    hasBackupInProgress: boolean
+    newEncrypt: (props: OperationProps) => Promise<void>
+    newDecrypt: (props: OperationProps) => void
   }
 }

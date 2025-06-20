@@ -1,26 +1,51 @@
-import { algorithmOptions, compressionLevels, marks } from '../constants/settingsForm.const'
+import { Button, Form, Modal, Popconfirm, Select, Slider, Switch } from 'antd'
+import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
-import { Form, Modal, Select, Slider, Switch } from 'antd'
+import { useCountdown } from '@renderer/hooks/useContdown'
+import * as consts from '../constants/settingsForm.const'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
+import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
+import { useNewOperation } from '@renderer/hooks/useNewOperation'
 
-interface CustomUserConf extends Omit<UserConfig, 'coreReady' | 'hashedPassword' | 'backupPath'> {
+type OmitedUserConfig = Omit<
+  UserConfig,
+  'coreReady' | 'hashedPassword' | 'backupPath' | 'encryptorConfig'
+>
+interface CustomUserConf extends OmitedUserConfig {
   cpuUsage?: number
 }
 
 function SettingsForm() {
   const { menuItem, setMenuItem } = useMenuItem()
   const { userConfig, updateUserConfig } = useUserConfig()
+  const encryptorConfig = useMemo(() => userConfig.encryptorConfig, [userConfig.encryptorConfig])
   const threadUsage = useMemo(
-    () => window.api.calculateUsageFromThreads(userConfig.encryptorConfig.maxThreads!),
-    [userConfig.encryptorConfig]
+    () => window.api.calculateUsageFromThreads(encryptorConfig.maxThreads!),
+    [encryptorConfig]
   )
+  const [usageToThreads, setThreads] = useState(encryptorConfig.maxThreads)
+  const { encryptedItems: items } = useEncryptedItems()
+  const encryptedItems = useMemo(() => items || { size: 0 }, [items])
   const [cpuUsage, setCpuUsage] = useState(threadUsage)
-  const [usageToThreads, setThreads] = useState(userConfig.encryptorConfig.maxThreads)
+  const { hasBackupInProgress } = useNewOperation()
+  const { pendingItems } = usePendingOperation()
+  const { counter, setActive } = useCountdown(5)
+
   const [form] = Form.useForm<CustomUserConf>()
+  const pwdDescription = useMemo(
+    () => (
+      <span className="max-w-80 block">
+        {encryptedItems.size > 0
+          ? 'Aún tiene elementos cifrados, descífrelos antes si no quiere perder los datos.'
+          : 'Esta acción no se puede revertir y no restablece la configuración al por defecto.'}
+      </span>
+    ),
+    [encryptedItems]
+  )
 
   const getGradientColor = useCallback(() => {
     const startColor = [24, 144, 255] // Azul
@@ -65,17 +90,16 @@ function SettingsForm() {
   const handleFinish = useCallback(
     async (values: CustomUserConf) => {
       delete values.cpuUsage
-      const updatedValues: CustomUserConf = {
+      updateUserConfig({
         ...values,
         encryptorConfig: {
-          ...userConfig.encryptorConfig,
+          ...encryptorConfig,
           maxThreads: usageToThreads
         }
-      }
-      updateUserConfig(updatedValues)
+      })
       handleClose()
     },
-    [usageToThreads, userConfig, updateUserConfig, handleClose]
+    [usageToThreads, encryptorConfig, updateUserConfig, handleClose]
   )
 
   const handleSliderChange = useCallback(
@@ -102,8 +126,10 @@ function SettingsForm() {
     if (menuItem !== 'settings') {
       setCpuUsage(threadUsage)
       form.setFieldsValue({
-        ...userConfig,
-        cpuUsage
+        autoBackup: userConfig.autoBackup,
+        cpuUsage,
+        compressionAlgorithm: userConfig.compressionAlgorithm,
+        compressionLvl: userConfig.compressionLvl
       })
     }
   }, [menuItem, userConfig, cpuUsage, form, threadUsage])
@@ -122,15 +148,11 @@ function SettingsForm() {
       }
       centered
     >
-      <Form
+      <Form<CustomUserConf>
         form={form}
         name="settings"
-        initialValues={{
-          ...userConfig,
-          cpuUsage: cpuUsage
-        }}
-        onFinish={handleFinish}
         requiredMark={false}
+        onFinish={handleFinish}
       >
         <div className="border-b border-black/10 p-1.5 [&>p]:text-gray-500 [&>p]:text-xs">
           <Form.Item
@@ -160,7 +182,12 @@ function SettingsForm() {
               { type: 'number', min: 10, message: 'El uso de CPU no puede ser menor al 10%.' }
             ]}
           >
-            <Slider onChange={handleSliderChange} marks={marks} min={10} styles={sliderStyles} />
+            <Slider
+              onChange={handleSliderChange}
+              marks={consts.marks}
+              min={10}
+              styles={sliderStyles}
+            />
           </Form.Item>
           <p>
             Ajusta el porcentaje de uso de la CPU para la compresión y descompresión de archivos. Un
@@ -175,7 +202,7 @@ function SettingsForm() {
             name="compressionAlgorithm"
             className="mb-1.5!"
           >
-            <Select className="w-32!" options={algorithmOptions} />
+            <Select className="w-32!" options={consts.algorithmOptions} />
           </Form.Item>
           <p>
             El algoritmo de compresión determina cómo se comprimirán los archivos. Algunos
@@ -183,15 +210,48 @@ function SettingsForm() {
           </p>
         </div>
 
-        <div className="p-2.5 [&>p]:text-gray-500 [&>p]:text-xs">
+        <div className="border-b border-black/10 p-2.5 [&>p]:text-gray-500 [&>p]:text-xs">
           <Form.Item label="Nivel de compresión" name="compressionLvl" className="mb-1.5!">
-            <Select className="w-32!" options={compressionLevels} />
+            <Select className="w-32!" options={consts.compressionLevels} />
           </Form.Item>
           <p>
             El nivel de compresión determina la cantidad de compresión aplicada a los archivos. Un
             nivel más alto puede reducir el tamaño del archivo, pero también puede aumentar el
             tiempo de compresión y descompresión.
           </p>
+        </div>
+
+        <div className="p-2.5 [&>p]:text-gray-500 [&>p]:text-xs flex gap-5">
+          <Popconfirm
+            title="¿Estás seguro de restablecer la contraseña?"
+            description={pwdDescription}
+            onOpenChange={(open) => {
+              if (encryptedItems.size > 0) {
+                setActive(open)
+              }
+            }}
+            onConfirm={() => {
+              window.api.resetAction('reset-pwd')
+            }}
+            okText={counter > 0 ? `Aceptar (${counter})` : 'Aceptar'}
+            disabled={pendingItems.size > 0 || hasBackupInProgress}
+            okButtonProps={{ loading: counter > 0 }}
+          >
+            <Button
+              disabled={pendingItems.size > 0 || hasBackupInProgress}
+              className="w-full group"
+              type="primary"
+              danger
+            >
+              <Icon
+                icon="fluent-color:person-key-32"
+                className="group-disabled:grayscale"
+                width="20"
+                height="20"
+              />
+              Restablecer Contraseña
+            </Button>
+          </Popconfirm>
         </div>
       </Form>
     </Modal>
