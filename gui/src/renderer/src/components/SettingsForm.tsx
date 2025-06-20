@@ -1,5 +1,7 @@
 import { Button, Form, Modal, Popconfirm, Select, Slider, Switch } from 'antd'
+import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
+import { useNewOperation } from '@renderer/hooks/useNewOperation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { useCountdown } from '@renderer/hooks/useContdown'
@@ -8,8 +10,6 @@ import { useMenuItem } from '@renderer/hooks/useMenuItem'
 import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
-import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
-import { useNewOperation } from '@renderer/hooks/useNewOperation'
 
 type OmitedUserConfig = Omit<
   UserConfig,
@@ -41,7 +41,7 @@ function SettingsForm() {
       <span className="max-w-80 block">
         {encryptedItems.size > 0
           ? 'Aún tiene elementos cifrados, descífrelos antes si no quiere perder los datos.'
-          : 'Esta acción no se puede revertir y no restablece la configuración al por defecto.'}
+          : 'Esta acción no se puede revertir, elimina los backups y no restablece la configuración al por defecto.'}
       </span>
     ),
     [encryptedItems]

@@ -190,11 +190,11 @@ export default function registerIpcMain() {
   })
 
   ipcMain.on('reset-action', async (_event: IpcMainInvokeEvent, action: ResetActions) => {
-    const libraryPath = EncryptorConfig.libraryPath!
+    const userConfig = getUserConfig()
     switch (action) {
       case 'reset-storage': {
         try {
-          await deleteStorageAndReload(libraryPath)
+          await deleteStorageAndReload(userConfig)
           break
         } catch (error) {
           console.error('Error resetting storage:', error)
@@ -206,7 +206,7 @@ export default function registerIpcMain() {
           const conf = CONF.get('userConfig')
           delete conf.hashedPassword
           CONF.set('userConfig', conf)
-          await deleteStorageAndReload(libraryPath)
+          await deleteStorageAndReload(userConfig)
           break
         } catch (error) {
           console.error('Error resetting config:', error)
