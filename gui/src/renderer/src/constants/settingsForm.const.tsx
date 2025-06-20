@@ -1,5 +1,7 @@
 import { SliderSingleProps } from 'antd'
 
+type EncodingOptions = { value: BufferEncoding; label: string }[]
+
 const algorithmOptions = [
   { value: '-m0=copy', label: 'Ninguno' },
   { value: '-m0=lzma', label: 'LZMA' },
@@ -38,5 +40,12 @@ const marks: SliderSingleProps['marks'] = {
     label: <strong>100%</strong>
   }
 }
+const encodingOptions: EncodingOptions = [
+  { value: 'utf8', label: 'UTF-8' },
+  { value: 'utf16le', label: 'UTF-16LE' },
+  { value: 'ascii', label: 'ASCII' },
+  { value: 'base64', label: 'Base64' },
+  { value: 'hex', label: 'Hexadecimal' }
+]
 
-export { algorithmOptions, compressionLevels, marks }
+export { algorithmOptions, compressionLevels, encodingOptions, marks }
