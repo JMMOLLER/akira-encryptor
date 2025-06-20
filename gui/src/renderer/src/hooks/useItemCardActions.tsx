@@ -159,7 +159,7 @@ const useItemCardActions = ({ item }: Props) => {
   return [
     <Tooltip
       title={item.isHidden ? 'Mostrar elemento' : 'Ocultar elemento'}
-      destroyTooltipOnHide
+      destroyOnHidden
       mouseEnterDelay={1}
       key="visibility"
     >
@@ -169,12 +169,12 @@ const useItemCardActions = ({ item }: Props) => {
         <Icons.EyeOutlined onClick={toggleVisibility} />
       )}
     </Tooltip>,
-    <Tooltip mouseEnterDelay={1} destroyTooltipOnHide title="Desencriptar" key="decrypt">
+    <Tooltip mouseEnterDelay={1} destroyOnHidden title="Desencriptar" key="decrypt">
       <Popconfirm title="¿Estás seguro de que quieres continuar?" onConfirm={decryptItem}>
         <Icons.KeyOutlined />
       </Popconfirm>
     </Tooltip>,
-    <Tooltip mouseEnterDelay={1} destroyTooltipOnHide title="Información" key="info">
+    <Tooltip mouseEnterDelay={1} destroyOnHidden title="Información" key="info">
       <Icons.InfoCircleOutlined onClick={openInfoDrawer} />
     </Tooltip>
   ]
