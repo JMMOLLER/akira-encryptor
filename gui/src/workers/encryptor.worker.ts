@@ -20,6 +20,7 @@ async function main() {
     throw new Error('Worker path is not defined. Please check your build configuration.')
   }
 
+  console.log('Starting encryptor worker with data:', EncryptorConfig)
   const ENCRYPTOR = await Encryptor.init(password.toString(), workerPath, EncryptorConfig)
 
   const sendProgress: ProgressCallback = (processedBytes, totalBytes) => {
