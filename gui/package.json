@@ -47,6 +47,7 @@
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "deep-object-diff": "^1.1.9",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
     "electron-devtools-installer": "^4.0.0",

@@ -1,5 +1,6 @@
 import ensureBackupFolder from '@utils/ensureBackupFolder'
 import calculateThreads from '@utils/calculateThreads'
+import { updatedDiff } from 'deep-object-diff'
 import { Conf } from 'electron-conf/main'
 import { app } from 'electron'
 import { join } from 'path'
@@ -109,8 +110,13 @@ const CONF = new Conf<Partial<ConfStoreType>>({
 // set initial values
 CONF.set('userConfig.coreReady', false)
 // debug configuration changes
-CONF.onDidAnyChange((changes) => {
-  console.log('Configuration changes detected:', changes)
+CONF.onDidAnyChange((newValue, oldValue) => {
+  const oldCfg = oldValue?.userConfig ?? {}
+  const newCfg = newValue?.userConfig ?? {}
+
+  const resultado = updatedDiff(oldCfg, newCfg)
+
+  console.log('[electronConf] Changes detected: ', JSON.stringify(resultado, null, 2))
 })
 // register the renderer listener
 CONF.registerRendererListener()
