@@ -2,11 +2,11 @@ import { Button, Form, Modal, Popconfirm, Select, Slider, Switch } from 'antd'
 import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
 import { useNewOperation } from '@renderer/hooks/useNewOperation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { useCountdown } from '@renderer/hooks/useContdown'
 import * as consts from '../constants/settingsForm.const'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
+import { useCallback, useMemo, useState } from 'react'
 import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
@@ -79,14 +79,6 @@ function SettingsForm() {
     [userConfig.backupPath]
   )
 
-  const handleClose = useCallback(() => {
-    setMenuItem()
-  }, [setMenuItem])
-
-  const handleOk = useCallback(() => {
-    form.submit()
-  }, [form])
-
   const handleFinish = useCallback(
     async (values: CustomUserConf) => {
       delete values.cpuUsage
@@ -97,9 +89,9 @@ function SettingsForm() {
           maxThreads: usageToThreads
         }
       })
-      handleClose()
+      setMenuItem()
     },
-    [usageToThreads, encryptorConfig, updateUserConfig, handleClose]
+    [usageToThreads, encryptorConfig, updateUserConfig, setMenuItem]
   )
 
   const handleSliderChange = useCallback(
@@ -110,6 +102,17 @@ function SettingsForm() {
     },
     [setCpuUsage, setThreads]
   )
+
+  const handleOpenChange = useCallback(() => {
+    setCpuUsage(threadUsage)
+    form.setFieldsValue({
+      autoBackup: userConfig.autoBackup,
+      compressionAlgorithm: userConfig.compressionAlgorithm,
+      compressionLvl: userConfig.compressionLvl,
+      hideItemName: userConfig.hideItemName,
+      cpuUsage
+    })
+  }, [form, userConfig, cpuUsage, threadUsage])
 
   const sliderStyles: SliderProps['styles'] = useMemo(() => {
     return {
@@ -122,24 +125,13 @@ function SettingsForm() {
     }
   }, [getGradientColor])
 
-  useEffect(() => {
-    if (menuItem !== 'settings') {
-      setCpuUsage(threadUsage)
-      form.setFieldsValue({
-        autoBackup: userConfig.autoBackup,
-        cpuUsage,
-        compressionAlgorithm: userConfig.compressionAlgorithm,
-        compressionLvl: userConfig.compressionLvl
-      })
-    }
-  }, [menuItem, userConfig, cpuUsage, form, threadUsage])
-
   return (
     <Modal
+      afterOpenChange={handleOpenChange}
       open={menuItem === 'settings'}
-      onCancel={handleClose}
+      onCancel={() => setMenuItem()}
+      onOk={() => form.submit()}
       destroyOnHidden
-      onOk={handleOk}
       title={
         <h1 className="text-lg font-semibold! inline-flex items-center">
           <Icon icon="fluent-color:settings-16" className="w-12 h-6 -ml-2.5! -mr-1.5!" />
