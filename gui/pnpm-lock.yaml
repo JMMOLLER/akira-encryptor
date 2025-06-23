@@ -12,8 +12,8 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       '@akira-encryptor/core':
-        specifier: file:..\core\akira-encryptor-core-0.4.2-beta.tgz
-        version: file:../core/akira-encryptor-core-0.4.2-beta.tgz(typescript@5.8.3)
+        specifier: file:..\core\akira-encryptor-core-0.4.3-beta.tgz
+        version: file:../core/akira-encryptor-core-0.4.3-beta.tgz(typescript@5.8.3)
       '@ant-design/icons':
         specifier: ^6.0.0
         version: 6.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -144,9 +144,9 @@ packages:
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
 
-  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.2-beta.tgz':
-    resolution: {integrity: sha512-pdHsmAlT+9NZDP1Pyd6bA00mmvFFnOruUk74XMXk3QfCulGqzC6ItRq6Zj5l4EOZmhBL9eNi9kGZ90sVd3eN9w==, tarball: file:../core/akira-encryptor-core-0.4.2-beta.tgz}
-    version: 0.4.2-beta
+  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.3-beta.tgz':
+    resolution: {integrity: sha512-TBywDQ6YVZfYQKYy2qBSKWBQPGBPTw2dvatBvXT+wEElh/2m05GYN1Gn4zggghkC+5L0osbxvSwvVFpFpmKbyw==, tarball: file:../core/akira-encryptor-core-0.4.3-beta.tgz}
+    version: 0.4.3-beta
     peerDependencies:
       typescript: ^5
 
@@ -3975,7 +3975,7 @@ snapshots:
 
   7zip-bin@5.2.0: {}
 
-  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.2-beta.tgz(typescript@5.8.3)':
+  '@akira-encryptor/core@file:../core/akira-encryptor-core-0.4.3-beta.tgz(typescript@5.8.3)':
     dependencies:
       '@types/hidefile': 3.0.3
       '@types/libsodium-wrappers': 0.7.14
