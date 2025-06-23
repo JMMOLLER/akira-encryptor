@@ -10,6 +10,7 @@ declare global {
   type FolderDecryptor = AkiraTypes.FolderDecryptor
   type FileEncryptor = AkiraTypes.FileEncryptor
   type FileDecryptor = AkiraTypes.FileDecryptor
+  type AkiraBufferEncoding = AkiraTypes.BufferEncoding
   type OpenExplorerProps = {
     title?: string
     properties: OpenDialogOptions['properties']
