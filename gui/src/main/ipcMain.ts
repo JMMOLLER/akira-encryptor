@@ -12,28 +12,41 @@ import fs from 'fs'
 const getUserConfig = () => CONF.get('userConfig')
 let EncryptorConfig = getUserConfig().encryptorConfig
 
-CONF.onDidChange('userConfig', (newConfig) => {
+CONF.onDidChange('userConfig', async (newConfig, oldValue) => {
   if (!newConfig) {
     console.warn('No userConfig found, using default EncryptorConfig')
     return
   }
   console.log('[ipcMain] UserConfing has been updated')
   EncryptorConfig = newConfig.encryptorConfig
+
+  // We check if config for the Encryptor class has changed.
+  const newConfString = JSON.stringify(newConfig.encryptorConfig)
+  const oldConfString = JSON.stringify(oldValue?.encryptorConfig)
+  if (ENCRYPTOR && newConfString !== oldConfString) {
+    await initializeEncryptor().then(() =>
+      console.log('[ipcMain] Basic ENCRYPTOR instance has been updated')
+    )
+  }
 })
 
 let isDialogOpen = false
 let ENCRYPTOR: BasicEncryptor
 let PASSWORD: Buffer
 
+async function initializeEncryptor() {
+  ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), undefined, {
+    libraryPath: EncryptorConfig.libraryPath,
+    encoding: EncryptorConfig.encoding
+  }) // This is a basic instance of the Encryptor class
+}
+
 export default function registerIpcMain() {
   ipcMain.handle('initialize-encryptor', async (_event: IpcMainInvokeEvent, password: string) => {
     try {
       // Using a buffer to have better memory control of the password.
       PASSWORD = Buffer.from(password, 'utf-8')
-      ENCRYPTOR = await Encryptor.init(PASSWORD.toString(), undefined, {
-        libraryPath: EncryptorConfig.libraryPath,
-        encoding: EncryptorConfig.encoding
-      }) // This is a basic instance of the Encryptor class
+      await initializeEncryptor()
       return { error: null, success: true }
     } catch (error) {
       console.error('Error initializing encryptor:', error)
