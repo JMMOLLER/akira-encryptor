@@ -96,6 +96,8 @@ export interface EncryptorOptions {
   encoding?: BufferEncoding;
 }
 
+export type BufferEncoding = "base64" | "base64url" | "hex" | "latin1";
+
 export interface BasicEncryptor {
   getStorage: () => Map<string, StorageItem>;
   refreshStorage: () => Promise<void>;
