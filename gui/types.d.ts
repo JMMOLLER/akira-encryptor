@@ -102,6 +102,7 @@ declare global {
     compressionAlgorithm: CompressionAlgorithm
     compressionLvl: CompressionLvl
     hashedPassword?: string
+    hideItemName: boolean
     autoBackup: boolean
     backupPath: string
     coreReady: boolean

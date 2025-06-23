@@ -16,6 +16,7 @@ const CONF = new Conf<Partial<ConfStoreType>>({
       compressionAlgorithm: '-m0=lzma2',
       hashedPassword: undefined,
       compressionLvl: '-mx=5',
+      hideItemName: false,
       encryptorConfig: {
         maxThreads: calculateThreads(50),
         allowExtraProps: true,
@@ -50,6 +51,10 @@ const CONF = new Conf<Partial<ConfStoreType>>({
           backupPath: {
             type: 'string',
             default: ensureBackupFolder()
+          },
+          hideItemName: {
+            type: 'boolean',
+            default: false
           },
           encryptorConfig: {
             type: 'object',

@@ -173,6 +173,13 @@ function SettingsForm() {
         </div>
 
         <div className="border-b border-black/10 p-1.5 [&>p]:text-gray-500 [&>p]:text-xs">
+          <Form.Item label="Ocultar nombre de los elementos" className="mb-0!" name="hideItemName">
+            <Switch checkedChildren="Activado" unCheckedChildren="Desactivado" />
+          </Form.Item>
+          <p>Permite ocultar el nombre de los elementos encriptados en la vista general.</p>
+        </div>
+
+        <div className="border-b border-black/10 p-1.5 [&>p]:text-gray-500 [&>p]:text-xs">
           <Form.Item
             label="Uso de CPU"
             className="-mb-1.5!"
