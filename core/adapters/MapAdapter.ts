@@ -1,4 +1,4 @@
-import type { EncryptedDataStore } from "../types/public";
+import type { EncryptedDataStore, BufferEncoding } from "../types/public";
 import decryptText from "../crypto/decryptText";
 import encryptText from "../crypto/encryptText";
 import type { JSONFile } from "lowdb/node";

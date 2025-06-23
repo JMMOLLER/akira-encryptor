@@ -1,3 +1,4 @@
+import type { BufferEncoding } from "../types/public";
 import sodium from "libsodium-wrappers";
 
 /**

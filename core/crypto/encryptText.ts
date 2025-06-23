@@ -1,3 +1,4 @@
+import type { BufferEncoding } from "../types/public";
 import generateNonce from "./generateNonce";
 import sodium from "libsodium-wrappers";
 

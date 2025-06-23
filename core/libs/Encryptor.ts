@@ -17,9 +17,9 @@ class Encryptor {
   private static workerPool: Piscina<Types.WorkerTask, void>;
   private static readonly FS = FileSystem.getInstance();
   private static readonly tempDir = tmpdir();
+  private ENCODING!: Types.BufferEncoding;
   private DEFAULT_STEP_DELAY!: number;
   private ALLOW_EXTRA_PROPS!: boolean;
-  private ENCODING!: BufferEncoding;
   private static STORAGE: Storage;
   private SECRET_KEY: Uint8Array;
   private MAX_THREADS!: number;

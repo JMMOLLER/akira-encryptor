@@ -19,7 +19,7 @@ class Storage {
    */
   static async init(
     secretKey: Uint8Array,
-    encoding: BufferEncoding,
+    encoding: Types.BufferEncoding,
     dbPath = env.LIBRARY_PATH
   ) {
     Storage.LIBRARY_PATH = dbPath;

@@ -1,3 +1,4 @@
+import type { BufferEncoding } from "../types/public";
 import { exit } from "process";
 import dotenv from "dotenv";
 import { z } from "zod";
