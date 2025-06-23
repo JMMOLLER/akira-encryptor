@@ -1,12 +1,12 @@
 import { Button, Form, Modal, Popconfirm, Select, Slider, Switch } from 'antd'
 import { usePendingOperation } from '@renderer/hooks/usePendingOperation'
 import { useEncryptedItems } from '@renderer/hooks/useEncryptedItems'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNewOperation } from '@renderer/hooks/useNewOperation'
 import { useUserConfig } from '@renderer/hooks/useUserConfig'
 import { useCountdown } from '@renderer/hooks/useContdown'
 import * as consts from '../constants/settingsForm.const'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
-import { useCallback, useMemo, useState } from 'react'
 import { ExportOutlined } from '@ant-design/icons'
 import { SliderProps } from 'antd/es/slider'
 import { Icon } from '@iconify/react'
@@ -17,6 +17,7 @@ type OmitedUserConfig = Omit<
 >
 interface CustomUserConf extends OmitedUserConfig {
   cpuUsage?: number
+  encoding?: AkiraBufferEncoding
 }
 
 function SettingsForm() {
@@ -28,6 +29,7 @@ function SettingsForm() {
     [encryptorConfig]
   )
   const [usageToThreads, setThreads] = useState(encryptorConfig.maxThreads)
+  const [isEncodingDisabled, setIsEncodingDisabled] = useState(false)
   const { encryptedItems: items } = useEncryptedItems()
   const encryptedItems = useMemo(() => items || { size: 0 }, [items])
   const [cpuUsage, setCpuUsage] = useState(threadUsage)
@@ -81,12 +83,15 @@ function SettingsForm() {
 
   const handleFinish = useCallback(
     async (values: CustomUserConf) => {
+      const encoding = values.encoding
       delete values.cpuUsage
+      delete values.encoding
       updateUserConfig({
         ...values,
         encryptorConfig: {
           ...encryptorConfig,
-          maxThreads: usageToThreads
+          maxThreads: usageToThreads,
+          encoding
         }
       })
       setMenuItem()
@@ -108,6 +113,7 @@ function SettingsForm() {
     form.setFieldsValue({
       autoBackup: userConfig.autoBackup,
       compressionAlgorithm: userConfig.compressionAlgorithm,
+      encoding: userConfig.encryptorConfig.encoding,
       compressionLvl: userConfig.compressionLvl,
       hideItemName: userConfig.hideItemName,
       cpuUsage
@@ -125,12 +131,21 @@ function SettingsForm() {
     }
   }, [getGradientColor])
 
+  useEffect(() => {
+    if (pendingItems.size > 0 || hasBackupInProgress) {
+      setIsEncodingDisabled(true)
+    } else {
+      window.api.existStorage().then(setIsEncodingDisabled)
+    }
+  }, [items, pendingItems, hasBackupInProgress])
+
   return (
     <Modal
       afterOpenChange={handleOpenChange}
       open={menuItem === 'settings'}
       onCancel={() => setMenuItem()}
       onOk={() => form.submit()}
+      className="my-8!"
       destroyOnHidden
       title={
         <h1 className="text-lg font-semibold! inline-flex items-center">
@@ -217,6 +232,27 @@ function SettingsForm() {
             El nivel de compresión determina la cantidad de compresión aplicada a los archivos. Un
             nivel más alto puede reducir el tamaño del archivo, pero también puede aumentar el
             tiempo de compresión y descompresión.
+          </p>
+        </div>
+
+        <div className="border-b border-black/10 p-2.5 [&>p]:text-gray-500 [&>p]:text-xs">
+          <Form.Item label="Codificación del Storage" name="encoding" className="mb-1.5!">
+            <Select
+              className="w-48!"
+              options={consts.encodingOptions}
+              disabled={isEncodingDisabled}
+            />
+          </Form.Item>
+          <p>
+            La codificación define la forma en que se almacenan los datos cifrados en el{' '}
+            <i>Storage</i>. Algunos tipos de codificación pueden ser más seguros o eficientes que
+            otros.
+            {isEncodingDisabled && (
+              <>
+                {' '}
+                Para poder cambiar esta opción, es necesario <i>restablecer tu contraseña</i>.
+              </>
+            )}
           </p>
         </div>
 
