@@ -16,6 +16,10 @@ declare global {
     properties: OpenDialogOptions['properties']
     filters?: OpenDialogOptions['filters']
   }
+  type MenuInfo = {
+    key: string
+    keyPath: string
+  }
 
   type EncryptFileProps = {
     extraProps?: Record<string, JsonValue>

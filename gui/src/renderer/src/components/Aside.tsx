@@ -1,10 +1,8 @@
 import SettingsForm from '@renderer/components/SettingsForm'
 import { useMenuItem } from '@renderer/hooks/useMenuItem'
-import type { MenuInfo } from 'rc-menu/lib/interface'
 import items from '@renderer/constants/menuItems'
 import Sider from 'antd/es/layout/Sider'
 import { useState } from 'react'
-
 import { Menu } from 'antd'
 
 const defaultSelectedKey: MenuItemOptions[] = ['files']
@@ -27,7 +25,7 @@ function Aside() {
       <div className="demo-logo-vertical" />
       <Menu
         defaultSelectedKeys={defaultSelectedKey}
-        onSelect={handleSelect}
+        onSelect={handleSelect as never}
         selectedKeys={[menuItem]}
         mode="inline"
         items={items}
