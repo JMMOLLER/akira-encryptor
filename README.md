@@ -1,26 +1,29 @@
-# Akira-encryptor (CLI/GUI)
+# Akira-encryptor
 
-**Akira-encryptor** es una herramienta de línea de comandos (CLI) desarrollada en TypeScript/Node.js, diseñada para el cifrado y descifrado de archivos y carpetas, utilizando `libsodium-wrappers` para garantizar un alto nivel de seguridad criptográfica. El proyecto está enfocado en la eficiencia, soportando archivos grandes mediante flujos (`streams`) y permitiendo seguimiento de progreso tanto a nivel individual como global.
+**Akira-encryptor** es una herramienta modular desarrollada en TypeScript/Node.js, diseñada para el cifrado y descifrado de archivos y carpetas, con soporte para CLI y GUI sobre un núcleo común robusto (`core`). Utiliza `libsodium-wrappers` para garantizar un alto nivel de seguridad criptográfica. El proyecto está enfocado en la eficiencia, soportando archivos grandes mediante flujos (`streams`) y permitiendo seguimiento de progreso a nivel global.
 
-> 🚧 El proyecto se encuentra actualmente **en fase beta**.  
-
----
-
-## 🧩 Características
-
-- 🔐 **Cifrado/Descifrado de archivos** usando `libsodium-wrappers`
-- 📂 **Soporte para carpetas** (procesamiento recursivo de subdirectorios)
-- 📦 **Manejo eficiente de archivos grandes** mediante streaming
-- 📊 **Visualización de progreso** en tiempo real (barra de progreso global)
-- 🧪 **Estructura modular** y lista para pruebas unitarias e integración (Vitest)
-- 📊 **Soporte Multihilo** para operaciones de cifrado y descifrado
-- 🧰 Preparado para ser usado como:
-  - CLI local
-  - Base para GUI (entornos de nodejs)
+> 🚧 El proyecto se encuentra actualmente **en fase beta**.
 
 ---
 
-## ⚙️ Configuración previa (Entorno node)
+## 🧩 Componentes del Proyecto
+
+- CLI: Interfaz de línea de comandos interactiva con soporte para carpetas y archivos grandes.
+- GUI: Interfaz gráfica basada en Electron con características exclusivas.
+- Core: Módulo central reutilizable con lógica criptográfica y de procesamiento.
+
+## ✨ Características
+
+- 🔐 **Cifrado/Descifrado de archivos** usando `libsodium-wrappers`.
+- 📂 **Soporte para carpetas** (procesamiento recursivo de subdirectorios).
+- 📦 **Manejo eficiente de archivos grandes** mediante streaming.
+- 📊 **Visualización de progreso** en tiempo real (barra de progreso global).
+- 😶‍🌫️**Ocultar el elemento cifrado** a nivel de SO.
+- ⚡ **Soporte Multihilo** para operaciones de cifrado y descifrado.
+
+---
+
+## ⚙️ Configuración previa (Opcional)
 
 Puedes crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
 
@@ -31,12 +34,12 @@ ENCODING=<encoding_value> #Codificación de datos [opcional]
 PASSWORD=<your_password> #Contraseña para cifrado/descifrado [opcional]
 ```
 
-> ⚠️ Importante: `PASSWORD` es solo para fines de desarrollo. 
+> ⚠️ Importante: `PASSWORD` es solo para fines de desarrollo.
 > Permite saltear el requisito de ingreso de constraseña en cada operación.
 
 ---
 
-## 🚀 Instalación y uso (Entorno node)
+## 🚀 Instalación y uso del CLI (Entorno Node)
 
 > Requisitos: Node.js ≥ 18.x y npm
 
@@ -46,19 +49,20 @@ PASSWORD=<your_password> #Contraseña para cifrado/descifrado [opcional]
 git clone https://github.com/JMMOLLER/akira-encryptor.git
 cd Akira-encryptor
 ```
-2. Instala las dependencias:
+
+2. Instala las dependencias con:
 
 ```bash
-bun install
+pnpm install
 ```
 
-3. Ejecuta la CLI:
+3. Ejecuta con:
 
 ```bash
-bun start
+pnpm start
 ```
 
-4. Sigue las instrucciones en la interfaz interactiva (inquirer) para cifrar o descifrar archivos o carpetas.
+4. Sigue las instrucciones en la interfaz interactiva para cifrar o descifrar archivos o carpetas.
 
 ```bash
 ? ¿Qué desea realizar? (Use arrow keys)
@@ -66,24 +70,82 @@ bun start
   Desencriptar
 ```
 
+### 📁 Funcionalidades
+
+- Encriptado/Desencriptado de archivos individuales.
+- Procesamiento recursivo de carpetas.
+- Barra de progreso global.
+- Cifrado seguro con `libsodium`.
+- Multihilo con `piscina`.
+- Soporte para flujos de datos (stream) → eficiencia con archivos grandes.
+- Ocultar archivos o carpetas a nivel de SO.
+
+> [!NOTE]
+> Para la versión ejecutable del CLI puedes configurar el número de hilos creando un archivo `.env` en el mismo nivel que el ejecutable. [Ver](#%EF%B8%8F-configuración-previa-opcional)
+
+---
+
+## 💻 Instalacion y uso de la GUI (Entorno Node)
+
+> Requisitos: Node.js ≥ 18.x y npm
+
+1. Clona el repositorio:
+
+```bash
+git clone https://github.com/JMMOLLER/akira-encryptor.git
+cd Akira-encryptor
+```
+
+2. Instala las dependencias con:
+
+```bash
+pnpm install
+```
+
+3. Ejecuta con:
+
+```bash
+pnpm start
+```
+
+### 📁 Funcionalidades
+
+- Encriptado/Desencriptado de archivos individuales.
+- Procesamiento recursivo de carpetas.
+- Barra de progreso global.
+- Cifrado seguro con `libsodium`.
+- Multihilo con `piscina` facilmente configurable.
+- Soporte para flujos de datos (stream) → eficiencia con archivos grandes.
+- Ocultar archivos o carpetas a nivel de SO.
+- Copias de seguridad (`.7z` cifrado con contraseña).
+- Ocultar el nombre original del elemento cifrado en la GUI.
+
+> [!NOTE]
+> Para la versión ejecutable de la GUI las copias de seguridad se crear con la misma contraseña creada al iniciar al app. La copia de seguridad se puede desactivar y el archivo creado se elimina automáticamente al descifrar el elemento asociado sin errores.
+
 ---
 
 ## ⚠️ Advertencia de uso
 
-**Este proyecto se encuentra en etapa experimental.**
-> No me responsabilizo por la pérdida, corrupción o inaccesibilidad de archivos causados por el uso de esta herramienta.
-> Por defecto la herramienta realiza una copia de seguridad antes de realizar cualquier operación.
+**Este proyecto se encuentra en etapa de desarrollo.**
+
+> [!WARNING]
+> Por defecto la herramienta GUI realiza una copia de seguridad antes de realizar cualquier operación, sin embarego, no me responsabilizo por la pérdida, corrupción o inaccesibilidad de archivos causados por el uso de esta herramienta.
 
 ## 🛠️ Estado actual
 
 - [x] Funcionalidades de cifrado y descifrado implementadas
 
-- [x] CLI interactiva con barras de progreso
+- [x] CLI interactiva con barra de progreso
 
 - [x] Soporte para archivos grandes
 
 - [x] GUI en desarrollo (Electron)
 
-- [x] Soporte multihilo 
+- [x] Soporte multihilo
+
+- [x] Ocultar elemento cifrado
+
+- [x] Copia de seguridad (.7z)
 
 - [ ] Empaquetado multiplataforma
