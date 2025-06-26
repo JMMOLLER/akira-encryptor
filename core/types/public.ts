@@ -99,7 +99,7 @@ export interface EncryptorOptions {
 export type BufferEncoding = "base64" | "base64url" | "hex" | "latin1";
 
 export interface BasicEncryptor {
-  getStorage: () => Map<string, StorageItem>;
+  getStorage: () => Promise<Map<string, StorageItem>>;
   refreshStorage: () => Promise<void>;
   revealStoredItem: (item: string) => Promise<boolean>;
   hideStoredItem: (item: string) => Promise<boolean>;
@@ -224,7 +224,7 @@ export interface Item {
   isHidden?: boolean;
   size?: number;
   path: string;
-  id: string;
+  _id: string;
 }
 
 export type FileItem = Item & {

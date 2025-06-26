@@ -78,6 +78,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@seald-io/nedb": "^4.1.1",
     "@types/hidefile": "^3.0.3",
     "@types/libsodium-wrappers": "^0.7.14",
     "chalk": "^5.4.1",
