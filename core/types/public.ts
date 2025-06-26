@@ -1,6 +1,5 @@
 import type createSpinner from "../utils/createSpinner";
 import type { Readable, Writable } from "stream";
-import type { Low } from "lowdb";
 import type { Stats } from "fs";
 
 //====================== WORKER TYPES ======================//
@@ -237,10 +236,6 @@ export type FolderItem = Item & {
 };
 
 export type StorageItem = FileItem | FolderItem;
-
-export type LowStoreType = Low<{
-  encryptedItems: Map<string, StorageItem>;
-}>;
 
 export interface EncryptedDataStore {
   encryptedItems: {
