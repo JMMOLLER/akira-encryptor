@@ -208,6 +208,13 @@ class Encryptor {
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    */
   async encryptFile(props: Types.FileEncryptor) {
+    const stats = Encryptor.FS.getStatFile(props.filePath);
+    if (!stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._encryptFile({
       ...props,
       isInternalFlow: false
@@ -312,6 +319,13 @@ class Encryptor {
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    */
   async decryptFile(props: Types.FileDecryptor) {
+    const stats = Encryptor.FS.getStatFile(props.filePath);
+    if (!stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._decryptFile({
       ...props,
       isInternalFlow: false
@@ -406,6 +420,13 @@ class Encryptor {
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
    */
   async encryptFolder(props: Types.FolderEncryptor) {
+    const stats = Encryptor.FS.getStatFile(props.folderPath);
+    if (stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._encryptFolder({
       ...props,
       isInternalFlow: false
@@ -629,6 +650,13 @@ class Encryptor {
    * @description `[ES]` Descifra recursivamente todos los archivos dentro de una carpeta.
    */
   async decryptFolder(props: Types.FolderDecryptor) {
+    const stats = Encryptor.FS.getStatFile(props.folderPath);
+    if (stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._decryptFolder({
       ...props,
       isInternalFlow: false
