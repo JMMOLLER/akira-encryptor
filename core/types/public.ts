@@ -1,6 +1,5 @@
 import type createSpinner from "../utils/createSpinner";
 import type { Readable, Writable } from "stream";
-import type { Low } from "lowdb";
 import type { Stats } from "fs";
 
 //====================== WORKER TYPES ======================//
@@ -99,7 +98,7 @@ export interface EncryptorOptions {
 export type BufferEncoding = "base64" | "base64url" | "hex" | "latin1";
 
 export interface BasicEncryptor {
-  getStorage: () => Map<string, StorageItem>;
+  getStorage: () => Promise<Map<string, StorageItem>>;
   refreshStorage: () => Promise<void>;
   revealStoredItem: (item: string) => Promise<boolean>;
   hideStoredItem: (item: string) => Promise<boolean>;
@@ -224,7 +223,7 @@ export interface Item {
   isHidden?: boolean;
   size?: number;
   path: string;
-  id: string;
+  _id: string;
 }
 
 export type FileItem = Item & {
@@ -237,13 +236,3 @@ export type FolderItem = Item & {
 };
 
 export type StorageItem = FileItem | FolderItem;
-
-export type LowStoreType = Low<{
-  encryptedItems: Map<string, StorageItem>;
-}>;
-
-export interface EncryptedDataStore {
-  encryptedItems: {
-    [key: string]: StorageItem;
-  };
-}

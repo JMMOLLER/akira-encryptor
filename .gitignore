@@ -178,6 +178,7 @@ dist
 library.json
 demo/**/*.mp4
 demo/**/*.mkv
+demo/**/*.rar
 *.enc
 test.ts
 pendings.md

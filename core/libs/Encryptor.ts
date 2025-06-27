@@ -76,7 +76,7 @@ class Encryptor {
     instance.LOG = options?.enableLogging || env.LOG;
     instance.SILENT = options?.silent || false;
 
-    Encryptor.STORAGE = await Storage.init(
+    Encryptor.STORAGE = new Storage(
       instance.SECRET_KEY,
       instance.ENCODING,
       options?.libraryPath
@@ -131,12 +131,12 @@ class Encryptor {
     this.processedBytes = 0;
   }
 
-  private visibilityHelper(itemId: string) {
+  private async visibilityHelper(itemId: string) {
     const id = path
       .basename(itemId)
       .replace(/^\./, "")
       .replace(/\.enc$/, "");
-    const item = Encryptor.STORAGE.get(id);
+    const item = await Encryptor.STORAGE.get(id);
 
     if (!item) {
       throw new Error("No se encontró el elemento en el almacenamiento.");
@@ -151,7 +151,7 @@ class Encryptor {
 
   async hideStoredItem(itemId: string) {
     try {
-      const { item, itemPath } = this.visibilityHelper(itemId);
+      const { item, itemPath } = await this.visibilityHelper(itemId);
       if (item.isHidden) return true;
 
       const newPath = hidefile.hideSync(itemPath);
@@ -160,7 +160,7 @@ class Encryptor {
       }
 
       item.isHidden = true;
-      await Encryptor.STORAGE.replace(item.id, item);
+      await Encryptor.STORAGE.update(item._id, item);
       return true;
     } catch (err) {
       console.error("Error al ocultar el archivo:", err);
@@ -170,7 +170,7 @@ class Encryptor {
 
   async revealStoredItem(itemId: string) {
     try {
-      const { item, itemPath } = this.visibilityHelper(itemId);
+      const { item, itemPath } = await this.visibilityHelper(itemId);
       if (!item.isHidden) return true;
 
       const newPath = hidefile.revealSync(itemPath);
@@ -179,7 +179,7 @@ class Encryptor {
       }
 
       item.isHidden = false;
-      await Encryptor.STORAGE.replace(item.id, item);
+      await Encryptor.STORAGE.update(item._id, item);
       return true;
     } catch (err) {
       console.error("Error al revelar el archivo:", err);
@@ -191,8 +191,8 @@ class Encryptor {
    * @description `[ENG]` Retrieves all encrypted items from storage.
    * @description `[ES]` Recupera todos los elementos cifrados del almacenamiento.
    */
-  getStorage() {
-    return Encryptor.STORAGE.getAll();
+  async getStorage() {
+    return await Encryptor.STORAGE.getAll();
   }
 
   /**
@@ -208,6 +208,13 @@ class Encryptor {
    * @description `[ES]` Cifra un archivo utilizando la clave secreta y lo guarda con un nuevo nombre.
    */
   async encryptFile(props: Types.FileEncryptor) {
+    const stats = Encryptor.FS.getStatFile(props.filePath);
+    if (!stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._encryptFile({
       ...props,
       isInternalFlow: false
@@ -312,6 +319,13 @@ class Encryptor {
    * @description `[ES]` Descifra un archivo utilizando la clave secreta y lo guarda con el nombre original.
    */
   async decryptFile(props: Types.FileDecryptor) {
+    const stats = Encryptor.FS.getStatFile(props.filePath);
+    if (!stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._decryptFile({
       ...props,
       isInternalFlow: false
@@ -406,6 +420,13 @@ class Encryptor {
    * @description `[ES]` Cifra recursivamente todos los archivos dentro de una carpeta.
    */
   async encryptFolder(props: Types.FolderEncryptor) {
+    const stats = Encryptor.FS.getStatFile(props.folderPath);
+    if (stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._encryptFolder({
       ...props,
       isInternalFlow: false
@@ -547,7 +568,7 @@ class Encryptor {
       originalName: baseName,
       size: this.totalFolderBytes,
       encryptedAt: new Date(),
-      id: utils.generateUID(),
+      _id: utils.generateUID(),
       path: folderPath,
       type: "folder",
       encryptedName,
@@ -585,7 +606,7 @@ class Encryptor {
     // --------------------
     // PHASE E: Rename/move the original folder to encrypted ID
     // --------------------
-    const encryptedPath = path.join(path.dirname(tempPath), saved.id);
+    const encryptedPath = path.join(path.dirname(tempPath), saved._id);
     await Encryptor.FS.safeRename(tempPath, encryptedPath);
 
     // --------------------
@@ -598,7 +619,7 @@ class Encryptor {
           )
         : undefined;
       try {
-        const destEncryptedFolder = folderPath.replace(baseName, saved.id);
+        const destEncryptedFolder = folderPath.replace(baseName, saved._id);
         await Encryptor.FS.copyItem(encryptedPath, destEncryptedFolder);
         await Encryptor.FS.removeItem(encryptedPath);
         await Encryptor.FS.removeItem(folderPath);
@@ -629,6 +650,13 @@ class Encryptor {
    * @description `[ES]` Descifra recursivamente todos los archivos dentro de una carpeta.
    */
   async decryptFolder(props: Types.FolderDecryptor) {
+    const stats = Encryptor.FS.getStatFile(props.folderPath);
+    if (stats.isFile()) {
+      return Promise.reject(
+        new Error("La ruta proporcionada no es un archivo válido.")
+      );
+    }
+
     return this._decryptFolder({
       ...props,
       isInternalFlow: false
@@ -647,7 +675,8 @@ class Encryptor {
 
     // Retrieve folder metadata from storage if not provided
     const baseName = path.basename(folderPath);
-    const currentFolder = folderItem || Encryptor.STORAGE.get(baseName);
+    const storedItem = await Encryptor.STORAGE.get(baseName);
+    const currentFolder = folderItem || storedItem;
 
     if (!currentFolder || currentFolder.type !== "folder") {
       throw new Error(`Folder not found in storage: ${baseName}`);
@@ -669,7 +698,7 @@ class Encryptor {
 
     for (const item of contentItems) {
       if (item.type === "folder") {
-        const fullPath = path.join(folderPath, item.id); // encrypted folder is named by item.id
+        const fullPath = path.join(folderPath, item._id); // encrypted folder is named by item.id
         const task = limit(async () => {
           return this._decryptFolder({
             folderPath: fullPath,
@@ -692,7 +721,7 @@ class Encryptor {
 
     for (const item of contentItems) {
       if (item.type === "file") {
-        const encryptedFilePath = path.join(folderPath, item.id + ".enc");
+        const encryptedFilePath = path.join(folderPath, item._id + ".enc");
         const task = limit(async () => {
           try {
             // decryptFile uses workerPool internally
@@ -732,7 +761,7 @@ class Encryptor {
     if (!originalName) {
       if (!this.SILENT) {
         utils
-          .createSpinner(`Could not decrypt folder name: ${currentFolder.id}`)
+          .createSpinner(`Could not decrypt folder name: ${currentFolder._id}`)
           .warn();
       }
       // If unable to decrypt folder name, return original path
@@ -753,7 +782,7 @@ class Encryptor {
         this.removeStep?.succeed("Carpeta encriptada eliminada correctamente.");
       }
       // Remove folder entry from storage
-      await Encryptor.STORAGE.delete(currentFolder.id);
+      await Encryptor.STORAGE.delete(currentFolder._id);
     } catch (err) {
       if (!isInternalFlow && this.removeStep) {
         this.removeStep.fail("Error al eliminar la carpeta encriptada.");
@@ -811,7 +840,7 @@ class Encryptor {
         path: path.resolve(filePath),
         size: fileStats.size,
         encryptedAt: new Date(),
-        id: utils.generateUID(),
+        _id: utils.generateUID(),
         type: "file"
       };
       if (!props.isInternalFlow) {
@@ -839,7 +868,7 @@ class Encryptor {
           savedItem = storageItem;
         });
       }
-      const encryptedFileName = savedItem.id + ".enc";
+      const encryptedFileName = savedItem._id + ".enc";
       const renamedTempFile = path.join(Encryptor.tempDir, encryptedFileName);
       const destPath = path.join(fileDir, encryptedFileName);
 
@@ -884,7 +913,7 @@ class Encryptor {
       return savedItem;
     } catch (err) {
       if (props.isInternalFlow && savedItem)
-        await Encryptor.STORAGE.delete(savedItem.id);
+        await Encryptor.STORAGE.delete(savedItem._id);
 
       if (!props.isInternalFlow && this.saveStep)
         this.saveStep.fail("Error al registrar el archivo.");
@@ -912,8 +941,8 @@ class Encryptor {
 
       const fileName = path.basename(folderPath).replace(/\.enc$/, "");
 
-      const { originalName } =
-        fileItem || Encryptor.STORAGE.get(fileName) || {};
+      const storedItem = await Encryptor.STORAGE.get(fileName);
+      const { originalName } = fileItem || storedItem || {};
       const originalFileName = originalName;
 
       if (!originalFileName) {
@@ -924,7 +953,12 @@ class Encryptor {
         path.basename(outPath ? outPath : folderPath),
         originalFileName
       );
-      const data = Encryptor.FS.readFile(tempPath);
+      const tempFileSize = Encryptor.FS.getStatFile(tempPath).size;
+      let inputBuffer: NonSharedBuffer | string = tempPath;
+      // If the file is smaller than `kMaxLength`, read it directly
+      if (tempFileSize < Encryptor.FS.kMaxLength) {
+        inputBuffer = Encryptor.FS.readFile(tempPath);
+      }
 
       if (!isInternalFlow && !this.SILENT) {
         this.renameStep = utils.createSpinner(
@@ -932,7 +966,7 @@ class Encryptor {
         );
       }
       await Promise.all([
-        Encryptor.FS.replaceFile(tempPath, restoredPath, data),
+        Encryptor.FS.replaceFile(tempPath, restoredPath, inputBuffer),
         utils.delay(this.stepDelay)
       ]).then(() => {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");

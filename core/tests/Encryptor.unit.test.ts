@@ -106,7 +106,7 @@ describe("Encryptor", () => {
 
     const encryptedFilePath = testFilePath.replace(
       path.basename(testFilePath),
-      `${res.id}.enc`
+      `${res._id}.enc`
     );
     const existTempFile = fs.existsSync(testFilePath);
     const existsEncTempFile = fs.existsSync(encryptedFilePath);
@@ -138,7 +138,7 @@ describe("Encryptor", () => {
       onProgress: () => {}
     });
 
-    const encryptedFolderPath = path.join(tempDir, res.id);
+    const encryptedFolderPath = path.join(tempDir, res._id);
     const existTempFile = fs.existsSync(
       path.join(testFolderPath, "test-file-1.txt")
     );
@@ -172,12 +172,12 @@ describe("Encryptor", () => {
     });
     const encHiddenFilePath = testFilePath.replace(
       path.basename(testFilePath),
-      `.${res.id}.enc`
+      `.${res._id}.enc`
     );
 
     const encryptedFilePath = testFilePath.replace(
       path.basename(testFilePath),
-      `${res.id}.enc`
+      `${res._id}.enc`
     );
 
     let hideStatus = await Encryptor.hideStoredItem(encryptedFilePath);
@@ -201,9 +201,9 @@ describe("Encryptor", () => {
       folderPath: testFolderPath,
       onProgress: () => {}
     });
-    const encHiddenFolderPath = path.join(tempDir, `.${res.id}`);
+    const encHiddenFolderPath = path.join(tempDir, `.${res._id}`);
 
-    const encFolderPath = path.join(tempDir, res.id);
+    const encFolderPath = path.join(tempDir, res._id);
 
     let hideStatus = await Encryptor.hideStoredItem(encFolderPath);
     expect(hideStatus).toBe(true);
@@ -226,11 +226,11 @@ describe("Encryptor", () => {
       filePath: testFilePath,
       extraProps: { customProp: "value", anotherProp: 123 }
     });
-    const library = Encryptor.getStorage();
+    const library = await Encryptor.getStorage();
 
-    expect(library.get(item.id)).toBeDefined();
-    expect(library.get(item.id)?.extraProps).toBeDefined();
-    expect(library.get(item.id)?.extraProps!.customProp).toBe("value");
-    expect(library.get(item.id)?.extraProps!.anotherProp).toBe(123);
+    expect(library.get(item._id)).toBeDefined();
+    expect(library.get(item._id)?.extraProps).toBeDefined();
+    expect(library.get(item._id)?.extraProps!.customProp).toBe("value");
+    expect(library.get(item._id)?.extraProps!.anotherProp).toBe(123);
   });
 });
