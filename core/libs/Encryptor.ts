@@ -953,7 +953,12 @@ class Encryptor {
         path.basename(outPath ? outPath : folderPath),
         originalFileName
       );
-      const data = Encryptor.FS.readFile(tempPath);
+      const tempFileSize = Encryptor.FS.getStatFile(tempPath).size;
+      let inputBuffer: NonSharedBuffer | string = tempPath;
+      // If the file is smaller than `kMaxLength`, read it directly
+      if (tempFileSize < Encryptor.FS.kMaxLength) {
+        inputBuffer = Encryptor.FS.readFile(tempPath);
+      }
 
       if (!isInternalFlow && !this.SILENT) {
         this.renameStep = utils.createSpinner(
@@ -961,7 +966,7 @@ class Encryptor {
         );
       }
       await Promise.all([
-        Encryptor.FS.replaceFile(tempPath, restoredPath, data),
+        Encryptor.FS.replaceFile(tempPath, restoredPath, inputBuffer),
         utils.delay(this.stepDelay)
       ]).then(() => {
         this.renameStep?.succeed("Archivo original reemplazado correctamente.");
