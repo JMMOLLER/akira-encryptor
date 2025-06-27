@@ -236,9 +236,3 @@ export type FolderItem = Item & {
 };
 
 export type StorageItem = FileItem | FolderItem;
-
-export interface EncryptedDataStore {
-  encryptedItems: {
-    [key: string]: StorageItem;
-  };
-}
