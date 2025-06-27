@@ -26,6 +26,9 @@ importers:
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
+      filesize-parser:
+        specifier: ^1.5.1
+        version: 1.5.1
       hidefile:
         specifier: ^3.0.0
         version: 3.0.0
@@ -51,6 +54,9 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.2.16
+      '@types/filesize-parser':
+        specifier: ^1.5.3
+        version: 1.5.3
       glob:
         specifier: ^11.0.2
         version: 11.0.3
@@ -468,6 +474,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/filesize-parser@1.5.3':
+    resolution: {integrity: sha512-D8veS92mQAfcKz5kbV9WINfKvvaxVfQHqnO3OWW6FxdYTZozDDb8mTLWCsvEqe8M/M7skeULTZzYeMf3Lsss+A==}
+
   '@types/hidefile@3.0.3':
     resolution: {integrity: sha512-TxdhdUW4i3QdBXdF6ugJtXtb/JW9if2Jv9Gg+oUO1HZ45bAq03BVv8wjSwsGlC59MauQmW3VYrE82pi11PyPuQ==}
 
@@ -679,6 +688,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  filesize-parser@1.5.1:
+    resolution: {integrity: sha512-wRjdlQ5JM3WHZp6xpakIHQbkcGig8ANglYQDPcQSgZUN5kcDGOgmAwB0396BxzHxcl+kr+GLuusxBnsjdO6x9A==}
 
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
@@ -1462,6 +1474,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/filesize-parser@1.5.3': {}
+
   '@types/hidefile@3.0.3':
     dependencies:
       '@types/node': 24.0.1
@@ -1677,6 +1691,8 @@ snapshots:
   fdir@6.4.6(picomatch@4.0.2):
     optionalDependencies:
       picomatch: 4.0.2
+
+  filesize-parser@1.5.1: {}
 
   fix-dts-default-cjs-exports@1.0.1:
     dependencies:

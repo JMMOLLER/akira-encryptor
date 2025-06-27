@@ -1,4 +1,6 @@
 import { Readable, pipeline as p } from "stream";
+import { formatBytes } from "../utils";
+import parse from "filesize-parser";
 import delay from "../utils/delay";
 import { promisify } from "util";
 import path from "path";
@@ -11,6 +13,7 @@ const pipeline = promisify(p);
 
 export class FileSystem {
   private static instance: FileSystem;
+  readonly kMaxLength = parse("2GiB"); // Maximum file size to read in memory for x64 architectures.
 
   private constructor() {}
 
@@ -159,6 +162,12 @@ export class FileSystem {
   readFile(path: string) {
     if (!fs.existsSync(path)) {
       throw new Error(`File not found: ${path}`);
+    } else if (fs.statSync(path).size > this.kMaxLength) {
+      throw new Error(
+        `File too large to read: ${path}. Maximum size is ${formatBytes(
+          this.kMaxLength
+        )}. Use createReadStream instead.`
+      );
     }
 
     try {
