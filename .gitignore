@@ -176,12 +176,20 @@ dist
 
 # Dev
 library.json
-demo/**/*.mp4
-demo/**/*.mkv
-demo/**/*.rar
 *.enc
 test.ts
 pendings.md
 tests/tmp
 *.csv
 *.ps1
+
+# Ignorar todo dentro de /demo/
+demo/**
+
+# incluir imágenes
+!demo/**/
+!demo/**/*.png
+!demo/**/*.jpg
+!demo/**/*.jpeg
+!demo/**/*.gif
+!demo/**/*.webp
