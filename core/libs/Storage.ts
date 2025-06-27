@@ -1,3 +1,5 @@
+import encryptText from "../crypto/encryptText";
+import decryptText from "../crypto/decryptText";
 import generateUID from "../utils/generateUID";
 import type { Types } from "../types";
 import { env } from "../configs/env";
@@ -13,8 +15,9 @@ class Storage {
   /**
    * @description `[ENG]` Initializes the storage with the given encryption and decryption functions to encrypt and decrypt the data.
    * @description `[ESP]` Inicializa el almacenamiento con las funciones de cifrado y descifrado dadas para descifrar y cifrar los datos.
-   * @param encryptFunc - The function used to encrypt the data.
-   * @param decryptFunc - The function used to decrypt the data.
+   * @param secretKey - The secret key used for encryption and decryption.
+   * @param encoding - The encoding used for the data.
+   * @param dbPath - The path to the database file. Defaults to the value of `env.LIBRARY_PATH`.
    */
   constructor(
     secretKey: Uint8Array,
@@ -23,7 +26,15 @@ class Storage {
   ) {
     Storage.db = new Nedb<Types.StorageItem>({
       filename: dbPath,
-      autoload: true
+      autoload: true,
+      beforeDeserialization: (line) => {
+        const foo = decryptText(line, secretKey, encoding);
+        return foo;
+      },
+      afterSerialization: async (line) => {
+        const foo = await encryptText(line, secretKey, encoding);
+        return foo;
+      }
     });
     Storage.db.compactDatafile(); // Compact the data file when the database is loaded
   }
@@ -33,7 +44,7 @@ class Storage {
   }
 
   async getAll() {
-    await Storage.db.autoloadPromise
+    await Storage.db.autoloadPromise;
     const all = Storage.db.getAllData();
     const map = all.reduce((acc, item) => {
       acc.set(item._id, item);
