@@ -91,9 +91,6 @@ class Storage {
 
   async delete(id: string) {
     const item = await this.get(id);
-    if (!item) {
-      throw new Error(`Item with id ${id} not found.`);
-    }
     await Storage.db.removeAsync({ _id: id }, { multi: false });
     return item;
   }
