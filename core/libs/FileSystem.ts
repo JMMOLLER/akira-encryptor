@@ -1,7 +1,6 @@
+import { formatBytes, delay } from "../utils/index";
 import { Readable, pipeline as p } from "stream";
-import { formatBytes } from "../utils";
 import parse from "filesize-parser";
-import delay from "../utils/delay";
 import { promisify } from "util";
 import path from "path";
 import fs from "fs";
