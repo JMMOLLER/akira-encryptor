@@ -32,9 +32,6 @@ importers:
       libsodium-wrappers:
         specifier: ^0.7.15
         version: 0.7.15
-      lowdb:
-        specifier: ^7.0.1
-        version: 7.0.1
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5

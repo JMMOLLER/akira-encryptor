@@ -86,7 +86,6 @@
     "dotenv": "^16.5.0",
     "hidefile": "^3.0.0",
     "libsodium-wrappers": "^0.7.15",
-    "lowdb": "^7.0.1",
     "nanoid": "^5.1.5",
     "p-limit": "^6.2.0",
     "piscina": "^5.1.0",
