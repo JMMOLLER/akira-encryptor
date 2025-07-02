@@ -121,7 +121,7 @@ pnpm start
 - Ocultar el nombre original del elemento cifrado en la GUI.
 
 > [!NOTE]
-> Para la versión ejecutable de la GUI las copias de seguridad se crear con la misma contraseña creada al iniciar al app. La copia de seguridad se puede desactivar y el archivo creado se elimina automáticamente al descifrar el elemento asociado sin errores.
+> Para la versión ejecutable de la GUI las copias de seguridad se crear con la misma contraseña creada al iniciar la aplicación. La copia de seguridad se puede desactivar y el archivo creado se elimina automáticamente al descifrar el elemento asociado sin errores.
 
 ---
 
