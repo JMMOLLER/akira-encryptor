@@ -103,7 +103,7 @@ async function handleFileAction(props: HanlderProps) {
 }
 
 async function handleIsHiddenFile(filePath: string, Encryptor: EncryptorClass) {
-  const storage = Encryptor.getStorage();
+  const storage = await Encryptor.getStorage();
   const id = path
     .basename(filePath)
     .replace(/^\./, "")
@@ -111,9 +111,9 @@ async function handleIsHiddenFile(filePath: string, Encryptor: EncryptorClass) {
   const item = storage.get(id);
 
   if (item?.isHidden) {
-    const status = await Encryptor.revealStoredItem(item.id);
+    const status = await Encryptor.revealStoredItem(item._id);
     if (status) {
-      return filePath.replace(path.basename(filePath), item.id + ".enc");
+      return filePath.replace(path.basename(filePath), item._id + ".enc");
     }
   }
 

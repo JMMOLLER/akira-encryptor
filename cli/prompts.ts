@@ -24,7 +24,7 @@ export async function askForHideItem(props: HidePromptOptions) {
     }
   ]);
   if (hide) {
-    await Encryptor.hideStoredItem(item.id);
+    await Encryptor.hideStoredItem(item._id);
   }
 }
 
@@ -78,12 +78,12 @@ export async function askUserActions() {
       minDelayPerStep: 0,
       silent: true
     });
-    const storage = encryptor.getStorage();
+    const storage = await encryptor.getStorage();
     const values = Array.from(storage.values());
     const choices = values
       .filter((item) => item.type === type)
       .map((item) => {
-        const named = item.isHidden ? "." + item.id : item.id;
+        const named = item.isHidden ? "." + item._id : item._id;
         return {
           name: item.path + (item.isHidden ? " (*)" : ""),
           value: item.path.replace(
