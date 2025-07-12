@@ -6,6 +6,7 @@ import { FileSystem } from "./FileSystem";
 import * as utils from "../utils/index";
 import sodium from "libsodium-wrappers";
 import { env } from "../configs/env";
+import parser from "filesize-parser";
 import Storage from "./Storage";
 import hidefile from "hidefile";
 import Piscina from "piscina";
@@ -29,7 +30,7 @@ class Encryptor {
   /* ========================== ENCRYPT PROPERTIES ========================== */
 
   /* ========================== DECRYPT PROPERTIES ========================== */
-  private readonly chunkSize = 64 * 1024;
+  private readonly chunkSize = parser("512KiB");
   /* ========================== COMMON PROPERTIES ========================== */
   private stepDelay = this.DEFAULT_STEP_DELAY;
   private renameStep?: Types.CliSpinner;
