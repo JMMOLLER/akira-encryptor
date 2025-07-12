@@ -27,7 +27,7 @@ const useItemCardActions = ({ item }: Props) => {
     const [res] = await Promise.all([
       window.api.changeVisibility({
         action: item.isHidden ? 'show' : 'hide',
-        itemId: item.id
+        itemId: item._id
       }),
       delay(500)
     ])
@@ -55,12 +55,12 @@ const useItemCardActions = ({ item }: Props) => {
     }
 
     const basePath = item.path.substring(0, lastSlash)
-    const fileName = item.id + (item.type === 'file' ? '.enc' : '')
+    const fileName = item._id + (item.type === 'file' ? '.enc' : '')
     const srcPath = `${basePath}${fileName}`
 
     newDecrypt({
       actionFor: item.type,
-      id: item.id,
+      id: item._id,
       srcPath
     })
   }
@@ -72,7 +72,7 @@ const useItemCardActions = ({ item }: Props) => {
         <ul className="space-y-3! text-sm text-gray-700 select-text cursor-default [&>li>p:nth-child(2)]:text-[#888]">
           <li>
             <h3 className="text-base font-semibold text-gray-900">ID</h3>
-            <p className="break-all">{item.id}</p>
+            <p className="break-all">{item._id}</p>
           </li>
 
           <li>
@@ -101,7 +101,7 @@ const useItemCardActions = ({ item }: Props) => {
                   Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\'))
                 ) +
                 '\\' +
-                item.id +
+                item._id +
                 (item.type === 'file' ? '.enc' : '')
 
               return (

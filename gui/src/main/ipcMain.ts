@@ -148,7 +148,7 @@ export default function registerIpcMain() {
 
   ipcMain.handle('get-encrypted-content', async (_event: IpcMainInvokeEvent) => {
     try {
-      const content = ENCRYPTOR.getStorage()
+      const content = await ENCRYPTOR.getStorage()
       return Array.from(content.entries())
     } catch (error) {
       return error
@@ -168,7 +168,7 @@ export default function registerIpcMain() {
       const { action, itemId } = props
       let success = false
       try {
-        const storage = ENCRYPTOR.getStorage()
+        const storage = await ENCRYPTOR.getStorage()
         const item = storage.get(itemId)
         if (!item) {
           throw new Error('Item not found')
