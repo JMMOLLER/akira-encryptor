@@ -280,6 +280,7 @@ class Encryptor {
       await Encryptor.workerPool.run(
         {
           SECRET_KEY: this.SECRET_KEY,
+          blockSize: this.chunkSize,
           enableLogging: this.LOG,
           taskType: "encrypt",
           port: channel.port1,

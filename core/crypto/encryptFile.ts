@@ -9,6 +9,7 @@ interface FileEncryptionProps {
   onProgress: (processedBytes: number) => void;
   enableLogging?: boolean;
   SECRET_KEY: Uint8Array;
+  blockSize: number;
   tempPath: string;
 }
 
@@ -23,11 +24,11 @@ const FS = FileSystem.getInstance();
  * @param saveOnEnd `boolean` - Optional flag to save the encrypted file in storage.
  */
 async function encryptFile(props: FileEncryptionProps): Promise<void> {
-  const { filePath, onProgress, tempPath, SECRET_KEY } = props;
+  const { filePath, onProgress, tempPath, SECRET_KEY, blockSize } = props;
 
   // Streams for reading and writing file
-  const rs = FS.createReadStream(filePath);
-  const ws = FS.createWriteStream(tempPath);
+  const rs = FS.createReadStream(filePath, { highWaterMark: blockSize });
+  const ws = FS.createWriteStream(tempPath, { highWaterMark: blockSize });
 
   // If logging is enabled, create a write stream for logging
   let log: ReturnType<typeof FS.createWriteStream> | null = null;

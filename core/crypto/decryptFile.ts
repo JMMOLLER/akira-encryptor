@@ -22,8 +22,8 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
   await sodium.ready;
 
   // Streams for reading and writing file
-  const rs = FS.createReadStream(filePath, blockSize);
-  const ws = FS.createWriteStream(tempPath);
+  const rs = FS.createReadStream(filePath, { highWaterMark: blockSize });
+  const ws = FS.createWriteStream(tempPath, { highWaterMark: blockSize });
 
   // If logging is enabled, create a write stream for logging
   let log: ReturnType<typeof FS.createWriteStream> | null = null;

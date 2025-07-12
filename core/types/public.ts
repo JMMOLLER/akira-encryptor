@@ -11,7 +11,7 @@ export interface WorkerTask {
   SECRET_KEY: Uint8Array;
   tempPath: string;
   port: MessagePort;
-  blockSize?: number;
+  blockSize: number;
 }
 
 //====================== UTIL TYPES ======================//

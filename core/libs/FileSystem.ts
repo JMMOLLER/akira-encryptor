@@ -1,3 +1,4 @@
+import type { ReadStreamOptions, WriteStreamOptions } from "../types/internal";
 import { formatBytes, delay } from "../utils/index";
 import { Readable, pipeline as p } from "stream";
 import parse from "filesize-parser";
@@ -66,14 +67,12 @@ export class FileSystem {
    * @param path `string` - The path of the file to be read.
    * @param highWaterMark `number` - The size of each chunk to be read (optional).
    */
-  createReadStream(path: string, highWaterMark?: number) {
+  createReadStream(path: string, options?: ReadStreamOptions) {
     if (!fs.existsSync(path)) {
       throw new Error(`File not found: ${path}`);
     }
 
-    return fs.createReadStream(path, {
-      highWaterMark
-    });
+    return fs.createReadStream(path, options);
   }
 
   /**
@@ -81,7 +80,7 @@ export class FileSystem {
    * @description `[ESP]` Crea un flujo de escritura a un archivo.
    * @param path `string` - The path of the file to be created.
    */
-  createWriteStream(path: string, options?: any) {
+  createWriteStream(path: string, options?: WriteStreamOptions) {
     return fs.createWriteStream(path, options);
   }
 
