@@ -113,14 +113,14 @@ async function handleIsHiddenFile(
   folderPath: string,
   Encryptor: EncryptorClass
 ) {
-  const storage = Encryptor.getStorage();
+  const storage = await Encryptor.getStorage();
   const id = path.basename(folderPath).replace(/^\./, "");
   const item = storage.get(id);
 
   if (item?.isHidden) {
-    const status = await Encryptor.revealStoredItem(item.id);
+    const status = await Encryptor.revealStoredItem(item._id);
     if (status) {
-      return folderPath.replace(path.basename(folderPath), item.id);
+      return folderPath.replace(path.basename(folderPath), item._id);
     }
   }
 
