@@ -1,5 +1,6 @@
 import { FileSystem } from "../libs/FileSystem";
 import { Transform, pipeline } from "stream";
+import decryptChunk from "./decryptChunk";
 import sodium from "libsodium-wrappers";
 import { promisify } from "util";
 
@@ -62,24 +63,18 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
           // Check if we have enough data for the encrypted chunk
           if (leftover.length - offset < nonceLen + 4 + encryptedLen) break;
 
-          // Extract the encrypted chunk
-          const encryptedChunk = leftover.subarray(
-            offset + nonceLen + 4,
-            offset + nonceLen + 4 + encryptedLen
-          );
+          const { newOffset, plain } = await decryptChunk({
+            id: (this as any)._chunkCount,
+            SECRET_KEY: props.SECRET_KEY,
+            encryptedLen,
+            chunkNonce,
+            nonceLen,
+            leftover,
+            offset
+          });
 
           // Recalculate the offset for the next iteration
-          offset += nonceLen + 4 + encryptedLen;
-
-          // Decrypt the chunk
-          const plain = sodium.crypto_secretbox_open_easy(
-            encryptedChunk,
-            chunkNonce,
-            props.SECRET_KEY
-          );
-          if (!plain) {
-            throw new Error("Error when decoding block");
-          }
+          offset += newOffset;
 
           // Send the progress
           onProgress?.(nonceLen + 4 + encryptedLen);
@@ -93,7 +88,7 @@ async function decryptFile(props: FileDecryptionProps): Promise<void> {
           }
 
           // Push the decrypted data to the writable stream
-          this.push(Buffer.from(plain));
+          this.push(plain);
         }
 
         (this as any)._leftover = leftover.subarray(offset);

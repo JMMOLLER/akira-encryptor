@@ -1,7 +1,7 @@
-import generateNonce from "../crypto/generateNonce";
 import { FileSystem } from "../libs/FileSystem";
 import { pipeline, Transform } from "stream";
-import sodium from "libsodium-wrappers";
+import encryptChunk from "./encryptChunk";
+import type { WriteStream } from "fs";
 import { promisify } from "util";
 
 interface FileEncryptionProps {
@@ -31,7 +31,7 @@ async function encryptFile(props: FileEncryptionProps): Promise<void> {
   const ws = FS.createWriteStream(tempPath, { highWaterMark: blockSize });
 
   // If logging is enabled, create a write stream for logging
-  let log: ReturnType<typeof FS.createWriteStream> | null = null;
+  let log: WriteStream | null = null;
   let chunkCount = 0;
   if (props.enableLogging) {
     log = FS.createWriteStream(filePath + ".enc.log");
@@ -44,36 +44,23 @@ async function encryptFile(props: FileEncryptionProps): Promise<void> {
     async transform(chunk, _enc, cb) {
       try {
         chunkCount++;
-        const nonce = await generateNonce();
+        // Convert chunk to Buffer if it's not already
         const chunkBuf = Buffer.isBuffer(chunk)
           ? chunk
           : Buffer.from(chunk as string);
-        const encrypted = sodium.crypto_secretbox_easy(
-          chunkBuf,
-          nonce,
-          SECRET_KEY
-        );
 
-        // Prepare the output - buffer with nonce + length + data
-        const lenBuf = Buffer.alloc(4);
-        lenBuf.writeUInt32BE(encrypted.length, 0);
-        const out = Buffer.concat([
-          Buffer.from(nonce),
-          lenBuf,
-          Buffer.from(encrypted)
-        ]);
+        // Encrypt the chunk
+        const encryptedChunk = await encryptChunk({
+          log: log || undefined,
+          chunk: chunkBuf,
+          id: chunkCount,
+          SECRET_KEY
+        });
 
         // Send the progress
         onProgress?.(chunkBuf.length);
 
-        // Write to the writable stream logging
-        if (log) {
-          log.write(`📦 Chunk #${chunkCount}\n`);
-          log.write(` - Nonce: ${Buffer.from(nonce).toString("hex")}\n`);
-          log.write(` - Encrypted Length: ${Buffer.from(encrypted).length}\n`);
-        }
-
-        cb(null, out);
+        cb(null, encryptedChunk);
       } catch (err) {
         cb(err as Error);
       }
